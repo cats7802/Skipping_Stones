@@ -1,0 +1,22 @@
+[Licensing::Module] Trying to connect to existing licensing client channel...
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-Cats" at "2026-08-17T08:52:28.6793592Z"
+[Licensing::Client] Error: HandshakeResponse reported an error:
+	ResponseCode: 505
+	ResponseStatus: Unsupported protocol version '1.18.1'.
+[Licensing::Module] Error: Failed to handshake to channel: "LicenseClient-Cats"
+[Licensing::IpcConnector] LicenseClient-Cats channel disconnected successfully.
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-Cats-6000.5.8" at "2026-08-17T08:52:30.4918655Z"
+[Licensing::Client] Code 10 while verifying Licensing Client signature (process Id: 1616, path: "C:/Program Files/Unity/Hub/Editor/6000.5.8f1/Editor/Data/Resources/Licensing/Client/Unity.Licensing.Client.exe")
+[Licensing::Module] LicensingClient has failed validation; ignoring
+[Licensing::Client] Handshaking with LicensingClient:
+  Version:                 1.18.1+9fbee8e
+  Session Id:              907ac218f604472bac899fc9e329671d
+  Correlation Id:          6cced8706dc6feac0c30ecbf1dea63e5
+  External correlation Id: 2385004435391963862
+  Machine Id:              BibNRHnhZwf4dH3WcZHNFH7ilwI=
+[Licensing::Module] Successfully connected to LicensingClient on channel: "LicenseClient-Cats-6000.5.8" (connect: 0.00s, validation: 0.00s, handshake: 0.01s)
+[Licensing::IpcConnector] Successfully connected to: "LicenseClient-Cats-6000.5.8-notifications" at "2026-08-17T08:52:30.5070712Z"
+[Licensing::Module] Generating manual activation license file: D:\Git_Hub\Test_AI\Test_AI/Unity_v6000.5.8f1.alf
+[Licensing::Client] Successfully processed ALF generation request: D:\Git_Hub\Test_AI\Test_AI\Unity_v6000.5.8f1.alf
+[Licensing::Module] Manual activation license file successfully saved.
+Exiting without the bug reporter. Application will terminate with return code 0
