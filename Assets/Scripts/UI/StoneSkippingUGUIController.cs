@@ -88,6 +88,11 @@ public class StoneSkippingUGUIController : MonoBehaviour
     private int goldTapCount = 0;
     private float lastGoldTapTime = 0f;
 
+    // 실시간 레이아웃 및 Safe Area 동기화 필드
+    private Rect lastSafeArea;
+    private int lastScreenWidth;
+    private int lastScreenHeight;
+
     private void Awake()
     {
         if (Instance != null && Instance != this)
@@ -98,7 +103,7 @@ public class StoneSkippingUGUIController : MonoBehaviour
         Instance = this;
 
         if (gameController == null)
-            gameController = FindFirstObjectByType<GameController>();
+            gameController = FindAnyObjectByType<GameController>();
 
         BindButtonEvents();
     }
@@ -253,8 +258,17 @@ public class StoneSkippingUGUIController : MonoBehaviour
     private void Update()
     {
         if (gameController == null)
-            gameController = FindFirstObjectByType<GameController>();
+            gameController = FindAnyObjectByType<GameController>();
         if (gameController == null) return;
+
+        // 실시간 Safe Area 및 종횡비 감지 후 레이아웃 자동 동기화
+        if (Screen.safeArea != lastSafeArea || Screen.width != lastScreenWidth || Screen.height != lastScreenHeight)
+        { 
+            lastSafeArea = Screen.safeArea;
+            lastScreenWidth = Screen.width;
+            lastScreenHeight = Screen.height;
+            ApplyLayouts();
+        }
 
         bool isHeld = false;
 #if ENABLE_INPUT_SYSTEM
@@ -288,11 +302,12 @@ public class StoneSkippingUGUIController : MonoBehaviour
     private void UpdateUIVisibilityByState()
     {
         var state = gameController.currentState;
+        bool showDevMenu = (EnvironmentTestHelper.Instance != null && EnvironmentTestHelper.Instance.showTestUI);
 
         if (topBarObj != null)
             topBarObj.SetActive(state != GameController.GameState.Replay && state != GameController.GameState.Result);
         if (modeSelectObj != null)
-            modeSelectObj.SetActive(state == GameController.GameState.ModeSelect);
+            modeSelectObj.SetActive(state == GameController.GameState.ModeSelect && !showDevMenu); // 비행테스트 창이 열려 있으면 모드선택창 비활성화
         if (positioningObj != null)
             positioningObj.SetActive(state == GameController.GameState.Positioning);
         if (aimingObj != null)
@@ -403,6 +418,48 @@ public class StoneSkippingUGUIController : MonoBehaviour
             if (EnvironmentTestHelper.Instance != null)
             {
                 EnvironmentTestHelper.Instance.showTestUI = true;
+            }
+        }
+    }
+
+    private void ApplyLayouts()
+    {
+        // 1. 탑바 Safe Area 적용 (최상단 고정 및 노치 회피)
+        if (topBarObj != null)
+        {
+            RectTransform topBarRt = topBarObj.GetComponent<RectTransform>();
+            if (topBarRt != null)
+            {
+                Rect safeArea = Screen.safeArea;
+                
+                // 스크린 높이 대비 안전 영역 상단(yMax)의 비율 계산
+                float safeTopRatio = safeArea.yMax / Screen.height;
+                
+                // TopBar의 anchors를 사단 노치 밑에 딱 고정
+                topBarRt.anchorMin = new Vector2(topBarRt.anchorMin.x, safeTopRatio);
+                topBarRt.anchorMax = new Vector2(topBarRt.anchorMax.x, safeTopRatio);
+                topBarRt.pivot = new Vector2(topBarRt.pivot.x, 1.0f); // 피벗 상단 고정
+                topBarRt.anchoredPosition = new Vector2(topBarRt.anchoredPosition.x, 0f); // 오프셋 0
+            }
+        }
+
+        // 2. 개발자 메뉴 위치 계산 (탑바 밑에 일정한 간격 유지)
+        if (topBarObj != null && devTestMenuObj != null)
+        {
+            RectTransform topBarRt = topBarObj.GetComponent<RectTransform>();
+            RectTransform devRt = devTestMenuObj.GetComponent<RectTransform>();
+            if (topBarRt != null && devRt != null)
+            {
+                float topBarHeight = topBarRt.rect.height;
+                
+                // 개발자 메뉴의 anchors를 탑바의 anchor와 일치시킴
+                devRt.anchorMin = new Vector2(devRt.anchorMin.x, topBarRt.anchorMin.y);
+                devRt.anchorMax = new Vector2(devRt.anchorMax.x, topBarRt.anchorMax.y);
+                devRt.pivot = new Vector2(devRt.pivot.x, 1.0f); // 피벗 상단 고정
+                
+                // 탑바 높이 + 간격(예: 15f) 만큼 내려서 배치
+                float spacing = 15f;
+                devRt.anchoredPosition = new Vector2(devRt.anchoredPosition.x, -(topBarHeight + spacing));
             }
         }
     }

@@ -1115,7 +1115,7 @@ public class GameController : MonoBehaviour
             topDownReplay = rObj.AddComponent<TopDownReplayManager>();
         }
 
-        topDownReplay.StartReplay(dist);
+        topDownReplay.isFromFlightTest = false; topDownReplay.StartReplay(dist);
     }
 
     public void ShowFinalResultDirect(float dist)

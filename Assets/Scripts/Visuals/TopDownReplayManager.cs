@@ -32,6 +32,7 @@ public class TopDownReplayManager : MonoBehaviour
     public Color skimStartMarkerColor = new Color(1.0f, 0.62f, 0.12f, 1f);
     public Color finishMarkerColor = new Color(1.0f, 0.22f, 0.22f, 1f);
 
+    public bool isFromFlightTest = false; // 🌟 비행 테스트에서 진입했는지 여부
     private LineRenderer trajectoryLine;
     private LineRenderer skimLine;
     private GameObject replayStoneAvatar; // 🌟 리플레이 선두에서 실제 돌 맵핑으로 2.5배 퐁퐁퐁 피칭 도약하는 3D 조약돌
@@ -1015,10 +1016,22 @@ public class TopDownReplayManager : MonoBehaviour
             dualCam.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
         }
 
-        // 2. 최종 결과창 표시
+        // 2. 최종 결과창 표시 또는 비행테스트 모드 복귀
         if (gameController != null)
         {
-            gameController.ShowFinalResultDirect(cachedFinalDist);
+            if (isFromFlightTest)
+            {
+                // 🌟 비행 테스트 종료 시 모드 선택 상태로 복귀하고 테스트 UI를 다시 활성화합니다.
+                gameController.ReturnToModeSelect();
+                if (EnvironmentTestHelper.Instance != null)
+                {
+                    EnvironmentTestHelper.Instance.showTestUI = true;
+                }
+            }
+            else
+            {
+                gameController.ShowFinalResultDirect(cachedFinalDist);
+            }
         }
     }
 }

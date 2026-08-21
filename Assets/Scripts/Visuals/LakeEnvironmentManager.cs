@@ -15,7 +15,7 @@ public class LakeEnvironmentManager : MonoBehaviour
 
             if (_instance == null)
             {
-                _instance = FindFirstObjectByType<LakeEnvironmentManager>();
+                _instance = FindAnyObjectByType<LakeEnvironmentManager>();
                 if (_instance == null && !isQuitting)
                 {
                     GameObject helperObj = new GameObject("[AutoBootstrap_LakeEnvironmentManager]");

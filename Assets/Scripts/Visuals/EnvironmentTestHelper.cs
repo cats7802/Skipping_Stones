@@ -11,7 +11,7 @@ public class EnvironmentTestHelper : MonoBehaviour
         {
             if (_instance == null)
             {
-                _instance = FindFirstObjectByType<EnvironmentTestHelper>();
+                _instance = FindAnyObjectByType<EnvironmentTestHelper>();
                 if (_instance == null)
                 {
                     GameObject helperObj = new GameObject("[AutoBootstrap_EnvironmentTestHelper]");
@@ -114,7 +114,7 @@ public class EnvironmentTestHelper : MonoBehaviour
     {
         isAutoFlying = true;
 
-        var gc = FindFirstObjectByType<GameController>();
+        var gc = FindAnyObjectByType<GameController>();
         if (gc == null)
         {
             Debug.LogError("[EnvironmentTestHelper] ❌ GameController를 찾을 수 없습니다!");
@@ -129,7 +129,7 @@ public class EnvironmentTestHelper : MonoBehaviour
         // 2. 캐릭터 바인딩
         if (gc.character == null)
         {
-            gc.character = FindFirstObjectByType<StoneThrowerCharacter>();
+            gc.character = FindAnyObjectByType<StoneThrowerCharacter>();
         }
 
         if (gc.character == null)
@@ -302,13 +302,13 @@ public class EnvironmentTestHelper : MonoBehaviour
         // 7. 리플레이 화면 자동 진입
         if (gc.topDownReplay == null)
         {
-            gc.topDownReplay = FindFirstObjectByType<TopDownReplayManager>();
+            gc.topDownReplay = FindAnyObjectByType<TopDownReplayManager>();
         }
 
         if (gc.topDownReplay != null)
         {
             gc.currentState = GameController.GameState.Replay;
-            gc.topDownReplay.StartReplay(targetDist);
+            gc.topDownReplay.isFromFlightTest = true; gc.topDownReplay.StartReplay(targetDist);
         }
         else
         {

@@ -21,6 +21,9 @@ public class DualCameraSetup : MonoBehaviour
     private Vector3 replayCenterPos;
     private float replayOrthoSize = 25f;
 
+    private float waterLevel = 0f;
+    private WaterSurface waterSurfaceCache;
+
     public void SetReplayTopDownView(Vector3 centerPos, float orthoSize)
     {
         replayCenterPos = centerPos;
@@ -135,6 +138,17 @@ public class DualCameraSetup : MonoBehaviour
             var st = FindAnyObjectByType<SkippingStone>();
             if (st != null) targetStone = st.transform;
         }
+
+        if (waterSurfaceCache == null)
+        {
+            waterSurfaceCache = FindAnyObjectByType<WaterSurface>();
+            if (waterSurfaceCache == null)
+            {
+                var waterObj = GameObject.Find("WaterSurface");
+                if (waterObj != null) waterSurfaceCache = waterObj.GetComponent<WaterSurface>();
+            }
+        }
+        waterLevel = (waterSurfaceCache != null) ? waterSurfaceCache.transform.position.y : 0f;
     }
 
     public void SnapCameraImmediate()
@@ -155,11 +169,7 @@ public class DualCameraSetup : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (targetCharacter == null)
-        {
-            var chr = FindAnyObjectByType<StoneThrowerCharacter>();
-            if (chr != null) targetCharacter = chr.transform;
-        }
+        EnsureReferences();
 
         Vector3 charPos = (targetCharacter != null) ? targetCharacter.position : (targetStone != null ? targetStone.position : transform.position);
         Vector3 stonePos = (targetStone != null) ? targetStone.position : charPos;
