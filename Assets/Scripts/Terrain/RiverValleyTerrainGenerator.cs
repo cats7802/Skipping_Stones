@@ -6,6 +6,10 @@ using UnityEditor;
 [ExecuteInEditMode]
 public class RiverValleyTerrainGenerator : MonoBehaviour
 {
+    [Header("0. 맵 식별자 (독립 에셋 및 오브젝트 생성용)")]
+    [Tooltip("생성될 배경 및 파일의 고유 이름 (예: BG_01, BG_02, Canyon_01)")]
+    public string mapName = "BG_01";
+
     [Header("1. 지형 기본 크기 (Terrain Dimensions)")]
     [Tooltip("지형의 가로 폭 (X축, 미터)")]
     public float sizeX = 1000f;
@@ -51,7 +55,7 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
     [Tooltip("강 물길 3차 미세 진폭 (미터)")]
     public float meanderTertiaryAmp = 8f;
 
-    [Tooltip("강 물길(수로)에도 3차 진폭을 적용할지 여부 (체크 해제 시 평야/산맥 경계에만 3차 진폭 적용)")]
+    [Tooltip("강 물길(수로)에도 3차 진폭을 적용할지 여부")]
     public bool applyTertiaryToRiver = false;
 
     [Header("4. 산맥 및 계곡 평야 설정 (Mountains & Valley)")]
@@ -70,10 +74,10 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
     [Tooltip("강 중심 기준 우측 평야 반폭 최대값 (미터)")]
     public float rightValleyWidthMax = 170f;
 
-    [Tooltip("산맥 기슭(평야 끝) 3차 굴곡 진폭 (미터) - 산자락이 평야로 굽이치는 3차 진폭")]
+    [Tooltip("산맥 기슭(평야 끝) 3차 굴곡 진폭 (미터)")]
     public float mountainFootTertiaryAmp = 25f;
 
-    [Tooltip("산맥 기슭(평야 끝) 랜덤 노이즈 진폭 (미터) - 산맥 시작선의 불규칙한 돌출/만입 크기")]
+    [Tooltip("산맥 기슭(평야 끝) 랜덤 노이즈 진폭 (미터)")]
     public float mountainFootNoiseAmp = 20f;
 
     [Tooltip("산맥 최고 높이 Y 최소값 (미터)")]
@@ -88,30 +92,20 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
     [Tooltip("산맥 경사면 폭 최대값 (미터)")]
     public float mountainTransitionWidthMax = 350f;
 
-    [Header("5. 텍스처 및 물 머티리얼 에셋 (Terrain Layers & Material)")]
-    [Tooltip("잔디 지형 레이어")]
+    [Header("5. 텍스처 및 물 머티리얼 에셋")]
     public TerrainLayer grassLayer;
-
-    [Tooltip("바위/암벽 지형 레이어")]
     public TerrainLayer rockLayer;
-
-    [Tooltip("강변 모래/자갈 지형 레이어")]
     public TerrainLayer sandLayer;
-
-    [Tooltip("산 정상 설경 지형 레이어")]
     public TerrainLayer snowLayer;
-
-    [Tooltip("강물 머티리얼")]
     public Material waterMaterial;
 
-    // Seamless river and valley center line along Z
     public float GetRiverCenterX(float z)
     {
         float zNorm = (z % sizeZ) / sizeZ;
         if (zNorm < 0f) zNorm += 1f;
         float angle = zNorm * Mathf.PI * 2f;
-        float center = (sizeX * 0.5f) + 
-                       Mathf.Sin(angle) * meanderPrimaryAmp + 
+        float center = (sizeX * 0.5f) +
+                       Mathf.Sin(angle) * meanderPrimaryAmp +
                        Mathf.Sin(angle * 2f + 0.4f) * meanderSecondaryAmp;
 
         if (applyTertiaryToRiver)
@@ -122,7 +116,6 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
         return center;
     }
 
-    // 1D Seamless Periodic Noise (Z=0 equals Z=sizeZ)
     public float SamplePeriodicNoise1D(float z, float freqZ, float seed)
     {
         float zNorm = (z % sizeZ) / sizeZ;
@@ -134,35 +127,30 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
         return Mathf.PerlinNoise(ny + seed, nz + seed);
     }
 
-    // Seamless River Width along Z
     public float GetRiverWidth(float z)
     {
         float t = SamplePeriodicNoise1D(z, 4.0f, (float)randomSeed + 17.3f);
         return Mathf.Lerp(riverWidthMin, riverWidthMax, t);
     }
 
-    // Seamless Left Valley Plain Width along Z
     public float GetLeftValleyWidth(float z)
     {
         float t = SamplePeriodicNoise1D(z, 3.5f, (float)randomSeed + 59.2f);
         return Mathf.Lerp(leftValleyWidthMin, leftValleyWidthMax, t);
     }
 
-    // Seamless Right Valley Plain Width along Z
     public float GetRightValleyWidth(float z)
     {
         float t = SamplePeriodicNoise1D(z, 3.5f, (float)randomSeed + 93.8f);
         return Mathf.Lerp(rightValleyWidthMin, rightValleyWidthMax, t);
     }
 
-    // Mountain Transition Width variation along Z
     public float GetMountainTransitionWidth(float z)
     {
         float t = SamplePeriodicNoise1D(z, 3.0f, (float)randomSeed + 81.1f);
         return Mathf.Lerp(mountainTransitionWidthMin, mountainTransitionWidthMax, t);
     }
 
-    // Periodic 3D cylinder noise (guarantees seamless Z=0 to Z=sizeZ)
     public float SamplePeriodicNoise(float worldX, float worldZ, float freqX, float freqZ, float seed)
     {
         float zNorm = (worldZ % sizeZ) / sizeZ;
@@ -184,20 +172,23 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
     [ContextMenu("Generate Terrain")]
     public void Generate()
     {
+        if (string.IsNullOrEmpty(mapName)) mapName = "BG_01";
+        gameObject.name = mapName;
+
         if (!AssetDatabase.IsValidFolder("Assets/TerrainData"))
         {
             AssetDatabase.CreateFolder("Assets", "TerrainData");
         }
 
-        // 1. Auto-assign layers if null
+        // 1. 머티리얼 및 레이어 자동 할당[cite: 7]
         if (grassLayer == null) grassLayer = AssetDatabase.LoadAssetAtPath<TerrainLayer>("Assets/Design_sources/3D/Environments/SoStylized/Environment/Landscape/Layer/TL_Grass.terrainlayer");
         if (rockLayer == null) rockLayer = AssetDatabase.LoadAssetAtPath<TerrainLayer>("Assets/Design_sources/3D/Environments/SoStylized/Environment/Landscape/Layer/TL_Rock.terrainlayer");
         if (sandLayer == null) sandLayer = AssetDatabase.LoadAssetAtPath<TerrainLayer>("Assets/Design_sources/3D/Environments/SoStylized/Environment/Landscape/Layer/TL_Sand.terrainlayer");
         if (snowLayer == null) snowLayer = AssetDatabase.LoadAssetAtPath<TerrainLayer>("Assets/Design_sources/3D/Environments/SoStylized/Environment/Landscape/Layer/TL_Snow.terrainlayer");
         if (waterMaterial == null) waterMaterial = AssetDatabase.LoadAssetAtPath<Material>("Assets/Design_sources/3D/Environments/SoStylized/Environment/Water/Materials/M_StylizedWater.mat");
 
-        // 2. TerrainData
-        string terrainDataPath = "Assets/TerrainData/RiverValley_1000x1500.asset";
+        // 2. mapName 기반 고유 TerrainData 생성 및 할당[cite: 7]
+        string terrainDataPath = $"Assets/TerrainData/{mapName}_TerrainData.asset";
         TerrainData terrainData = AssetDatabase.LoadAssetAtPath<TerrainData>(terrainDataPath);
         if (terrainData == null)
         {
@@ -208,10 +199,9 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
         terrainData.heightmapResolution = heightmapResolution;
         terrainData.size = new Vector3(sizeX, sizeY, sizeZ);
         terrainData.alphamapResolution = alphamapResolution;
-
         terrainData.terrainLayers = new TerrainLayer[] { grassLayer, rockLayer, sandLayer, snowLayer };
 
-        // 3. Heights
+        // 3. 지형 높이 계산 (Heights)[cite: 7]
         float[,] heights = new float[heightmapResolution, heightmapResolution];
 
         for (int zi = 0; zi < heightmapResolution; zi++)
@@ -229,18 +219,14 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
             for (int xi = 0; xi < heightmapResolution; xi++)
             {
                 float worldX = (xi / (float)(heightmapResolution - 1)) * sizeX;
-                
-                // Distance from meandering river center
                 float distFromRiver = Mathf.Abs(worldX - riverCenterX);
                 bool isLeft = (worldX < riverCenterX);
                 float currentValleyWidth = isLeft ? currentLeftValley : currentRightValley;
 
-                // --- 산맥 기슭(평야 끝) 3차 진폭 + 랜덤 노이즈 굴곡 ---
                 float footTertiary = Mathf.Sin(angle * 3f + (isLeft ? 0.8f : 2.4f)) * mountainFootTertiaryAmp;
                 float footNoise = (SamplePeriodicNoise(worldX, worldZ, 6.0f, 6.0f, (float)randomSeed + (isLeft ? 511f : 723f)) - 0.5f) * 2f * mountainFootNoiseAmp;
                 float effectiveValleyWidth = Mathf.Max(25f, currentValleyWidth + footTertiary + footNoise);
 
-                // --- A. Mountain Elevation: Valley and mountains curve along with the river meander ---
                 float mountainRamp = Mathf.Clamp01((distFromRiver - effectiveValleyWidth) / currentTransitionWidth);
                 float mountainShape = Mathf.SmoothStep(0f, 1f, mountainRamp);
 
@@ -253,22 +239,17 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
                 float ridged = 1f - Mathf.Abs(totalNoise * 2f - 1f);
                 ridged = Mathf.Pow(ridged, 1.8f);
 
-                // Mountain max height randomized smoothly along space between Min and Max
                 float heightRandT = SamplePeriodicNoise(worldX, worldZ, 2.5f, 2.5f, (float)randomSeed + 155f);
                 float localMountainMaxHeight = Mathf.Lerp(mountainMaxHeightMin, mountainMaxHeightMax, heightRandT);
-
                 float mountainElevation = mountainShape * (localMountainMaxHeight - valleyBaseHeight) * (0.25f + 0.75f * ridged);
 
-                // --- B. Valley Lowlands with Natural Undulation (Curves with the river) ---
                 float valleyNoise1 = SamplePeriodicNoise(worldX, worldZ, 3.0f, 3.0f, (float)randomSeed + 77f);
                 float valleyNoise2 = SamplePeriodicNoise(worldX, worldZ, 8.0f, 8.0f, (float)randomSeed + 133f) * 0.4f;
                 float valleyNoiseTotal = (valleyNoise1 + valleyNoise2) / 1.4f;
-                
-                float lowlandElevation = valleyBaseHeight + (valleyNoiseTotal - 0.5f) * 4.0f;
 
+                float lowlandElevation = valleyBaseHeight + (valleyNoiseTotal - 0.5f) * 4.0f;
                 float rawHeightY = lowlandElevation + mountainElevation;
 
-                // --- C. Riverbed & Shoreline Carving ---
                 float bedNoise = SamplePeriodicNoise(worldX, worldZ, 6.0f, 6.0f, (float)randomSeed + 219f);
                 float localRiverBed = riverBedDepth + (bedNoise - 0.5f) * 3.0f;
 
@@ -298,7 +279,7 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
 
         terrainData.SetHeights(0, 0, heights);
 
-        // 4. Splatmaps (Alphamaps)
+        // 4. 스플랫맵 계산 (Alphamaps)[cite: 7]
         float[,,] splatmaps = new float[alphamapResolution, alphamapResolution, 4];
         for (int zi = 0; zi < alphamapResolution; zi++)
         {
@@ -313,7 +294,6 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
 
                 float currentHeight = terrainData.GetInterpolatedHeight(normX, normZ);
                 float steepness = terrainData.GetSteepness(normX, normZ);
-                float distFromRiver = Mathf.Abs(worldX - riverCenterX);
 
                 float wGrass = 0f;
                 float wRock = 0f;
@@ -367,27 +347,42 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
         terrainData.SetAlphamaps(0, 0, splatmaps);
         EditorUtility.SetDirty(terrainData);
 
-        // 5. Setup Terrain Component
-        Terrain terrain = GetComponent<Terrain>();
-        TerrainCollider col = GetComponent<TerrainCollider>();
-        if (terrain == null) terrain = gameObject.AddComponent<Terrain>();
-        if (col == null) col = gameObject.AddComponent<TerrainCollider>();
+        // 🌟 5. 자식 오브젝트 1: [Ground] 오브젝트 구조 보장[cite: 7]
+        Transform groundTrans = transform.Find("Ground");
+        GameObject groundGO = (groundTrans != null) ? groundTrans.gameObject : null;
+        if (groundGO == null)
+        {
+            groundGO = new GameObject("Ground");
+            groundGO.transform.SetParent(transform);
+            groundGO.transform.localPosition = new Vector3(-sizeX * 0.5f, 0f, 0f);
+        }
+        else
+        {
+            groundGO.transform.localPosition = new Vector3(-sizeX * 0.5f, 0f, 0f);
+        }
+
+        Terrain terrain = groundGO.GetComponent<Terrain>();
+        TerrainCollider col = groundGO.GetComponent<TerrainCollider>();
+        if (terrain == null) terrain = groundGO.AddComponent<Terrain>();
+        if (col == null) col = groundGO.AddComponent<TerrainCollider>();
 
         terrain.terrainData = terrainData;
         col.terrainData = terrainData;
 
-        // 6. Water Object
-        Transform waterTrans = transform.Find("River_Water");
+        // 🌟 6. 자식 오브젝트 2: [Water_Surface] 오브젝트 및 콜라이더 완벽 구축[cite: 1, 7]
+        Transform waterTrans = transform.Find("Water_Surface") ?? transform.Find("River_Water");
         GameObject riverWaterGO = waterTrans != null ? waterTrans.gameObject : null;
         if (riverWaterGO == null)
         {
-            riverWaterGO = new GameObject("River_Water");
+            riverWaterGO = new GameObject("Water_Surface");
             riverWaterGO.transform.SetParent(transform);
-            riverWaterGO.AddComponent<MeshFilter>();
-            riverWaterGO.AddComponent<MeshRenderer>();
+        }
+        else
+        {
+            riverWaterGO.name = "Water_Surface";
         }
 
-        riverWaterGO.transform.localPosition = Vector3.zero;
+        riverWaterGO.transform.localPosition = new Vector3(-sizeX * 0.5f, 0f, 0f);
 
         int zSegments = 400;
         int xSegments = 14;
@@ -437,12 +432,12 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
             }
         }
 
-        string waterMeshPath = "Assets/TerrainData/RiverWaterMesh.asset";
+        string waterMeshPath = $"Assets/TerrainData/{mapName}_WaterMesh.asset";
         UnityEngine.Mesh waterMesh = AssetDatabase.LoadAssetAtPath<UnityEngine.Mesh>(waterMeshPath);
         if (waterMesh == null)
         {
             waterMesh = new UnityEngine.Mesh();
-            waterMesh.name = "RiverWaterMesh";
+            waterMesh.name = $"{mapName}_WaterMesh";
             AssetDatabase.CreateAsset(waterMesh, waterMeshPath);
         }
         else
@@ -458,14 +453,24 @@ public class RiverValleyTerrainGenerator : MonoBehaviour
 
         EditorUtility.SetDirty(waterMesh);
 
-        var mf = riverWaterGO.GetComponent<MeshFilter>();
-        var mr = riverWaterGO.GetComponent<MeshRenderer>();
+        var mf = riverWaterGO.GetComponent<MeshFilter>() ?? riverWaterGO.AddComponent<MeshFilter>();
+        var mr = riverWaterGO.GetComponent<MeshRenderer>() ?? riverWaterGO.AddComponent<MeshRenderer>();
         mf.sharedMesh = waterMesh;
         if (waterMaterial != null) mr.sharedMaterial = waterMaterial;
 
+        // 🌟 수면 물리 콜라이더 & WaterSurface 컴포넌트 자동 부착[cite: 1]
+        var waterCol = riverWaterGO.GetComponent<BoxCollider>() ?? riverWaterGO.AddComponent<BoxCollider>();
+        waterCol.isTrigger = true;
+        waterCol.center = new Vector3(sizeX * 0.5f, waterHeight - 2.0f, sizeZ * 0.5f);
+        waterCol.size = new Vector3(sizeX, 4.0f, sizeZ);
+
+        if (riverWaterGO.GetComponent<WaterSurface>() == null)
+        {
+            riverWaterGO.AddComponent<WaterSurface>();
+        }
+
         AssetDatabase.SaveAssets();
-        Debug.Log($"[RiverValley] 지형 생성 완료 (시드: {randomSeed}): 평야 동적 굴곡 연동, 좌우 비대칭 강폭(Min/Max), 산맥 높이/경사면 랜덤화 및 Z축 1500m 심리스 타일링 적용");
+        Debug.Log($"✅ [{mapName}] 지형 생성 완료: {mapName}/Ground 및 {mapName}/Water_Surface 계층 구조와 에셋이 독립적으로 완벽 빌드되었습니다.");
     }
 #endif
 }
-

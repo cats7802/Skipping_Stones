@@ -1,8 +1,15 @@
 using UnityEngine;
 
+
+
 [ExecuteAlways]
 public class LakeEnvironmentManager : MonoBehaviour
+
 {
+    [Header("청크 오브젝트 참조")]
+    public GameObject chunk0;
+    public GameObject chunk1;
+    public GameObject chunk2;
     private static bool isQuitting = false;
     private static LakeEnvironmentManager _instance;
 
@@ -10,7 +17,6 @@ public class LakeEnvironmentManager : MonoBehaviour
     {
         get
         {
-            // 게임 종료 중일 때는 새로 생성하지 않고 null 반환
             if (isQuitting) return null;
 
             if (_instance == null)
@@ -25,6 +31,17 @@ public class LakeEnvironmentManager : MonoBehaviour
             return _instance;
         }
     }
+
+    public enum MapCycleMode
+    {
+        Sequential, // 순차 순환 (0 -> 1 -> 2 -> 0...)
+        Random      // 무작위 순환
+    }
+
+    [Header("배경 맵 목록 및 순환 방식")]
+    [Tooltip("1개만 넣으면 단일 반복, 여러 개를 넣으면 설정된 모드로 순환합니다.")]
+    public GameObject[] mapPrefabs;
+    public MapCycleMode cycleMode = MapCycleMode.Sequential;
 
     private void Awake()
     {
@@ -57,8 +74,6 @@ public class LakeEnvironmentManager : MonoBehaviour
         }
     }
 
-   
-
     public enum EnvironmentTheme
     {
         DynamicJourney, // 🌟 0~4500m 비거리에 따라 낮 -> 노을 -> 밤으로 실시간 자동 전환
@@ -76,7 +91,7 @@ public class LakeEnvironmentManager : MonoBehaviour
     public float sunsetEndDistance = 3000f;    // 1500m ~ 3000m: 황금빛 노을
     public float nightStartDistance = 4500f;   // 3000m ~ 4500m: 짙은 석양 -> 밤
 
-    [Header("🎨 환경 머티리얼 에셋 직결 (인스펙터에서 직접 수정 가능)")]
+    [Header("🎨 환경 머티리얼 에셋 직결")]
     public Material groundMaterial;
     public Material mountainMaterial;
     public Material waterMaterial;
@@ -103,7 +118,7 @@ public class LakeEnvironmentManager : MonoBehaviour
         public Color waterRippleColor;
     }
 
-    [Header("1단계: 청량한 맑은 날 (0 ~ 1500m)")]
+    [Header("1단계: 청량한 맑은 날")]
     public EnvironmentPreset dayPreset = new EnvironmentPreset
     {
         name = "ClearDay",
@@ -122,7 +137,7 @@ public class LakeEnvironmentManager : MonoBehaviour
         waterRippleColor = new Color(1f, 1f, 1f, 1f)
     };
 
-    [Header("2단계: 황금빛 노을 (1500 ~ 3000m)")]
+    [Header("2단계: 황금빛 노을")]
     public EnvironmentPreset sunsetPreset = new EnvironmentPreset
     {
         name = "Sunset",
@@ -141,7 +156,7 @@ public class LakeEnvironmentManager : MonoBehaviour
         waterRippleColor = new Color(1.0f, 0.88f, 0.65f, 1f)
     };
 
-    [Header("3단계: 짙은 석양/땅거미 (3000 ~ 4500m)")]
+    [Header("3단계: 짙은 석양/땅거미")]
     public EnvironmentPreset twilightPreset = new EnvironmentPreset
     {
         name = "Twilight",
@@ -160,7 +175,7 @@ public class LakeEnvironmentManager : MonoBehaviour
         waterRippleColor = new Color(1.0f, 0.60f, 0.50f, 1f)
     };
 
-    [Header("4단계: 달빛/별빛 밤 호수 (4500m+)")]
+    [Header("4단계: 달빛/별빛 밤 호수")]
     public EnvironmentPreset nightPreset = new EnvironmentPreset
     {
         name = "MoonlitNight",
@@ -183,13 +198,14 @@ public class LakeEnvironmentManager : MonoBehaviour
 
     private Light mainLight;
 
-    // 🌟 BG_01 순차 인스턴스화 (0m 기본 청크 영구 보존 + 1500m, 3000m, 4500m 동적 생성)
-    private const float CHUNK_SIZE = 1500f;
+    [Header("청크 자동 측정 정보")]
+    [Tooltip("자동 감지된 배경 1청크의 Z축 길이")]
+    public float autoChunkSize = 1500f;
+
     private GameObject baseBGChunk0;
     private readonly System.Collections.Generic.List<GameObject> dynamicChunks = new System.Collections.Generic.List<GameObject>();
     private readonly System.Collections.Generic.HashSet<int> spawnedChunkIndices = new System.Collections.Generic.HashSet<int>();
 
-    // 새 구간 생성 시 콜백 - RiverSpawner가 구독하여 해당 구간 엔티티 생성
     public System.Action<float> OnChunkRelayed;
 
     private void Start()
@@ -216,6 +232,36 @@ public class LakeEnvironmentManager : MonoBehaviour
         }
     }
 
+    private void InitializeFirstChunk()
+    {
+        if (chunk0 == null)
+        {
+            // 씬 내 Terrain이 속한 최상위 부모를 첫 번째 청크로 자동 지정 (이름 무관)
+            Terrain terrain = FindAnyObjectByType<Terrain>();
+            if (terrain != null)
+            {
+                chunk0 = terrain.transform.parent != null ? terrain.transform.parent.gameObject : terrain.gameObject;
+            }
+        }
+    }
+
+    private GameObject GetMapPrefabForChunk(int chunkIndex)
+    {
+        if (mapPrefabs != null && mapPrefabs.Length > 0)
+        {
+            if (cycleMode == MapCycleMode.Random && mapPrefabs.Length > 1)
+            {
+                int randIdx = (chunkIndex == 0) ? 0 : UnityEngine.Random.Range(0, mapPrefabs.Length);
+                return mapPrefabs[randIdx];
+            }
+            else
+            {
+                int seqIdx = chunkIndex % mapPrefabs.Length;
+                return mapPrefabs[seqIdx];
+            }
+        }
+        return chunk0;
+    }
     private void EnsureMaterials()
     {
         if (skyboxMaterial == null || !skyboxMaterial.HasProperty("_SkyTint"))
@@ -271,7 +317,6 @@ public class LakeEnvironmentManager : MonoBehaviour
 
     private void CleanUpLegacyObjects()
     {
-        // 🌟 지평선 인위적 태양 구체 및 에러 파티클 시스템만 삭제 (산맥은 보존!)
         string[] legacyNames = {
             "Environment_SunMoonDisc", "Sunset_SunDisc", "ClearDay_SunDisc",
             "VFX_LakeSurfaceMist", "VFX_SunsetWaterDust"
@@ -312,7 +357,7 @@ public class LakeEnvironmentManager : MonoBehaviour
 
         if (distance <= dayEndDistance)
         {
-            float blendT = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(750f, dayEndDistance, distance));
+            float blendT = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(dayEndDistance * 0.5f, dayEndDistance, distance));
             target = LerpPreset(dayPreset, sunsetPreset, blendT * 0.55f);
         }
         else if (distance <= sunsetEndDistance)
@@ -359,7 +404,6 @@ public class LakeEnvironmentManager : MonoBehaviour
         EnsureDirectionalLight();
         EnsureMaterials();
 
-        // 1. 조명 갱신
         if (mainLight != null)
         {
             mainLight.color = p.sunLightColor;
@@ -367,7 +411,6 @@ public class LakeEnvironmentManager : MonoBehaviour
             mainLight.transform.rotation = Quaternion.Euler(p.sunLightRotation);
         }
 
-        // 2. 스카이박스 & 카메라 배경 갱신
         if (skyboxMaterial != null)
         {
             if (RenderSettings.skybox != skyboxMaterial) RenderSettings.skybox = skyboxMaterial;
@@ -385,14 +428,12 @@ public class LakeEnvironmentManager : MonoBehaviour
             Camera.main.backgroundColor = p.skyTop;
         }
 
-        // 3. 산맥(Mountain) 색상 실시간 연동
         if (mountainMaterial != null)
         {
             if (mountainMaterial.HasProperty("_BaseColor")) mountainMaterial.SetColor("_BaseColor", p.mountainColor);
             else if (mountainMaterial.HasProperty("_Color")) mountainMaterial.SetColor("_Color", p.mountainColor);
         }
 
-        // 4. 호수 수면(Water_Surface) 물 색상 실시간 연동
         if (waterMaterial != null)
         {
             if (waterMaterial.HasProperty("_BaseColor")) waterMaterial.SetColor("_BaseColor", p.waterDeepColor);
@@ -402,7 +443,6 @@ public class LakeEnvironmentManager : MonoBehaviour
             if (waterMaterial.HasProperty("_DepthThreshold")) waterMaterial.SetFloat("_DepthThreshold", 0.20f);
         }
 
-        // 5. 환경광 및 안개 갱신
         RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
         RenderSettings.ambientSkyColor = p.skyTop;
         RenderSettings.ambientEquatorColor = p.skyEquator;
@@ -442,14 +482,37 @@ public class LakeEnvironmentManager : MonoBehaviour
         }
     }
 
-    #region BG_01 순차 인스턴스화 (지형+수면+산맥 통째로 새로 설치 & 리셋 시 일괄 정리)
+    #region BG 순차 인스턴스화 및 자동 크기 감지 무한 스트리밍
 
     /// <summary>
-    /// 시작 시 기본 0m 청크(baseBGChunk0) 확인 및 상태 정렬
+    /// 배경 프리팹 내부의 렌더러/콜라이더를 순회하여 Z축 길이를 자동 측정
     /// </summary>
+    private void AutoDetectChunkSize()
+    {
+        if (baseBGChunk0 == null) return;
+
+        Renderer[] renderers = baseBGChunk0.GetComponentsInChildren<Renderer>();
+        if (renderers.Length > 0)
+        {
+            Bounds combined = renderers[0].bounds;
+            foreach (var r in renderers)
+            {
+                // 파티클/트레일 등 비정상적으로 큰 바운드는 제외
+                if (r is ParticleSystemRenderer || r is TrailRenderer) continue;
+                combined.Encapsulate(r.bounds);
+            }
+            if (combined.size.z > 50f)
+            {
+                autoChunkSize = combined.size.z;
+            }
+        }
+    }
+
     public void SetupBGChunks()
     {
-        if (!Application.isPlaying) return;
+        InitializeFirstChunk(); // 🌟 첫 번째 청크 자동 인식
+
+        if (chunk0 == null && (mapPrefabs == null || mapPrefabs.Length == 0)) return;
 
         if (baseBGChunk0 == null)
         {
@@ -459,18 +522,17 @@ public class LakeEnvironmentManager : MonoBehaviour
                 var g = GameObject.Find("Ground");
                 if (g != null)
                 {
-                    baseBGChunk0 = (g.transform.parent != null && g.transform.parent.name.Contains("BG_01")) 
-                                   ? g.transform.parent.gameObject 
+                    baseBGChunk0 = (g.transform.parent != null && g.transform.parent.name.Contains("BG_01"))
+                                   ? g.transform.parent.gameObject
                                    : g;
                 }
             }
         }
+
+        AutoDetectChunkSize();
         spawnedChunkIndices.Add(0);
     }
 
-    /// <summary>
-    /// 특정 청크 번호(1: 1500m, 2: 3000m, 3: 4500m)가 아직 없으면 씬의 원본 BG_01을 완벽히 복제하여 순차 연결
-    /// </summary>
     public GameObject EnsureChunkSpawned(int chunkIndex)
     {
         if (chunkIndex <= 0) return baseBGChunk0;
@@ -482,23 +544,18 @@ public class LakeEnvironmentManager : MonoBehaviour
         SetupBGChunks();
         if (baseBGChunk0 == null) return null;
 
-        float targetZ = chunkIndex * CHUNK_SIZE;
+        float targetZ = chunkIndex * autoChunkSize;
 
-        // 🌟 씬의 원본 baseBGChunk0을 동일한 부모(transform.parent) 아래로 완벽 복제
         GameObject newChunk = Instantiate(baseBGChunk0, baseBGChunk0.transform.parent);
-
         newChunk.name = $"BG_01_Section_{chunkIndex}_{targetZ:F0}m";
 
-        // 🌟 원본과 완전히 동일한 X/Y, 회전, 스케일을 계승하고 Z축만 정확히 targetZ만큼 이동
         newChunk.transform.localPosition = baseBGChunk0.transform.localPosition + new Vector3(0f, 0f, targetZ);
         newChunk.transform.localRotation = baseBGChunk0.transform.localRotation;
         newChunk.transform.localScale = baseBGChunk0.transform.localScale;
 
-        // 발판(Lakeside_WoodenPier)은 시작 지점(0m)에만 존재하므로, 복제된 배경 내의 중복 발판은 제거
         Transform duplicatePier = newChunk.transform.Find("Lakeside_WoodenPier");
         if (duplicatePier != null) Destroy(duplicatePier.gameObject);
 
-        // 복제본 Water_Surface의 WaterSurface 스크립트 제거 (콜라이더/메쉬 유지)
         Transform ws = newChunk.transform.Find("Water_Surface");
         if (ws != null)
         {
@@ -509,15 +566,11 @@ public class LakeEnvironmentManager : MonoBehaviour
         dynamicChunks.Add(newChunk);
         spawnedChunkIndices.Add(chunkIndex);
 
-        // 새 구간 엔티티 스폰 알림
         OnChunkRelayed?.Invoke(targetZ);
 
         return newChunk;
     }
 
-    /// <summary>
-    /// 게임 재시작/리셋 시 동적으로 생성되었던 청크들을 일괄 삭제(Destroy)하여 메모리 완전 정리
-    /// </summary>
     public void ClearDynamicChunks()
     {
         foreach (var chunk in dynamicChunks)
@@ -529,9 +582,6 @@ public class LakeEnvironmentManager : MonoBehaviour
         spawnedChunkIndices.Add(0);
     }
 
-    /// <summary>
-    /// 리플레이 페이지 이동 시 해당 페이지에 필요한 청크가 모두 생성되어 있도록 보장 (1P: 0~1500m, 2P: 1500~3000m, 3P: 3000~4500m)
-    /// </summary>
     public void PlaceBGAtPage(int page)
     {
         SetupBGChunks();
@@ -541,13 +591,11 @@ public class LakeEnvironmentManager : MonoBehaviour
         }
     }
 
-    // 하위 호환성 래퍼
     public void PlaceTerrainAtPage(int page) => PlaceBGAtPage(page);
     public void SetupTerrainChunks() => SetupBGChunks();
 
     /// <summary>
-    /// 매 프레임 돌/카메라의 Z 좌표를 감시하여 비거리가 도달하기 전에 다음 청크를 미리 설치
-    /// (800m 통과 시 1500m 설치, 2300m 통과 시 3000m 설치, 3800m 통과 시 4500m 설치)
+    /// 🌟 청크 크기(autoChunkSize)에 비례하여 다음 청크를 사전에 무한 자동 스폰
     /// </summary>
     public void UpdateBGStreaming()
     {
@@ -555,22 +603,20 @@ public class LakeEnvironmentManager : MonoBehaviour
         SetupBGChunks();
 
         float trackZ = GetTrackingZ();
+        if (autoChunkSize <= 0f) autoChunkSize = 1500f;
 
-        if (trackZ >= 800f && !spawnedChunkIndices.Contains(1))
+        // 현재 위치 기준으로 다음 청크 인덱스 계산 (청크의 55% 지점 통과 시 다음 청크 사전 로드)
+        int requiredChunkIndex = Mathf.FloorToInt((trackZ + (autoChunkSize * 0.45f)) / autoChunkSize);
+
+        for (int i = 1; i <= requiredChunkIndex; i++)
         {
-            EnsureChunkSpawned(1);
-        }
-        if (trackZ >= 2300f && !spawnedChunkIndices.Contains(2))
-        {
-            EnsureChunkSpawned(2);
-        }
-        if (trackZ >= 3800f && !spawnedChunkIndices.Contains(3))
-        {
-            EnsureChunkSpawned(3);
+            if (!spawnedChunkIndices.Contains(i))
+            {
+                EnsureChunkSpawned(i);
+            }
         }
     }
 
-    // 하위 호환성 래퍼
     public void UpdateTerrainStreaming() => UpdateBGStreaming();
 
     private float GetTrackingZ()

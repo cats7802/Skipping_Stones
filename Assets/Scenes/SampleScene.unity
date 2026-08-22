@@ -439,12 +439,15 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::GameController
   currentMode: 0
+  currentState: 0
+  defaultCharacterPrefab: {fileID: 0}
+  defaultStonePrefab: {fileID: 0}
+  defaultMapPrefab: {fileID: 0}
+  character: {fileID: 0}
   stone: {fileID: 0}
   dualCamera: {fileID: 0}
-  launchPlatform: {fileID: 0}
-  character: {fileID: 0}
   topDownReplay: {fileID: 0}
-  currentState: 0
+  currentLaunchPier: {fileID: 0}
   startPosX: 0
   aimGaugeValue: 0
   powerGaugeValue: 0
@@ -452,10 +455,10 @@ MonoBehaviour:
   bannerNotificationText: 
   showAquariumModal: 0
   showStoneSelectorModal: 0
+  requireTouchRelease: 0
+  targetPlatformIndex: 0
   minPositionX: -50
   maxPositionX: 50
-  dragSensitivity: 0.045
-  requireTouchRelease: 0
   distanceScore: 0
   skipScore: 0
   specialScore: 0
@@ -466,7 +469,6 @@ MonoBehaviour:
   friendOvertakeCount: 0
   boostPadCount: 0
   lastSkimBonusDist: 0
-  lastGameOverReason: "\uC218\uBA74 \uCE68\uBAB0"
 --- !u!114 &266294366
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -675,8 +677,8 @@ Transform:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 330585543}
   serializedVersion: 2
-  m_LocalRotation: {x: 0.074999586, y: 0.7031181, z: -0.074999586, w: 0.7031181}
-  m_LocalPosition: {x: -9, y: 5.6, z: 0}
+  m_LocalRotation: {x: 0.10606543, y: 0, z: 0, w: 0.99435914}
+  m_LocalPosition: {x: 0, y: 5.6, z: -9}
   m_LocalScale: {x: 1, y: 1, z: 1}
   m_ConstrainProportionsScale: 0
   m_Children: []
@@ -1627,7 +1629,7 @@ GameObject:
   - component: {fileID: 818125878}
   - component: {fileID: 818125877}
   m_Layer: 0
-  m_Name: Lakeside_WoodenPier
+  m_Name: Lakeside_Platform
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -2305,6 +2307,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::DualCameraSetup
   targetStone: {fileID: 0}
   targetCharacter: {fileID: 0}
+  waterLevel: 16
   currentMode: 0
   mainCam: {fileID: 330585545}
   followSmoothSpeed: 8
@@ -3428,6 +3431,18 @@ PrefabInstance:
     serializedVersion: 3
     m_TransformParent: {fileID: 1425683700}
     m_Modifications:
+    - target: {fileID: 3547527291104305780, guid: b6b0c5db5108ad544a6babc10cb5616f, type: 3}
+      propertyPath: m_Enabled
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: 5804602897538501024, guid: b6b0c5db5108ad544a6babc10cb5616f, type: 3}
+      propertyPath: m_Size.y
+      value: 4
+      objectReference: {fileID: 0}
+    - target: {fileID: 5804602897538501024, guid: b6b0c5db5108ad544a6babc10cb5616f, type: 3}
+      propertyPath: m_Center.y
+      value: 14
+      objectReference: {fileID: 0}
     - target: {fileID: 6726142715302024581, guid: b6b0c5db5108ad544a6babc10cb5616f, type: 3}
       propertyPath: m_Name
       value: BG_01

@@ -6,36 +6,41 @@ using UnityEngine.InputSystem;
 
 public class GameController : MonoBehaviour
 {
+    public static GameController Instance { get; private set; }
+
     public enum GameMode
     {
-        LongDistance,   // 🏆 장거리 도전 모드 (1,500m 강줄기 최대 비거리 & 랭킹 레이스)
+        LongDistance,   // 🏆 장거리 도전 모드 (최대 비거리 & 랭킹 레이스)
         TargetAccuracy  // 🎯 타겟 맞추기 모드 (강변 PP 위치 선정 & 건너편 타겟 정밀 투구)
     }
 
     public enum GameState
     {
-        ModeSelect,         // 모드 선택 로비 화면
+        ModeSelect,         // 모드/캐릭터/맵 선택 로비 (앞단 UI 영역)
         Positioning,        // 0단계: 위치 선정 (Top-Down 뷰)
         AimingAngle,        // 1단계: 방향 조준 (Shoulder 뷰)
         ChargingPower,      // 2단계: 파워 충전 (Shoulder 뷰)
-        ThrowingAnimation,  // 2.5단계: 캐릭터 투구 스윙 모션 재생 중 (수면 탭 차단)
-        Flying,             // 3단계: 비행 및 리듬 바운스 (다이내믹 쿼터뷰)
-        Replay,             // 3.5단계: 1.5초 후 직교 탑다운 궤적 맵 리플레이
-        Result              // 4단계: 게임 오버 및 최종 결과창
+        ThrowingAnimation,  // 2.5단계: 캐릭터 투구 스윙 모션 재생 중
+        Flying,             // 3단계: 비행 및 리듬 바운스
+        Replay,             // 3.5단계: 직교 탑다운 궤적 맵 리플레이
+        Result              // 4단계: 최종 결과창
     }
 
-    [Header("게임 모드")]
+    [Header("게임 모드 및 상태")]
     public GameMode currentMode = GameMode.LongDistance;
+    public GameState currentState = GameState.ModeSelect;
 
-    [Header("핵심 오브젝트 참조")]
+    [Header("기본 프리팹 (앞단 UI 없을 때의 기본값)")]
+    public GameObject defaultCharacterPrefab;
+    public GameObject defaultStonePrefab;
+    public GameObject defaultMapPrefab;
+
+    [Header("핵심 인게임 참조 (컴포넌트 자동 연결)")]
+    public StoneThrowerCharacter character;
     public SkippingStone stone;
     public DualCameraSetup dualCamera;
-    public Transform launchPlatform;
-    public StoneThrowerCharacter character;
     public TopDownReplayManager topDownReplay;
-
-    [Header("게임 상태")]
-    public GameState currentState = GameState.ModeSelect;
+    public Transform currentLaunchPier;
 
     [Header("게이지 값 (실시간)")]
     public float startPosX = 0f;
@@ -47,49 +52,281 @@ public class GameController : MonoBehaviour
     [Header("UI 모달 상태")]
     public bool showAquariumModal = false;
     public bool showStoneSelectorModal = false;
+    public bool requireTouchRelease = false;
 
-    private float aimSpeed = 2.4f;      // 🌟 원래 상태로 원복 (기존 2.4f)
-    private float powerSpeed = 3.0f;    // 🌟 원래 상태로 원복 (기존 3.0f)
+    [Header("타깃 모드 발판 설정")]
+    [Tooltip("강 건너기 모드에서 사용할 발판 번호 (0 = PP01, 1 = PP02 ...)")]
+    public int targetPlatformIndex = 0;
+
+    private void SetupCharacterSpawn(GameMode mode)
+    {
+        if (character == null) return;
+
+        // 1. 강 건너기(타깃 모드): Player_Position 하위의 PP01~PP10 활용
+        if (mode == GameMode.TargetAccuracy)
+        {
+            GameObject playerPosRoot = GameObject.Find("Player_Position");
+            if (playerPosRoot != null && playerPosRoot.transform.childCount > 0)
+            {
+                int safeIndex = Mathf.Clamp(targetPlatformIndex, 0, playerPosRoot.transform.childCount - 1);
+                Transform targetSpawn = playerPosRoot.transform.GetChild(safeIndex);
+
+                character.transform.position = targetSpawn.position;
+                character.transform.rotation = targetSpawn.rotation;
+                return;
+            }
+        }
+
+        // 2. 기본 장거리 모드: 발판 자동 탐색 및 변수 등록
+        if (currentLaunchPier == null)
+        {
+            var colliders = FindObjectsByType<BoxCollider>();
+            foreach (var col in colliders)
+            {
+                string colName = col.gameObject.name.ToLower();
+                if (colName.Contains("pier") || colName.Contains("platform") || colName.Contains("start"))
+                {
+                    currentLaunchPier = col.transform;
+                    break;
+                }
+            }
+        }
+
+        // 발판이 찾아졌다면 발판의 실제 X, Z 위치와 꼭대기 Y를 읽어서 캐릭터 안착
+        if (currentLaunchPier != null)
+        {
+            var pierCol = currentLaunchPier.GetComponent<Collider>();
+            float topY = (pierCol != null) ? pierCol.bounds.max.y : (currentLaunchPier.position.y + 0.5f);
+
+            // 발판의 X, Z 좌표 위에 정확히 캐릭터를 올림
+            character.transform.position = new Vector3(currentLaunchPier.position.x, topY, currentLaunchPier.position.z);
+            character.transform.rotation = Quaternion.identity;
+        }
+        else
+        {
+            // 비상 예외 처리 (수면 위 기본 위치)
+            character.transform.position = new Vector3(0f, 17.0f, -2.1f);
+            character.transform.rotation = Quaternion.identity;
+        }
+    }
+
+
+    private float aimSpeed = 2.4f;
+    private float powerSpeed = 3.0f;
     private float aimDirection = 1f;
     private float powerDirection = 1f;
-    private Vector3 initialStonePos;
     private float lastStateChangeTime = 0f;
     private const float STATE_COOLDOWN = 0.35f;
 
     private void Awake()
     {
-#if UNITY_STANDALONE_WIN && !UNITY_EDITOR
-        if (GetComponent<WindowsAspectRatioController>() == null)
+        // 1. 발판 자동 찾기 (Lakeside_Platform 등)
+        if (currentLaunchPier == null)
         {
-            gameObject.AddComponent<WindowsAspectRatioController>();
+            var colliders = FindObjectsByType<BoxCollider>();
+            foreach (var col in colliders)
+            {
+                string colName = col.gameObject.name.ToLower();
+                if (colName.Contains("platform") || colName.Contains("pier") || colName.Contains("start"))
+                {
+                    currentLaunchPier = col.transform;
+                    break;
+                }
+            }
         }
-#endif
-        if (topDownReplay == null)
+
+        // 2. 캐릭터 컴포넌트 자동 찾기
+        if (character == null)
         {
-            topDownReplay = GetComponent<TopDownReplayManager>() ?? gameObject.AddComponent<TopDownReplayManager>();
+            character = FindAnyObjectByType<StoneThrowerCharacter>();
         }
-        EnsureCharacterReady();
+
+        // 3. 돌(SkippingStone) 자동 찾기
+        if (stone == null)
+        {
+            stone = FindAnyObjectByType<SkippingStone>();
+        }
+
+        // 4. 카메라 리그 자동 찾기
+        if (dualCamera == null)
+        {
+            dualCamera = FindAnyObjectByType<DualCameraSetup>();
+        }
+
+        // 5. 발판 위치에 맞춰 캐릭터 최초 안착
+        if (character != null && currentLaunchPier != null)
+        {
+            var pierCol = currentLaunchPier.GetComponent<Collider>();
+            float topY = (pierCol != null) ? pierCol.bounds.max.y : (currentLaunchPier.position.y + 0.5f);
+
+            // 발판의 X, Z 좌표와 상단 높이(Y)에 캐릭터 배치
+            character.transform.position = new Vector3(currentLaunchPier.position.x, topY, currentLaunchPier.position.z);
+            character.transform.rotation = Quaternion.identity;
+        }
     }
 
     private void Start()
     {
-        if (stone != null)
+        // 🌟 현재 앞단 UI가 없으므로 시작 시 기본 세션으로 즉시 진입
+        StartGameSession(defaultCharacterPrefab, defaultStonePrefab, defaultMapPrefab, currentMode);
+    }
+
+    /// <summary>
+    /// 🌟 나중에 앞단(캐릭터/돌/맵/모드 선택 UI)에서 최종 [게임 시작]을 누를 때 호출할 공용 진입점
+    /// </summary>
+    public void StartGameSession(GameObject charPrefab, GameObject stonePrefab, GameObject mapPrefab, GameMode mode)
+    {
+        currentMode = mode;
+
+        // 1. 맵 환경 구성 및 컴포넌트 자동 인식
+        SetupMapEnvironment(mapPrefab);
+
+        // 2. 캐릭터 및 카메라 구성
+        SetupCharacterAndCamera(charPrefab);
+
+        // 3. 인게임 0단계(Positioning)로 전환
+        ResetToPositioning();
+    }
+
+    private void SetupMapEnvironment(GameObject mapPrefab)
+    {
+        // 씬에 이미 배치된 배경이 없는데 프리팹이 넘어온 경우 인스턴스화
+        Terrain existingTerrain = FindAnyObjectByType<Terrain>();
+        if (existingTerrain == null && mapPrefab != null)
         {
-            initialStonePos = stone.transform.position;
-            stone.OnSkipBounced += HandleSkipBounced;
-            stone.OnStoneSunk += HandleStoneSunk;
+            Instantiate(mapPrefab, Vector3.zero, Quaternion.identity);
         }
 
-        EnsureCharacterReady();
-        ApplyCurrentStoneVisuals();
-        currentState = GameState.ModeSelect;
-        if (MapPIPManager.Instance != null) MapPIPManager.Instance.UpdatePIPState(false);
+        // 발판(Collider) 컴포넌트 자동 탐색 (이름 무관)
+        currentLaunchPier = null;
+        // 기존: var colliders = FindObjectsByType<BoxCollider>(FindObjectsSortMode.None);
+        // 변경: var colliders = FindObjectsByType<BoxCollider>(FindObjectsInactive.Exclude, FindObjectsSortMode.None);
+        // 또는 더 간단히:
+        var colliders = FindObjectsByType<BoxCollider>();
+
+        foreach (var col in colliders)
+        {
+            if (col.gameObject.name.ToLower().Contains("pier") || col.gameObject.name.ToLower().Contains("dock"))
+            {
+                currentLaunchPier = col.transform;
+                col.gameObject.SetActive(currentMode == GameMode.LongDistance);
+                break;
+            }
+        }
+
+        // PP(Player Position) 오브젝트 모드별 상태 제어
+        GameObject ppObj = GameObject.Find("Player_Position");
+        if (ppObj != null)
+        {
+            ppObj.SetActive(currentMode == GameMode.TargetAccuracy);
+        }
+
+        if (MapPIPManager.Instance != null)
+        {
+            MapPIPManager.Instance.UpdatePIPState(currentMode == GameMode.TargetAccuracy);
+        }
+
+        // 강 엔티티 스포너 모드별 재배치
+        var spawner = FindAnyObjectByType<RiverSpawner>();
+        if (spawner != null && character != null)
+        {
+            spawner.startBankPos = character.basePosition;
+            spawner.spawnDirection = character.baseRotation * Vector3.forward;
+            spawner.GenerateRiverEntitiesForMode(currentMode);
+        }
+    }
+
+    private void OnGUI()
+    {
+        // ModeSelect 상태일 때만 화면에 임시 선택 UI 표시
+        if (currentState == GameState.ModeSelect)
+        {
+            GUI.Box(new Rect(20, 20, 260, 160), "<b>게임 모드 선택 (임시 UI)</b>");
+
+            if (GUI.Button(new Rect(35, 60, 230, 40), "🏆 장거리 도전 모드"))
+            {
+                SelectModeAndStart(GameMode.LongDistance);
+            }
+
+            if (GUI.Button(new Rect(35, 110, 230, 40), "🎯 타깃 맞추기 모드 (강 건너기)"))
+            {
+                SelectModeAndStart(GameMode.TargetAccuracy);
+            }
+        }
+    }
+
+    // 모드 선택 후 인게임 진입 처리
+    public void SelectModeAndStart(GameMode mode)
+    {
+        currentMode = mode;
+
+        // 선택된 모드에 맞춰 캐릭터 스폰 위치 세팅
+        SetupCharacterSpawn(currentMode);
+
+        // 모드에 따른 시작 상태 분기
+        if (currentMode == GameMode.LongDistance)
+        {
+            currentState = GameState.Positioning; // 장거리: 0단계(발판 위치 선정)
+        }
+        else
+        {
+            currentState = GameState.AimingAngle; // 타깃 모드: 발판 이동 없이 바로 1단계(조준)
+        }
+    }
+    private void SetupCharacterAndCamera(GameObject charPrefab)
+    {
+        if (character == null)
+        {
+            character = FindAnyObjectByType<StoneThrowerCharacter>();
+        }
+
+        if (character == null && charPrefab != null)
+        {
+            GameObject cObj = Instantiate(charPrefab);
+            character = cObj.GetComponent<StoneThrowerCharacter>() ?? cObj.AddComponent<StoneThrowerCharacter>();
+        }
+
+        if (character != null)
+        {
+            // 발판 높이 또는 수면 높이 기준 시작 위치 정렬
+            float baseSurfaceY = 0.5f;
+            if (currentLaunchPier != null)
+            {
+                Collider pierCol = currentLaunchPier.GetComponent<Collider>();
+                baseSurfaceY = (pierCol != null) ? pierCol.bounds.max.y : currentLaunchPier.position.y;
+            }
+            else
+            {
+                WaterSurface ws = FindAnyObjectByType<WaterSurface>();
+                if (ws != null)
+                {
+                    Collider wCol = ws.GetComponent<Collider>();
+                    baseSurfaceY = (wCol != null) ? wCol.bounds.max.y : ws.transform.position.y;
+                }
+            }
+
+            Vector3 startPos = new Vector3(0f, baseSurfaceY, 0f);
+            character.basePosition = startPos;
+            character.currentPosition = startPos;
+            character.baseRotation = (currentMode == GameMode.LongDistance) ? Quaternion.identity : Quaternion.Euler(0f, 90f, 0f);
+            character.transform.position = startPos;
+            character.transform.rotation = character.baseRotation;
+            character.InitializeCharacter();
+        }
+
+        if (dualCamera == null) dualCamera = FindAnyObjectByType<DualCameraSetup>();
+        if (dualCamera != null && character != null)
+        {
+            dualCamera.targetCharacter = character.transform;
+            dualCamera.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
+            dualCamera.SnapCameraImmediate();
+        }
     }
 
     public void SelectGameMode(GameMode mode)
     {
         currentMode = mode;
-        ApplyGameModeEnvironment();
+        SetupMapEnvironment(null);
         ResetToPositioning();
     }
 
@@ -101,331 +338,8 @@ public class GameController : MonoBehaviour
         if (MapPIPManager.Instance != null) MapPIPManager.Instance.UpdatePIPState(false);
     }
 
-    public GameObject GetWoodenPier()
-    {
-        GameObject pier = GameObject.Find("Lakeside_WoodenPier");
-        if (pier != null) return pier;
-
-        // 비활성화(Inactive) 오브젝트까지 씬 전체 탐색
-        var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-        if (activeScene.isLoaded)
-        {
-            foreach (var root in activeScene.GetRootGameObjects())
-            {
-                if (root.name.Equals("Lakeside_WoodenPier", System.StringComparison.OrdinalIgnoreCase))
-                {
-                    return root;
-                }
-                var children = root.GetComponentsInChildren<Transform>(true);
-                foreach (var t in children)
-                {
-                    if (t.name.Equals("Lakeside_WoodenPier", System.StringComparison.OrdinalIgnoreCase))
-                    {
-                        return t.gameObject;
-                    }
-                }
-            }
-        }
-
-        // 만약 씬에 존재하지 않는다면 나무 발판(Wooden Dock) 자동 복원 생성
-        GameObject newPier = GameObject.CreatePrimitive(PrimitiveType.Cube);
-        newPier.name = "Lakeside_WoodenPier";
-        newPier.transform.position = new Vector3(0f, 0.2f, 0f);
-        newPier.transform.localScale = new Vector3(4.5f, 0.4f, 7.0f);
-
-        var mr = newPier.GetComponent<MeshRenderer>();
-        if (mr != null)
-        {
-            Shader standardShader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
-            if (standardShader != null)
-            {
-                Material mat = new Material(standardShader);
-                mat.color = new Color(0.48f, 0.32f, 0.18f); // 짙은 원목 나무 색상
-                mr.material = mat;
-            }
-        }
-        return newPier;
-    }
-
-    public void ApplyGameModeEnvironment()
-    {
-        // 1. 발판 오브젝트 제어 (비활성화된 발판까지 100% 탐색 및 활성화)
-        GameObject pierObj = GetWoodenPier();
-        GameObject ppObj = GameObject.Find("Player_Position");
-        if (ppObj == null)
-        {
-            foreach (var go in Resources.FindObjectsOfTypeAll<GameObject>())
-            {
-                if (go.name == "Player_Position" && go.scene.isLoaded) { ppObj = go; break; }
-            }
-        }
-
-        if (currentMode == GameMode.LongDistance)
-        {
-            if (pierObj != null) pierObj.SetActive(true);
-            if (ppObj != null) ppObj.SetActive(false);
-            if (MapPIPManager.Instance != null) MapPIPManager.Instance.UpdatePIPState(false);
-        }
-        else
-        {
-            if (pierObj != null) pierObj.SetActive(false);
-            if (ppObj != null) ppObj.SetActive(true);
-            if (MapPIPManager.Instance != null) MapPIPManager.Instance.UpdatePIPState(true);
-        }
-
-        // 2. 캐릭터 위치 및 회전, 강 엔티티 초기화
-        if (character != null)
-        {
-            if (currentMode == GameMode.LongDistance)
-            {
-                // 🏆 장거리 모드: 나무 발판 위에서 월드 +Z축 물줄기 방향(Euler 0, 0, 0) 정면 고정
-                Vector3 pierPos = (pierObj != null) ? pierObj.transform.position + Vector3.up * 0.45f : new Vector3(0f, 0.5f, 0f);
-                character.basePosition = pierPos;
-                character.currentPosition = pierPos;
-                character.baseRotation = Quaternion.Euler(0f, 0f, 0f);
-                character.transform.position = pierPos;
-                character.transform.rotation = character.baseRotation;
-                character.currentAimRotation = character.baseRotation;
-            }
-            else
-            {
-                // 🎯 타겟 맞추기 모드: PP01~PP29 중심 포인트에서 강 건너편(+X / 90도) 방향 시작
-                character.InitializeCharacter();
-            }
-        }
-
-        // 3. 강 엔티티(부스트 패드, 물고기, 바위, 깃발) 모드별 궤적 자동 재배치
-        var spawner = FindAnyObjectByType<RiverSpawner>();
-        if (spawner != null)
-        {
-            spawner.GenerateRiverEntitiesForMode(currentMode);
-        }
-
-        // 4. 카메라 시점 즉각 동기화
-        if (dualCamera != null)
-        {
-            dualCamera.SnapCameraImmediate();
-        }
-    }
-
-    public void EnsureCharacterReady()
-    {
-        // 0. 현재 모드에 맞게 발판 및 Player_Position 상태 동기화 (장거리 모드 시 PP 완전 숨김)
-        ApplyGameModeEnvironment();
-
-        // Ground 메쉬에 MeshCollider 보장 (지면 밀착 레이캐스트 정확도 보장)
-        var activeScene = UnityEngine.SceneManagement.SceneManager.GetActiveScene();
-        if (activeScene.isLoaded)
-        {
-            foreach (var root in activeScene.GetRootGameObjects())
-            {
-                var meshFilters = root.GetComponentsInChildren<MeshFilter>(true);
-                foreach (var mf in meshFilters)
-                {
-                    if (mf.name.IndexOf("ground", System.StringComparison.OrdinalIgnoreCase) >= 0)
-                    {
-                        var mc = mf.GetComponent<MeshCollider>();
-                        if (mc == null) mc = mf.gameObject.AddComponent<MeshCollider>();
-                        if (mc.sharedMesh == null) mc.sharedMesh = mf.sharedMesh;
-                    }
-                }
-            }
-        }
-
-        // MapPIPManager (상단 1/4 MAP_Camera PIP 매니저) 보장
-        if (FindAnyObjectByType<MapPIPManager>() == null)
-        {
-            gameObject.AddComponent<MapPIPManager>();
-        }
-
-        // 1. 씬 내에 사용자가 배치한 Test_Chr 우선 탐색 및 중복 정리
-        GameObject userChr = GameObject.Find("Test_Chr");
-        GameObject spawnedChr = GameObject.Find("Player_StoneThrower");
-
-        if (userChr != null && spawnedChr != null && userChr != spawnedChr)
-        {
-            Destroy(spawnedChr);
-        }
-
-        GameObject targetObj = (userChr != null) ? userChr : spawnedChr;
-        if (targetObj != null)
-        {
-            character = targetObj.GetComponent<StoneThrowerCharacter>();
-            if (character == null) character = targetObj.AddComponent<StoneThrowerCharacter>();
-        }
-
-        if (character == null)
-        {
-            character = FindAnyObjectByType<StoneThrowerCharacter>();
-        }
-
-        if (character == null)
-        {
-            // 씬 내에 사용자가 꺼내둔 캐릭터 (Animator 보유 오브젝트) 자동 탐색
-            Animator[] allAnimators = FindObjectsByType<Animator>(FindObjectsInactive.Exclude);
-            foreach (var anim in allAnimators)
-            {
-                if (anim.GetComponent<Camera>() == null && anim.GetComponent<Canvas>() == null)
-                {
-                    character = anim.gameObject.GetComponent<StoneThrowerCharacter>();
-                    if (character == null)
-                    {
-                        character = anim.gameObject.AddComponent<StoneThrowerCharacter>();
-                        Debug.Log($"✅ [GameController] 씬 내의 Animator 오브젝트('{anim.gameObject.name}')에 StoneThrowerCharacter 자동 부착 완료!");
-                    }
-                    break;
-                }
-            }
-        }
-
-        // 🌟 2. 씬에 캐릭터가 없으면 Thrower_001.prefab 최우선 인스턴스화
-        if (character == null)
-        {
-            GameObject charPrefab = Resources.Load<GameObject>("Thrower_001");
-#if UNITY_EDITOR
-            if (charPrefab == null)
-            {
-                charPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/prefab/Thrower_001.prefab");
-            }
-            if (charPrefab == null)
-            {
-                charPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/Character/Test_Chr.fbx");
-            }
-#endif
-            if (charPrefab != null)
-            {
-                GameObject charObj = Instantiate(charPrefab);
-                charObj.name = "Thrower_001";
-                charObj.transform.position = new Vector3(0f, 0.9f, -3.8f);
-                character = charObj.GetComponent<StoneThrowerCharacter>();
-                if (character == null) character = charObj.AddComponent<StoneThrowerCharacter>();
-                Debug.Log("✅ [GameController] Thrower_001 프리팹을 성공적으로 인스턴스화하여 배치했습니다!");
-            }
-        }
-
-        // 🌟 3. 배경 (BG_01) 런타임 보장
-        GameObject bgObj = GameObject.Find("BG_01");
-        if (bgObj == null)
-        {
-            GameObject bgPrefab = Resources.Load<GameObject>("BG_01");
-#if UNITY_EDITOR
-            if (bgPrefab == null)
-            {
-                bgPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/prefab/BG_01.prefab");
-            }
-#endif
-            if (bgPrefab != null)
-            {
-                bgObj = Instantiate(bgPrefab);
-                bgObj.name = "BG_01";
-                bgObj.transform.position = Vector3.zero;
-                bgObj.transform.rotation = Quaternion.identity;
-                Debug.Log("✅ [GameController] Resources에서 BG_01 배경을 성공적으로 인스턴스화했습니다!");
-            }
-        }
-
-        // 🌟 4. 조약돌 (SkippingStone) 런타임 보장
-        if (stone == null)
-        {
-            stone = FindAnyObjectByType<SkippingStone>();
-            if (stone == null)
-            {
-                GameObject stonePrefab = Resources.Load<GameObject>("Stone");
-                GameObject sObj = (stonePrefab != null) ? Instantiate(stonePrefab) : new GameObject("Stone");
-                sObj.name = "Stone";
-                stone = sObj.GetComponent<SkippingStone>() ?? sObj.AddComponent<SkippingStone>();
-                Debug.Log("✅ [GameController] Resources에서 Stone 오브젝트를 성공적으로 인스턴스화했습니다!");
-            }
-        }
-
-        // 🌟 5. 카메라 리그 (DualCameraSetup) 런타임 보장
-        if (dualCamera == null)
-        {
-            dualCamera = FindAnyObjectByType<DualCameraSetup>();
-            if (dualCamera == null)
-            {
-                GameObject rig = new GameObject("DualCameraRig");
-                dualCamera = rig.AddComponent<DualCameraSetup>();
-            }
-        }
-
-        if (character != null)
-        {
-            character.InitializeCharacter();
-            if (stone != null)
-            {
-                character.AttachStone(stone);
-                stone.OnSkipBounced -= HandleSkipBounced;
-                stone.OnSkipBounced += HandleSkipBounced;
-                stone.OnStoneSunk -= HandleStoneSunk;
-                stone.OnStoneSunk += HandleStoneSunk;
-            }
-            if (dualCamera != null)
-            {
-                dualCamera.targetCharacter = character.transform;
-                if (stone != null) dualCamera.targetStone = stone.transform;
-                dualCamera.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
-                dualCamera.SnapCameraImmediate();
-            }
-        }
-
-        // 🌟 6. 강 엔티티 스포너 보장 및 초기화
-        RiverSpawner spawner = FindAnyObjectByType<RiverSpawner>();
-        if (spawner == null)
-        {
-            GameObject spawnerObj = new GameObject("RiverEntitiesSpawner");
-            spawner = spawnerObj.AddComponent<RiverSpawner>();
-        }
-        if (spawner != null && character != null)
-        {
-            spawner.startBankPos = character.basePosition;
-            spawner.spawnDirection = character.baseRotation * Vector3.forward;
-            spawner.GenerateRiverEntitiesForMode(currentMode);
-        }
-    }
-
-    public void ApplyCurrentStoneVisuals()
-    {
-        if (stone == null) return;
-
-        Color targetTrailColor = Color.white;
-        if (StoneInventory.Instance != null)
-        {
-            StoneItem item = StoneInventory.Instance.GetCurrentStone();
-            if (item != null)
-            {
-                Renderer r = stone.GetComponentInChildren<Renderer>();
-                if (r != null && r.sharedMaterial != null)
-                {
-                    r.sharedMaterial.SetColor("_BaseColor", item.color);
-                }
-                targetTrailColor = item.trailColor;
-            }
-        }
-
-        if (stone.trail != null)
-        {
-            stone.trailStartColor = targetTrailColor;
-            stone.trail.startWidth = 0.075f;
-            stone.trail.endWidth = 0.005f;
-
-            if (stone.trail.material != null)
-            {
-                stone.trail.material.color = Color.white;
-            }
-
-            Gradient g = new Gradient();
-            g.SetKeys(
-                new GradientColorKey[] { new GradientColorKey(targetTrailColor, 0.0f), new GradientColorKey(targetTrailColor, 1.0f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(0.70f, 0.0f), new GradientAlphaKey(0.0f, 1.0f) }
-            );
-            stone.trail.colorGradient = g;
-        }
-    }
-
     private void Update()
     {
-        if (character == null) EnsureCharacterReady();
         if (showAquariumModal || showStoneSelectorModal) return;
 
         switch (currentState)
@@ -440,13 +354,11 @@ public class GameController : MonoBehaviour
                 UpdateChargingPower();
                 break;
             case GameState.ThrowingAnimation:
-                // 🌟 투구 애니메이션(55프레임/1.8초) 중에는 수면 탭을 완전히 차단하여 오작동 방지
                 break;
             case GameState.Flying:
                 UpdateFlying();
                 break;
             case GameState.Result:
-                // 결과창 확인 후 명시적 R키/Space 키보드 입력 시 재시작 (화면 탭은 UI '다시하기' 버튼으로 처리)
                 if (Time.time - lastStateChangeTime > 0.7f && (IsKeyTriggered(KeyCode.R) || IsKeyTriggered(KeyCode.Space)))
                 {
                     RestartGame();
@@ -455,36 +367,24 @@ public class GameController : MonoBehaviour
         }
     }
 
-    [Header("0단계: PP(물가 발판) 이동 및 맵 슬라이드")]
-    public float minPositionX = -230f;
-    public float maxPositionX = 275f;
-    public float dragSensitivity = 0.045f;
-
+    [Header("0단계 위치 선정 파라미터")]
+    public float minPositionX = -12f;
+    public float maxPositionX = 12f;
     private bool isDraggingMap = false;
     private Vector2 prevDragPos;
-    private float dragTotalDistance = 0f;
 
     private void UpdatePositioning()
     {
         if (currentMode == GameMode.LongDistance)
         {
-            // 🏆 장거리 모드: 나무 발판(Lakeside_WoodenPier)의 실제 콜라이더/스케일 너비 자동 반영
-            GameObject pierObj = GetWoodenPier();
-            if (pierObj != null)
+            if (currentLaunchPier != null)
             {
-                var bc = pierObj.GetComponent<BoxCollider>();
-                float halfW = (bc != null && bc.bounds.extents.x > 1f) ? (bc.bounds.extents.x * 0.85f) : (pierObj.transform.lossyScale.x * 0.45f);
-                halfW = Mathf.Clamp(halfW, 4f, 40f);
+                var bc = currentLaunchPier.GetComponent<BoxCollider>();
+                float halfW = (bc != null && bc.bounds.extents.x > 1f) ? (bc.bounds.extents.x * 0.85f) : 12f;
                 minPositionX = -halfW;
                 maxPositionX = halfW;
             }
-            else
-            {
-                minPositionX = -12.0f;
-                maxPositionX = 12.0f;
-            }
 
-            // A / D 및 ◀ / ▶ 연속 이동
             float hInput = GetHorizontalInput();
             if (Mathf.Abs(hInput) > 0.001f)
             {
@@ -501,7 +401,6 @@ public class GameController : MonoBehaviour
         }
         else
         {
-            // 🎯 타겟 모드: 좌/우 스와이프 드래그 & A/D로 포인트 1칸씩 스냅 이동
             if (IsKeyTriggered(KeyCode.LeftArrow) || IsKeyTriggered(KeyCode.A))
             {
                 if (character != null) character.MoveToPreviousWaypoint();
@@ -513,11 +412,6 @@ public class GameController : MonoBehaviour
 
             HandleTargetSwipeStep();
 
-            if (MapPIPManager.Instance != null)
-            {
-                MapPIPManager.Instance.UpdatePIPState(true);
-            }
-
             if (character != null)
             {
                 character.UpdatePositioning(startPosX, 0f);
@@ -525,7 +419,6 @@ public class GameController : MonoBehaviour
             }
         }
 
-        // 0단계에서는 하단 UI 버튼 클릭(또는 키보드 Space/Enter)으로 1단계로 진행
         if (Time.time - lastStateChangeTime > STATE_COOLDOWN)
         {
             if (IsKeyTriggered(KeyCode.Space) || IsKeyTriggered(KeyCode.Return))
@@ -541,9 +434,8 @@ public class GameController : MonoBehaviour
         bool isPressed = false;
 
 #if ENABLE_INPUT_SYSTEM
-        var touch = UnityEngine.InputSystem.Touchscreen.current;
-        var mouse = UnityEngine.InputSystem.Mouse.current;
-
+        var touch = Touchscreen.current;
+        var mouse = Mouse.current;
         if (touch != null && touch.primaryTouch.press.isPressed)
         {
             isPressed = true;
@@ -592,9 +484,8 @@ public class GameController : MonoBehaviour
         bool isPressed = false;
 
 #if ENABLE_INPUT_SYSTEM
-        var touch = UnityEngine.InputSystem.Touchscreen.current;
-        var mouse = UnityEngine.InputSystem.Mouse.current;
-
+        var touch = Touchscreen.current;
+        var mouse = Mouse.current;
         if (touch != null && touch.primaryTouch.press.isPressed)
         {
             isPressed = true;
@@ -625,13 +516,11 @@ public class GameController : MonoBehaviour
                 float dx = curPos.x - swipeStartPos.x;
                 if (dx > swipeThreshold)
                 {
-                    // 우측으로 스와이프 드래그 ➔ 다음 포인트 1칸 스냅 이동
                     if (character != null) character.MoveToNextWaypoint();
                     swipeStartPos = curPos;
                 }
                 else if (dx < -swipeThreshold)
                 {
-                    // 좌측으로 스와이프 드래그 ➔ 이전 포인트 1칸 스냅 이동
                     if (character != null) character.MoveToPreviousWaypoint();
                     swipeStartPos = curPos;
                 }
@@ -643,70 +532,6 @@ public class GameController : MonoBehaviour
         }
     }
 
-    private void HandleMapDragSlide()
-    {
-        Vector2 curPos = Vector2.zero;
-        bool isPressed = false;
-
-#if ENABLE_INPUT_SYSTEM
-        var touch = UnityEngine.InputSystem.Touchscreen.current;
-        var mouse = UnityEngine.InputSystem.Mouse.current;
-
-        if (touch != null && touch.primaryTouch.press.isPressed)
-        {
-            isPressed = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (mouse != null && (mouse.leftButton.isPressed || mouse.rightButton.isPressed))
-        {
-            isPressed = true;
-            curPos = mouse.position.ReadValue();
-        }
-#else
-        if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
-        {
-            isPressed = true;
-            curPos = Input.mousePosition;
-        }
-#endif
-
-        if (isPressed)
-        {
-            // 상단 HUD 및 하단 버튼 영역을 제외한 중앙 물 수면 터치/클릭 시 맵 슬라이드 동작
-            if (!isDraggingMap)
-            {
-                if (curPos.y > Screen.height * 0.16f && curPos.y < Screen.height * 0.88f)
-                {
-                    isDraggingMap = true;
-                    prevDragPos = curPos;
-                    dragTotalDistance = 0f;
-                }
-            }
-            else
-            {
-                Vector2 delta = curPos - prevDragPos;
-                dragTotalDistance += delta.magnitude;
-
-                float totalSpan = Mathf.Max(10f, maxPositionX - minPositionX);
-                // 화면 스크린 가로를 드래그할 때 전체 PP 라인의 전체 범위를 시원하게 탐색할 수 있도록 감도 스케일링
-                float dynamicSensitivity = (totalSpan / Mathf.Max(320f, (float)Screen.width)) * 1.5f;
-                float moveAmount = delta.x * dynamicSensitivity;
-                startPosX = Mathf.Clamp(startPosX + moveAmount, minPositionX, maxPositionX);
-
-                prevDragPos = curPos;
-            }
-        }
-        else
-        {
-            if (isDraggingMap)
-            {
-                isDraggingMap = false;
-            }
-        }
-    }
-
-    public bool requireTouchRelease = false;
-
     public void ConfirmPosition()
     {
         currentState = GameState.AimingAngle;
@@ -715,21 +540,13 @@ public class GameController : MonoBehaviour
         aimGaugeValue = 0f;
         aimDirection = 1f;
 
-        // 위치 확정 완료: 상단 1/4 MAP_Camera PIP 창 자동 종료
         if (MapPIPManager.Instance != null)
         {
             MapPIPManager.Instance.UpdatePIPState(false);
         }
 
-        if (character != null)
-        {
-            character.UpdateAiming(0f);
-        }
-
-        if (dualCamera != null)
-        {
-            dualCamera.SetCameraMode(DualCameraSetup.CameraMode.ShoulderAim);
-        }
+        if (character != null) character.UpdateAiming(0f);
+        if (dualCamera != null) dualCamera.SetCameraMode(DualCameraSetup.CameraMode.ShoulderAim);
     }
 
     private void UpdateAimingAngle()
@@ -741,10 +558,7 @@ public class GameController : MonoBehaviour
         if (character != null)
         {
             character.UpdateAiming(aimGaugeValue);
-            if (stone != null)
-            {
-                stone.transform.position = character.GetHandPosition();
-            }
+            if (stone != null) stone.transform.position = character.GetHandPosition();
         }
 
         if (Time.time - lastStateChangeTime > STATE_COOLDOWN && IsActionTriggered())
@@ -771,10 +585,7 @@ public class GameController : MonoBehaviour
         if (character != null)
         {
             character.UpdateWindup(powerGaugeValue);
-            if (stone != null)
-            {
-                stone.transform.position = character.GetHandPosition();
-            }
+            if (stone != null) stone.transform.position = character.GetHandPosition();
         }
 
         if (Time.time - lastStateChangeTime > STATE_COOLDOWN && IsActionTriggered())
@@ -794,15 +605,10 @@ public class GameController : MonoBehaviour
             character.PlayThrowAnimation(
                 onCameraLeadInCallback: (anchorPos, forwardDir) =>
                 {
-                    // 🌟 45프레임: 55f 발사 앵커 위치를 기준으로 카메라 완만 선행 가속 시작!
-                    if (dualCamera != null)
-                    {
-                        dualCamera.StartLaunchLeadIn(anchorPos, forwardDir);
-                    }
+                    if (dualCamera != null) dualCamera.StartLaunchLeadIn(anchorPos, forwardDir);
                 },
                 onReleaseCallback: () =>
                 {
-                    // 🌟 55프레임: 비행 상태 전환 및 물리 발사!
                     ExecuteLaunchPhysics();
                 }
             );
@@ -820,10 +626,10 @@ public class GameController : MonoBehaviour
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
 
-        // 1단계 조준 게이지(aimGaugeValue)에서 선택된 방향으로 캐릭터를 틀고 해당 방향으로 투구 발사!
         float angleDegrees = aimGaugeValue * 25f;
-        Vector3 baseForward = (character != null) ? (character.baseRotation * Vector3.forward) : Vector3.right;
+        Vector3 baseForward = (character != null) ? (character.baseRotation * Vector3.forward) : Vector3.forward;
         Vector3 direction = Quaternion.Euler(0f, angleDegrees, 0f) * baseForward;
+
         if (character != null)
         {
             character.currentAimRotation = Quaternion.Euler(0f, angleDegrees, 0f) * character.baseRotation;
@@ -834,10 +640,10 @@ public class GameController : MonoBehaviour
         float stoneMultiplier = (StoneInventory.Instance != null) ? StoneInventory.Instance.GetCurrentStone().forwardPowerMultiplier : 1.0f;
         float finalPowerMultiplier = Mathf.Lerp(0.6f, 1.4f, powerGaugeValue) * stoneMultiplier;
 
-        // 🌟 55프레임 발사 순간: 기존 비행 돌 완전 파괴 및 손 위치에서 신규 조약돌 인스턴스 생성 (포탄 투사체 방식)
         Vector3 spawnPos = (character != null) ? character.GetHandPosition() : transform.position + new Vector3(0.35f, 1.2f, 0.8f);
         Quaternion spawnRot = Quaternion.LookRotation(direction, Vector3.up);
 
+        // 기존 돌 인스턴스 파괴 및 새 돌 스폰
         if (stone != null)
         {
             stone.OnSkipBounced -= HandleSkipBounced;
@@ -847,10 +653,7 @@ public class GameController : MonoBehaviour
             stone = null;
         }
 
-        GameObject prefabToSpawn = Resources.Load<GameObject>("Stone");
-#if UNITY_EDITOR
-        if (prefabToSpawn == null) prefabToSpawn = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/prefab/Stone.prefab");
-#endif
+        GameObject prefabToSpawn = defaultStonePrefab ?? Resources.Load<GameObject>("Stone");
         GameObject newStoneObj = (prefabToSpawn != null) ? Instantiate(prefabToSpawn, spawnPos, spawnRot) : new GameObject("Stone");
         newStoneObj.name = "Stone";
         if (prefabToSpawn == null)
@@ -861,11 +664,9 @@ public class GameController : MonoBehaviour
 
         stone = newStoneObj.GetComponent<SkippingStone>() ?? newStoneObj.AddComponent<SkippingStone>();
 
-        // 이벤트 콜백 연결
         stone.OnSkipBounced += HandleSkipBounced;
         stone.OnStoneSunk += HandleStoneSunk;
 
-        // 🌟 카메라 및 리플레이 매니저 타깃 100% 동기화
         if (dualCamera != null)
         {
             dualCamera.targetStone = stone.transform;
@@ -885,13 +686,11 @@ public class GameController : MonoBehaviour
 
     private void UpdateFlying()
     {
-        // 1. ESC 키 입력 시 윈도우 스탠드얼론 즉시 안전 종료
         if (IsKeyTriggered(KeyCode.Escape))
         {
             Application.Quit();
         }
 
-        // 2. 키보드 스티어링 (A / D 또는 Left / Right 누른 상태로 탭 시 조향)
         float hInput = GetHorizontalInput();
         float keySteer = 0f;
         if (hInput < -0.1f) keySteer = -3f;
@@ -903,13 +702,11 @@ public class GameController : MonoBehaviour
             return;
         }
 
-        // 🌟 실시간 비거리에 따른 낮 -> 노을 -> 밤 4단계 동적 환경 변화
         if (LakeEnvironmentManager.Instance != null && stone != null)
         {
             LakeEnvironmentManager.Instance.UpdateEnvironmentByDistance(stone.totalDistance);
         }
 
-        // 3. 터치 및 마우스 플릭 스티어링 (터치 스와이프 조향)
         HandleFlightFlickSteering();
     }
 
@@ -922,7 +719,6 @@ public class GameController : MonoBehaviour
 #if ENABLE_INPUT_SYSTEM
         var touch = Touchscreen.current;
         var mouse = Mouse.current;
-
         if (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
         {
             isDown = true;
@@ -952,14 +748,8 @@ public class GameController : MonoBehaviour
                 if (t.phase == UnityEngine.TouchPhase.Began) { isDown = true; curPos = t.position; }
                 else if (t.phase == UnityEngine.TouchPhase.Ended || t.phase == UnityEngine.TouchPhase.Canceled) { isUp = true; curPos = t.position; }
             }
-            else if (Input.GetMouseButtonDown(0))
-            {
-                isDown = true; curPos = Input.mousePosition;
-            }
-            else if (Input.GetMouseButtonUp(0))
-            {
-                isUp = true; curPos = Input.mousePosition;
-            }
+            else if (Input.GetMouseButtonDown(0)) { isDown = true; curPos = Input.mousePosition; }
+            else if (Input.GetMouseButtonUp(0)) { isUp = true; curPos = Input.mousePosition; }
         }
         catch { }
 #endif
@@ -969,8 +759,6 @@ public class GameController : MonoBehaviour
             flightTouchStartPos = curPos;
             flightTouchStartTime = Time.time;
             isTrackingFlightTouch = true;
-
-            // 터치 시작 순간 즉시 기본 탭(0도) 판정
             EvaluateRhythmTiming(0f);
         }
         else if (isUp && isTrackingFlightTouch)
@@ -979,7 +767,6 @@ public class GameController : MonoBehaviour
             float deltaX = curPos.x - flightTouchStartPos.x;
             float duration = Time.time - flightTouchStartTime;
 
-            // 0.35초 이내에 좌/우 25px 이상 플릭한 경우 즉시 추가 각도 조향(±3°) 적용!
             if (duration < 0.35f && Mathf.Abs(deltaX) > 25f)
             {
                 float steerAngle = (deltaX > 0f) ? 3.0f : -3.0f;
@@ -989,14 +776,6 @@ public class GameController : MonoBehaviour
                     lastTimingText += (steerAngle > 0f) ? " \n👉 [RIGHT 3° 조향]" : " \n👈 [LEFT 3° 조향]";
                 }
             }
-        }
-    }
-
-    public void TriggerFlightTap()
-    {
-        if (currentState == GameState.Flying)
-        {
-            EvaluateRhythmTiming(0f);
         }
     }
 
@@ -1023,13 +802,11 @@ public class GameController : MonoBehaviour
     public int specialScore = 0;
     public int totalScore = 0;
     public int earnedCoins = 0;
-
     public int perfectTimingCount = 0;
     public int fishSnipeCount = 0;
     public int friendOvertakeCount = 0;
     public int boostPadCount = 0;
     public float lastSkimBonusDist = 0f;
-    public string lastGameOverReason = "수면 침몰";
     private bool hasCalculatedResult = false;
 
     public void TriggerFishSnipeEffect(string speciesName)
@@ -1037,10 +814,7 @@ public class GameController : MonoBehaviour
         fishSnipeCount++;
         bannerNotificationText = $"🎯 FISH SNIPE! [{speciesName}] 저격 성공! (+1,000점 & 코인)";
         lastTimingText = "🔥 FISH SNIPE! 🔥";
-
-        // 슬로우모션 연출 (0.25초간 0.4배속)
         StartCoroutine(HitStopSlowMo(0.25f));
-
         StopCoroutine(nameof(ClearBannerAfterDelay));
         StartCoroutine(ClearBannerAfterDelay(2.5f));
     }
@@ -1053,10 +827,7 @@ public class GameController : MonoBehaviour
         StartCoroutine(ClearBannerAfterDelay(2.5f));
     }
 
-    public void TriggerBoostPadEffect()
-    {
-        boostPadCount++;
-    }
+    public void TriggerBoostPadEffect() => boostPadCount++;
 
     private IEnumerator HitStopSlowMo(float duration)
     {
@@ -1080,11 +851,7 @@ public class GameController : MonoBehaviour
     private void HandleSkipBounced(int count, string text)
     {
         lastTimingText = text;
-        if (text.Contains("PERFECT"))
-        {
-            perfectTimingCount++;
-        }
-
+        if (text.Contains("PERFECT")) perfectTimingCount++;
         StopCoroutine(nameof(ClearTimingTextAfterDelay));
         StartCoroutine(ClearTimingTextAfterDelay(0.8f));
     }
@@ -1096,26 +863,20 @@ public class GameController : MonoBehaviour
 
     private IEnumerator DelayedShowResultRoutine(float dist, float delay)
     {
-        // 🌟 1.5초 대기 (돌 침몰/충돌 착지 연출 감상)
         yield return new WaitForSeconds(delay);
-
-        // 🌟 이미 리플레이 또는 결과창이 시작되었으면 중복 실행 원천 차단!
         if (currentState == GameState.Replay || currentState == GameState.Result) yield break;
         if (topDownReplay != null && (topDownReplay.isReplayActive || topDownReplay.isDrawing)) yield break;
 
-        // 🌟 1.5초 후 직교 탑다운 궤적 맵 리플레이로 먼저 전환!
         currentState = GameState.Replay;
         lastStateChangeTime = Time.time;
-        requireTouchRelease = true; // 🌟 리플레이 진입 시 터치 릴리즈 락 적용
+        requireTouchRelease = true;
 
         if (topDownReplay == null) topDownReplay = FindAnyObjectByType<TopDownReplayManager>();
-        if (topDownReplay == null)
+        if (topDownReplay != null)
         {
-            GameObject rObj = new GameObject("TopDownReplayManager");
-            topDownReplay = rObj.AddComponent<TopDownReplayManager>();
+            topDownReplay.isFromFlightTest = false;
+            topDownReplay.StartReplay(dist);
         }
-
-        topDownReplay.isFromFlightTest = false; topDownReplay.StartReplay(dist);
     }
 
     public void ShowFinalResultDirect(float dist)
@@ -1128,7 +889,7 @@ public class GameController : MonoBehaviour
 
         currentState = GameState.Result;
         lastStateChangeTime = Time.time;
-        requireTouchRelease = true; // 🌟 결과창 진입 시 터치 릴리즈 락 적용
+        requireTouchRelease = true;
         CalculateFinalScores(dist);
     }
 
@@ -1137,20 +898,13 @@ public class GameController : MonoBehaviour
         if (hasCalculatedResult) return;
         hasCalculatedResult = true;
 
-        // 1. 도달거리 점수 (1m당 10점)
         distanceScore = Mathf.RoundToInt(dist * 10f);
-
-        // 2. 튕긴 횟수에 따른 점수 (1회당 500점)
         int skips = (stone != null) ? stone.skipCount : 0;
         skipScore = skips * 500;
-
-        // 3. 특별 이벤트 점수
-        // (PERFECT 타이밍당 300점 + 물고기 저격당 1000점 + 친구 추월당 800점 + 부스트 패드당 500점 + 도로록 스키밍 1m당 15점)
         lastSkimBonusDist = (stone != null) ? stone.skimDistance : 0f;
         int skimScore = Mathf.RoundToInt(lastSkimBonusDist * 15f);
-        specialScore = (perfectTimingCount * 300) + (fishSnipeCount * 1000) + (friendOvertakeCount * 800) + (boostPadCount * 500) + skimScore;
 
-        // 종합 점수 및 코인 보상 계산
+        specialScore = (perfectTimingCount * 300) + (fishSnipeCount * 1000) + (friendOvertakeCount * 800) + (boostPadCount * 500) + skimScore;
         totalScore = distanceScore + skipScore + specialScore;
         earnedCoins = Mathf.Max(5, Mathf.RoundToInt(totalScore / 25f));
 
@@ -1158,8 +912,6 @@ public class GameController : MonoBehaviour
         {
             AquariumManager.Instance.AddCoins(earnedCoins);
         }
-
-        Debug.Log($"📊 [결과 집계 완료] 도달거리: {dist:F1}m({distanceScore}점) | 바운스: {skips}회({skipScore}점) | 스키밍 보너스: +{lastSkimBonusDist:F1}m({skimScore}점) | 특별이벤트: {specialScore}점 | 총점: {totalScore:N0}점 (+{earnedCoins}코인)");
     }
 
     public void RestartGame()
@@ -1170,10 +922,8 @@ public class GameController : MonoBehaviour
     private void ResetToPositioning()
     {
         StopAllCoroutines();
-        if (topDownReplay != null)
-        {
-            topDownReplay.isReplayActive = false;
-        }
+        if (topDownReplay != null) topDownReplay.isReplayActive = false;
+
         currentState = GameState.Positioning;
         lastStateChangeTime = Time.time + 0.35f;
         startPosX = 0f;
@@ -1186,11 +936,6 @@ public class GameController : MonoBehaviour
         fishSnipeCount = 0;
         friendOvertakeCount = 0;
         boostPadCount = 0;
-
-        if (LakeEnvironmentManager.Instance != null)
-        {
-            LakeEnvironmentManager.Instance.ResetEnvironment();
-        }
         distanceScore = 0;
         skipScore = 0;
         specialScore = 0;
@@ -1198,38 +943,23 @@ public class GameController : MonoBehaviour
         earnedCoins = 0;
         hasCalculatedResult = false;
 
+        if (LakeEnvironmentManager.Instance != null)
+        {
+            LakeEnvironmentManager.Instance.ResetEnvironment();
+        }
+
         if (dualCamera != null)
         {
             dualCamera.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
         }
 
-        if (currentMode == GameMode.TargetAccuracy)
-        {
-            if (MapPIPManager.Instance != null)
-            {
-                MapPIPManager.Instance.UpdatePIPState(true);
-            }
-        }
-        else
-        {
-            if (MapPIPManager.Instance != null)
-            {
-                MapPIPManager.Instance.UpdatePIPState(false);
-            }
-        }
-
         requireTouchRelease = true;
         isTrackingFlightTouch = false;
 
-        ApplyGameModeEnvironment();
-
-        // 🌟 매판 시작 시 지난 게임의 돌을 완전 파괴하고 새 돌을 깨끗하게 스폰!
+        SetupCharacterAndCamera(null);
         SpawnNewStone();
     }
 
-    /// <summary>
-    /// 🌟 매판 클린 스타트: 기존 돌을 완전 파괴(Destroy)하고 깨끗한 새 돌을 인스턴스화
-    /// </summary>
     public void SpawnNewStone()
     {
         if (stone != null)
@@ -1249,12 +979,50 @@ public class GameController : MonoBehaviour
         ApplyCurrentStoneVisuals();
     }
 
-    #region 범용 입력 처리
+    public void ApplyCurrentStoneVisuals()
+    {
+        if (stone == null) return;
+
+        Color targetTrailColor = Color.white;
+        if (StoneInventory.Instance != null)
+        {
+            StoneItem item = StoneInventory.Instance.GetCurrentStone();
+            if (item != null)
+            {
+                Renderer r = stone.GetComponentInChildren<Renderer>();
+                if (r != null && r.sharedMaterial != null)
+                {
+                    r.sharedMaterial.SetColor("_BaseColor", item.color);
+                }
+                targetTrailColor = item.trailColor;
+            }
+        }
+
+        if (stone.trail != null)
+        {
+            stone.trailStartColor = targetTrailColor;
+            stone.trail.startWidth = 0.075f;
+            stone.trail.endWidth = 0.005f;
+
+            if (stone.trail.material != null)
+            {
+                stone.trail.material.color = Color.white;
+            }
+
+            Gradient g = new Gradient();
+            g.SetKeys(
+                new GradientColorKey[] { new GradientColorKey(targetTrailColor, 0.0f), new GradientColorKey(targetTrailColor, 1.0f) },
+                new GradientAlphaKey[] { new GradientAlphaKey(0.70f, 0.0f), new GradientAlphaKey(0.0f, 1.0f) }
+            );
+            stone.trail.colorGradient = g;
+        }
+    }
+
+    #region 입력 처리 유틸
 
     public float GetHorizontalInput()
     {
         float h = 0f;
-
 #if ENABLE_INPUT_SYSTEM
         if (Keyboard.current != null)
         {
@@ -1268,7 +1036,6 @@ public class GameController : MonoBehaviour
             if (Mathf.Abs(legacyH) > 0.01f) h = legacyH;
         }
         catch { }
-
         return h;
     }
 
@@ -1289,10 +1056,7 @@ public class GameController : MonoBehaviour
 
         if (requireTouchRelease)
         {
-            if (!isCurrentlyHeld)
-            {
-                requireTouchRelease = false;
-            }
+            if (!isCurrentlyHeld) requireTouchRelease = false;
             return false;
         }
 
@@ -1306,7 +1070,6 @@ public class GameController : MonoBehaviour
             if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0)) return true;
         }
         catch { }
-
         return false;
     }
 
@@ -1327,7 +1090,6 @@ public class GameController : MonoBehaviour
             if (Input.GetKeyDown(key)) return true;
         }
         catch { }
-
         return false;
     }
 

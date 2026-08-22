@@ -21,6 +21,9 @@ public class TopDownReplayManager : MonoBehaviour
     public int totalPages = 1;
     public int currentPage = 1;
 
+    [Header("기준 높이 (발판 상단 우선)")]
+    public float baseReplayLevel = 0f;
+
     [Header("궤적 라인 및 비주얼 색상")]
     public float lineWidth = 0.55f;
     public Color pathColor = new Color(0.1f, 0.95f, 1.0f, 0.95f);
@@ -32,18 +35,17 @@ public class TopDownReplayManager : MonoBehaviour
     public Color skimStartMarkerColor = new Color(1.0f, 0.62f, 0.12f, 1f);
     public Color finishMarkerColor = new Color(1.0f, 0.22f, 0.22f, 1f);
 
-    public bool isFromFlightTest = false; // 🌟 비행 테스트에서 진입했는지 여부
+    public bool isFromFlightTest = false;
     private LineRenderer trajectoryLine;
     private LineRenderer skimLine;
-    private GameObject replayStoneAvatar; // 🌟 리플레이 선두에서 실제 돌 맵핑으로 2.5배 퐁퐁퐁 피칭 도약하는 3D 조약돌
+    private GameObject replayStoneAvatar;
     private List<GameObject> markerObjects = new List<GameObject>();
     private List<SkippingStone.BounceRecord> currentHistory = new List<SkippingStone.BounceRecord>();
     private Coroutine drawCoroutine;
     private Coroutine slideCoroutine;
     private float cachedFinalDist = 0f;
 
-    // 🌟 자유 줌/스크롤 네비게이션 상태 및 궤적 경계(Bounding Box)
-    private Vector3 currentCamCenter = new Vector3(0f, 8.0f, 0f);
+    private Vector3 currentCamCenter = Vector3.zero;
     private float currentOrthoSize = 40f;
     private float targetOrthoSize = 40f;
     private float minOrthoSize = 18f;
@@ -66,15 +68,47 @@ public class TopDownReplayManager : MonoBehaviour
         if (gameController == null) gameController = FindAnyObjectByType<GameController>();
         if (stone == null) stone = FindAnyObjectByType<SkippingStone>();
 
+        UpdateBaseReplayLevel();
         CreateTrajectoryLineRenderers();
         CreateReplayStoneAvatar();
+    }
+
+    /// <summary>
+    /// 발판(Lakeside_WoodenPier) 상단 표면(bounds.max.y)을 최우선 기준 높이로 취득
+    /// </summary>
+    public void UpdateBaseReplayLevel()
+    {
+        GameObject pier = GameObject.Find("Lakeside_WoodenPier");
+        if (pier != null)
+        {
+            Collider pierCol = pier.GetComponent<Collider>();
+            if (pierCol != null)
+            {
+                baseReplayLevel = pierCol.bounds.max.y;
+                return;
+            }
+            baseReplayLevel = pier.transform.position.y + 0.2f;
+            return;
+        }
+
+        if (stone != null && stone.waterLevel > 0.1f)
+        {
+            baseReplayLevel = stone.waterLevel;
+            return;
+        }
+
+        GameObject water = GameObject.Find("WaterSurface") ?? GameObject.Find("Water_Surface");
+        if (water != null)
+        {
+            Collider col = water.GetComponent<Collider>();
+            baseReplayLevel = (col != null) ? col.bounds.max.y : water.transform.position.y;
+        }
     }
 
     private void Update()
     {
         if (!isReplayActive) return;
 
-        // 리플레이 궤적 드로잉이 완료된 후 PC 휠/드래그 및 모바일 핀치줌/스크롤 활성화
         if (isReplayFinished && !isDrawing)
         {
             HandleFreeNavigation();
@@ -83,11 +117,10 @@ public class TopDownReplayManager : MonoBehaviour
 
     private void CreateTrajectoryLineRenderers()
     {
-        Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit") 
-                             ?? Shader.Find("Sprites/Default") 
+        Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit")
+                             ?? Shader.Find("Sprites/Default")
                              ?? Shader.Find("Unlit/Color");
 
-        // 1. 일반 공중 비행 궤적선 (시안색)
         if (trajectoryLine == null)
         {
             GameObject lineObj = new GameObject("TopDownReplay_TrajectoryLine");
@@ -105,7 +138,6 @@ public class TopDownReplayManager : MonoBehaviour
             trajectoryLine.enabled = false;
         }
 
-        // 2. 도로록 스키밍 활주 궤적선 (황금빛 골드)
         if (skimLine == null)
         {
             GameObject skimLineObj = new GameObject("TopDownReplay_SkimLine");
@@ -124,9 +156,6 @@ public class TopDownReplayManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 🌟 실제 인게임 조약돌 3D 메쉬 및 머티리얼(Stone_Pebble_Mat) 1:1 완벽 연동
-    /// </summary>
     private void CreateReplayStoneAvatar()
     {
         if (replayStoneAvatar == null)
@@ -150,16 +179,14 @@ public class TopDownReplayManager : MonoBehaviour
                 replayStoneAvatar.transform.SetParent(transform);
             }
 
-            // 물리 콜라이더 제거
             foreach (var col in replayStoneAvatar.GetComponentsInChildren<Collider>(true))
             {
                 if (Application.isPlaying) Destroy(col);
                 else DestroyImmediate(col);
             }
 
-            // 🌟 실제 인게임 조약돌 머티리얼(Stone_Pebble_Mat) 연결
-            Material pebbleMat = (stone != null && stone.stoneCustomMaterial != null) 
-                                 ? stone.stoneCustomMaterial 
+            Material pebbleMat = (stone != null && stone.stoneCustomMaterial != null)
+                                 ? stone.stoneCustomMaterial
                                  : Resources.Load<Material>("Stone_Pebble_Mat");
             if (pebbleMat != null)
             {
@@ -174,12 +201,9 @@ public class TopDownReplayManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 🌟 카메라 줌 레벨에 따라 화면상에서 일정한 픽셀 굵기를 유지하도록 실시간 역비례 스케일링
-    /// </summary>
     private void UpdateVisualsScale(float orthoSize)
     {
-        float dynamicW = Mathf.Clamp(orthoSize * 0.0128f, 0.32f, 6.0f); // 🌟 0.8배 슬림화
+        float dynamicW = Mathf.Clamp(orthoSize * 0.0128f, 0.32f, 6.0f);
         float ringW = Mathf.Clamp(orthoSize * 0.0056f, 0.12f, 2.6f);
 
         if (trajectoryLine != null)
@@ -193,7 +217,6 @@ public class TopDownReplayManager : MonoBehaviour
             skimLine.endWidth = dynamicW * 1.25f;
         }
 
-        // 마커 지름 및 테두리 선 굵기 동시 실시간 동기화 (줌인 시 뚱뚱해짐 방지)
         float markerScale = Mathf.Clamp(orthoSize / 390f, 0.15f, 2.5f);
         foreach (var m in markerObjects)
         {
@@ -209,7 +232,6 @@ public class TopDownReplayManager : MonoBehaviour
             }
         }
 
-        // 🌟 돌 아바타 크기도 라인 폭 및 줌 레벨에 1:1 일치하여 거리가 멀어져도 동일한 화면 크기 유지
         if (replayStoneAvatar != null && replayStoneAvatar.activeSelf)
         {
             float avatarScale = Mathf.Clamp(orthoSize * 0.28f, 3.5f, 65f);
@@ -217,16 +239,13 @@ public class TopDownReplayManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 🌟 리플레이 시작
-    /// </summary>
     public void StartReplay(float finalDist)
     {
+        UpdateBaseReplayLevel();
         cachedFinalDist = finalDist;
         if (stone == null) stone = FindAnyObjectByType<SkippingStone>();
         if (gameController == null) gameController = FindAnyObjectByType<GameController>();
 
-        // 🌟 1. 리플레이 중 3D 비행 트레일 끄기 및 실제 3D 물리 돌 완전 동결 (백그라운드 충돌/비행 원천 차단)
         if (stone != null)
         {
             if (stone.trail != null)
@@ -252,7 +271,7 @@ public class TopDownReplayManager : MonoBehaviour
         }
         else
         {
-            Vector3 startP = (stone != null) ? stone.transform.position : Vector3.zero;
+            Vector3 startP = (stone != null) ? stone.transform.position : new Vector3(0f, baseReplayLevel, 0f);
             currentHistory.Add(new SkippingStone.BounceRecord { position = startP, skipIndex = 0, grade = "START", distance = 0f });
             currentHistory.Add(new SkippingStone.BounceRecord { position = startP + Vector3.forward * finalDist, skipIndex = 1, grade = "FINISH", distance = finalDist });
         }
@@ -264,14 +283,12 @@ public class TopDownReplayManager : MonoBehaviour
         isReplayActive = true;
         isReplayFinished = false;
 
-        // 🌟 2. 리플레이 진입 시 자동 비행 즉시 중단 및 테스트 UI 자동 닫힘
         if (EnvironmentTestHelper.Instance != null)
         {
             EnvironmentTestHelper.Instance.StopAutoFly();
             EnvironmentTestHelper.Instance.showTestUI = false;
         }
 
-        // 🌟 3. 시작 나무 발판 및 투구 캐릭터 가시성 복원 (리플레이에서 선명하게 노출)
         StoneThrowerCharacter thrower = FindAnyObjectByType<StoneThrowerCharacter>();
         if (thrower != null)
         {
@@ -286,16 +303,10 @@ public class TopDownReplayManager : MonoBehaviour
             if (pr != null) pr.enabled = true;
         }
 
-        // 🌟 4. 1구간 (0m ~ 1,500m) 직교 뷰로 세팅
         SetPageCameraView(1, false);
-
-        // 🌟 5. 궤적 드로잉 애니메이션 시작
         StartDrawingAnimation();
     }
 
-    /// <summary>
-    /// 🌟 산맥 이탈 방지 스마트 바운딩 박스 및 줌 한계 계산
-    /// </summary>
     private void CalculateSmartBounds()
     {
         float minX = float.MaxValue, maxX = float.MinValue;
@@ -310,13 +321,12 @@ public class TopDownReplayManager : MonoBehaviour
 
         if (minX > maxX) { minX = -10f; maxX = 10f; }
 
-        // 🌟 산맥 밖으로 나가지 않도록 호수 수면 영역(-120m ~ +120m) 내로 한정
         boundMinX = Mathf.Max(minX - 35f, -120f);
         boundMaxX = Mathf.Min(maxX + 35f, 120f);
         boundMinZ = -15f;
         boundMaxZ = maxZ + 25f;
 
-        minOrthoSize = 18f; // 최대 줌인 (물보라 초근접)
+        minOrthoSize = 18f;
 
         float spanX = Mathf.Max(35f, boundMaxX - boundMinX);
         float spanZ = Mathf.Max(50f, boundMaxZ - boundMinZ);
@@ -349,11 +359,12 @@ public class TopDownReplayManager : MonoBehaviour
 
     public void SetPageCameraView(int page, bool smooth)
     {
-        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null) 
-                                  ? gameController.dualCamera 
+        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null)
+                                  ? gameController.dualCamera
                                   : FindAnyObjectByType<DualCameraSetup>();
         if (dualCam == null) return;
 
+        UpdateBaseReplayLevel();
         Vector3 targetCenter;
         float targetOrtho;
 
@@ -362,7 +373,7 @@ public class TopDownReplayManager : MonoBehaviour
             float spanZ = Mathf.Max(35f, boundMaxZ - boundMinZ);
             float spanX = Mathf.Max(25f, boundMaxX - boundMinX);
             float midX = (boundMinX + boundMaxX) * 0.5f;
-            targetCenter = new Vector3(midX, 8.0f, (boundMinZ + boundMaxZ) * 0.5f);
+            targetCenter = new Vector3(midX, baseReplayLevel + 80f, (boundMinZ + boundMaxZ) * 0.5f);
             targetOrtho = Mathf.Max(spanZ * 0.55f, spanX * 0.98f, 20f);
         }
         else
@@ -384,7 +395,7 @@ public class TopDownReplayManager : MonoBehaviour
             float pageCenterX = (pageMinX <= pageMaxX) ? (pageMinX + pageMaxX) * 0.5f : 0f;
             float pageSpanX = (pageMinX <= pageMaxX) ? Mathf.Max(35f, pageMaxX - pageMinX) : 35f;
 
-            targetCenter = new Vector3(pageCenterX, 8.0f, pageCenterZ);
+            targetCenter = new Vector3(pageCenterX, baseReplayLevel + 80f, pageCenterZ);
             targetOrtho = Mathf.Max(pageSpanZ * 0.52f, pageSpanX * 0.98f, 25f);
         }
 
@@ -394,7 +405,6 @@ public class TopDownReplayManager : MonoBehaviour
 
         UpdateVisualsScale(targetOrtho);
 
-        // 지형/수면 청크 배치
         lastLoadedTerrainPage = page;
         if (LakeEnvironmentManager.Instance != null) LakeEnvironmentManager.Instance.PlaceTerrainAtPage(page);
         var water = FindAnyObjectByType<WaterSurface>();
@@ -424,7 +434,7 @@ public class TopDownReplayManager : MonoBehaviour
             elapsed += Time.unscaledDeltaTime;
             float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
 
-            Vector3 currentPos = Vector3.Lerp(startPos, new Vector3(targetCenter.x, 8.0f, targetCenter.z), t);
+            Vector3 currentPos = Vector3.Lerp(startPos, new Vector3(targetCenter.x, baseReplayLevel + 80f, targetCenter.z), t);
             float ortho = Mathf.Lerp(startOrtho, targetOrtho, t);
 
             currentCamCenter = currentPos;
@@ -441,9 +451,6 @@ public class TopDownReplayManager : MonoBehaviour
         dualCam.SetReplayTopDownView(targetCenter, targetOrtho);
     }
 
-    /// <summary>
-    /// 🌟 800m부터 완주 지점 끝까지 1:1 완전 연속 실시간 Z축 추적 카메라 계산 (X=0 정중앙 고정)
-    /// </summary>
     private float CalculateCameraZForLeadPosition(float leadZ)
     {
         if (cachedFinalDist <= PAGE_DISTANCE)
@@ -451,32 +458,24 @@ public class TopDownReplayManager : MonoBehaviour
             return (boundMinZ + boundMaxZ) * 0.5f;
         }
 
-        // 0m ~ 800m: 출발 지점 조망 (Z = 750m 고정)
         if (leadZ <= 800f)
         {
             return 750f;
         }
 
-        // 🌟 800m ~ 완주 지점 끝까지: 조기 멈춤 없이 3,500m/3,800m까지 시원하게 전진!
         return Mathf.Clamp(leadZ - 50f, 750f, cachedFinalDist);
     }
 
-    /// <summary>
-    /// 🌟 리플레이 완료 후 PC 마우스 휠/드래그 & 모바일 핀치줌/스크롤 자유 네비게이션
-    /// </summary>
     private void HandleFreeNavigation()
     {
-        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null) 
-                                  ? gameController.dualCamera 
+        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null)
+                                  ? gameController.dualCamera
                                   : FindAnyObjectByType<DualCameraSetup>();
         if (dualCam == null || dualCam.mainCam == null) return;
 
         float screenH = Mathf.Max(Screen.height, 100f);
         float worldPerPixel = (currentOrthoSize * 2f) / screenH;
 
-        // ─────────────────────────────────────────────────────────────
-        // 1. 📱 모바일 터치 처리 (New Input System & Legacy 지원)
-        // ─────────────────────────────────────────────────────────────
 #if ENABLE_INPUT_SYSTEM
         if (Touchscreen.current != null && Touchscreen.current.touches.Count > 0)
         {
@@ -548,9 +547,6 @@ public class TopDownReplayManager : MonoBehaviour
         }
         catch { }
 
-        // ─────────────────────────────────────────────────────────────
-        // 2. 💻 PC 마우스 처리 (New Input System & Legacy 지원)
-        // ─────────────────────────────────────────────────────────────
         float scrollVal = 0f;
         Vector2 mousePos = Vector2.zero;
         bool isMouseDown = false;
@@ -588,13 +584,11 @@ public class TopDownReplayManager : MonoBehaviour
         }
         catch { }
 
-        // 휠 줌 적용 (1클릭당 12% 줌인/줌아웃)
         if (Mathf.Abs(scrollVal) > 0.01f)
         {
             targetOrthoSize = Mathf.Clamp(targetOrthoSize - scrollVal * (targetOrthoSize * 0.12f), minOrthoSize, maxOrthoSize);
         }
 
-        // 드래그 팬 적용
         if (isMouseDown && mousePos.y > screenH * 0.18f)
         {
             if (!isMouseDragging)
@@ -618,20 +612,14 @@ public class TopDownReplayManager : MonoBehaviour
             isMouseDragging = false;
         }
 
-        // ─────────────────────────────────────────────────────────────
-        // 3. 산맥 이탈 방지 엄격 클램핑 및 카메라 동기화
-        // ─────────────────────────────────────────────────────────────
         currentCamCenter.x = Mathf.Clamp(currentCamCenter.x, boundMinX, boundMaxX);
         currentCamCenter.z = Mathf.Clamp(currentCamCenter.z, boundMinZ, boundMaxZ);
 
         currentOrthoSize = Mathf.Lerp(currentOrthoSize, targetOrthoSize, Time.unscaledDeltaTime * 14f);
         UpdateVisualsScale(currentOrthoSize);
 
-        dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, 8.0f, currentCamCenter.z), currentOrthoSize);
+        dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
 
-        // ─────────────────────────────────────────────────────────────
-        // 4. 스크롤 위치에 따른 실시간 지형 청크 동기화
-        // ─────────────────────────────────────────────────────────────
         SyncTerrainByZ(currentCamCenter.z);
     }
 
@@ -652,7 +640,6 @@ public class TopDownReplayManager : MonoBehaviour
             }
         }
 
-        // 🌟 실시간 카메라 Z 위치에 따른 4단계 동적 환경/수면 라이팅 연동
         if (LakeEnvironmentManager.Instance != null)
         {
             LakeEnvironmentManager.Instance.UpdateEnvironmentByDistance(centerZ);
@@ -671,6 +658,7 @@ public class TopDownReplayManager : MonoBehaviour
     {
         isDrawing = true;
         isReplayFinished = false;
+        UpdateBaseReplayLevel();
 
         CreateTrajectoryLineRenderers();
         trajectoryLine.enabled = true;
@@ -681,8 +669,8 @@ public class TopDownReplayManager : MonoBehaviour
         CreateReplayStoneAvatar();
         if (replayStoneAvatar != null) replayStoneAvatar.SetActive(true);
 
-        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null) 
-                                  ? gameController.dualCamera 
+        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null)
+                                  ? gameController.dualCamera
                                   : FindAnyObjectByType<DualCameraSetup>();
 
         if (currentHistory.Count < 2)
@@ -693,11 +681,12 @@ public class TopDownReplayManager : MonoBehaviour
             yield break;
         }
 
-        // 1. 시작점 마커 생성 (나무 발판/지형 위 Y = 1.02m)
+        float drawY = baseReplayLevel + 0.15f;
+
         SpawnBounceMarker(currentHistory[0], 0);
 
         List<Vector3> flightPoints = new List<Vector3>();
-        flightPoints.Add(new Vector3(currentHistory[0].position.x, 1.05f, currentHistory[0].position.z));
+        flightPoints.Add(new Vector3(currentHistory[0].position.x, drawY, currentHistory[0].position.z));
         trajectoryLine.positionCount = 1;
         trajectoryLine.SetPosition(0, flightPoints[0]);
 
@@ -706,8 +695,8 @@ public class TopDownReplayManager : MonoBehaviour
 
         for (int i = 0; i < currentHistory.Count - 1; i++)
         {
-            Vector3 startP = new Vector3(currentHistory[i].position.x, 1.05f, currentHistory[i].position.z);
-            Vector3 endP = new Vector3(currentHistory[i + 1].position.x, 1.05f, currentHistory[i + 1].position.z);
+            Vector3 startP = new Vector3(currentHistory[i].position.x, drawY, currentHistory[i].position.z);
+            Vector3 endP = new Vector3(currentHistory[i + 1].position.x, drawY, currentHistory[i + 1].position.z);
 
             Vector3 segDirection = (endP - startP).normalized;
             if (segDirection.sqrMagnitude < 0.001f) segDirection = Vector3.forward;
@@ -726,39 +715,27 @@ public class TopDownReplayManager : MonoBehaviour
                 {
                     segElapsed += Time.deltaTime;
                     float rawT = Mathf.Clamp01(segElapsed / timePerSegment);
-
-                    // 🌟 중력 포물선 물리 이징 (수평 전진):
-                    // 수면을 탕! 치고 빠른 초기 속도로 튀어나가며(Ease-Out), 정점을 지나 수면으로 가속 낙하(Ease-In)
                     float forwardT = Mathf.SmoothStep(0f, 1f, rawT);
                     Vector3 currentLeadPos = Vector3.Lerp(startP, endP, forwardT);
 
-                    // 🌟 카툰 3D 도약 포물선 높이 곡선: 4 * t * (1 - t)
                     float heightFactor = 4f * rawT * (1f - rawT);
 
-                    // 공중 정점 시 선두 궤적 폭 2.5배 퐁퐁퐁 도약 스케일링 (완료 후 굵기 0.8배와 1:1 통일)
                     float baseWidth = Mathf.Clamp(currentOrthoSize * 0.0128f, 0.32f, 6.0f);
                     float dynamicJumpWidth = baseWidth * (1f + heightFactor * 1.5f);
                     trajectoryLine.startWidth = baseWidth;
                     trajectoryLine.endWidth = dynamicJumpWidth;
 
-                    // 🌟 3단 피칭 틸트 액팅 (+38도 ~ -38도 시원하게 확대):
-                    // 수직 속도 v_y = 1 - 2*rawT
-                    // 상승(rawT=0~0.5): 앞머리를 +38도 번쩍 쳐들고 솟구침
-                    // 최고점(rawT=0.5): 0도 수평 체공
-                    // 하강(rawT=0.5~1.0): 앞머리를 -38도 숙이며 슬라이스 다이빙
                     float vyFactor = (1f - 2f * rawT);
-                    float pitchAngle = vyFactor * 38f; // +38도 ~ -38도
+                    float pitchAngle = vyFactor * 38f;
 
                     if (replayStoneAvatar != null)
                     {
                         float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.28f, 3.5f, 65f);
                         float avatarCurrentScale = avatarBaseScale * (1f + heightFactor * 1.5f);
 
-                        // 🌟 돌 아바타(Y = 1.35m+)를 푸른 리본 궤적(Y = 1.05m)보다 위에 띄워 돌 가림 완벽 방지!
-                        replayStoneAvatar.transform.position = new Vector3(currentLeadPos.x, 1.35f + heightFactor * 6f, currentLeadPos.z);
+                        replayStoneAvatar.transform.position = new Vector3(currentLeadPos.x, (baseReplayLevel + 0.45f) + heightFactor * 6f, currentLeadPos.z);
                         replayStoneAvatar.transform.localScale = new Vector3(avatarCurrentScale, avatarCurrentScale * 0.35f, avatarCurrentScale);
 
-                        // 🌟 넓고 납작한 윗면이 상공 카메라를 정면으로 바라보며 -pitchAngle 피칭 틸팅
                         Quaternion pitchRot = Quaternion.Euler(-pitchAngle, 0f, 0f);
                         replayStoneAvatar.transform.rotation = baseYawRot * pitchRot;
                     }
@@ -766,12 +743,11 @@ public class TopDownReplayManager : MonoBehaviour
                     flightPoints[currentSegmentIdx] = currentLeadPos;
                     trajectoryLine.SetPosition(currentSegmentIdx, currentLeadPos);
 
-                    // 🌟 실시간 비행 궤적 X/Z 동시 중심 추적 (화면 쏠림 완전 방지)
                     if (dualCam != null)
                     {
                         currentCamCenter.x = Mathf.Clamp(currentLeadPos.x, boundMinX, boundMaxX);
                         currentCamCenter.z = CalculateCameraZForLeadPosition(currentLeadPos.z);
-                        dualCam.SetReplayTopDownView(currentCamCenter, currentOrthoSize);
+                        dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
                         SyncTerrainByZ(currentCamCenter.z);
                     }
 
@@ -799,16 +775,16 @@ public class TopDownReplayManager : MonoBehaviour
                     if (replayStoneAvatar != null)
                     {
                         float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.28f, 3.5f, 65f);
-                        replayStoneAvatar.transform.position = new Vector3(currentLeadPos.x, 1.35f, currentLeadPos.z);
+                        replayStoneAvatar.transform.position = new Vector3(currentLeadPos.x, baseReplayLevel + 0.45f, currentLeadPos.z);
                         replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale * 0.35f, avatarBaseScale);
-                        replayStoneAvatar.transform.rotation = baseYawRot; // 수면 수평 활주
+                        replayStoneAvatar.transform.rotation = baseYawRot;
                     }
 
                     if (dualCam != null)
                     {
                         currentCamCenter.x = Mathf.Clamp(currentLeadPos.x, boundMinX, boundMaxX);
                         currentCamCenter.z = CalculateCameraZForLeadPosition(currentLeadPos.z);
-                        dualCam.SetReplayTopDownView(currentCamCenter, currentOrthoSize);
+                        dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
                         SyncTerrainByZ(currentCamCenter.z);
                     }
 
@@ -818,29 +794,26 @@ public class TopDownReplayManager : MonoBehaviour
                 skimLine.SetPosition(1, endP);
             }
 
-            // 착수점 도착! 마커 생성 및 0.15초 물결 파문 팝업
             SpawnBounceMarker(currentHistory[i + 1], i + 1);
         }
 
-        // 최종 완주 위치로 카메라 정확히 안착 및 자유 네비게이션 모드 전환
         if (dualCam != null)
         {
             float finalX = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.x : 0f;
             currentCamCenter.x = Mathf.Clamp(finalX, boundMinX, boundMaxX);
             currentCamCenter.z = CalculateCameraZForLeadPosition(cachedFinalDist);
-            dualCam.SetReplayTopDownView(currentCamCenter, currentOrthoSize);
+            dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
             SyncTerrainByZ(currentCamCenter.z);
         }
 
-        // 🌟 드로잉 완료 후에도 조약돌 아바타를 끄지 않고 최종 착수 위치에 안착 유지
         if (replayStoneAvatar != null)
         {
             float finalX = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.x : 0f;
             float finalZ = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.z : cachedFinalDist;
             float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.28f, 3.5f, 65f);
-            replayStoneAvatar.transform.position = new Vector3(finalX, 1.35f, finalZ);
+            replayStoneAvatar.transform.position = new Vector3(finalX, baseReplayLevel + 0.45f, finalZ);
             replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale * 0.35f, avatarBaseScale);
-            replayStoneAvatar.transform.rotation = Quaternion.identity; // 수면에 납작하게 안착
+            replayStoneAvatar.transform.rotation = Quaternion.identity;
             replayStoneAvatar.SetActive(true);
         }
 
@@ -848,14 +821,11 @@ public class TopDownReplayManager : MonoBehaviour
         isReplayFinished = true;
     }
 
-    /// <summary>
-    /// 착수점 물결 파문 링 및 마커 생성 (수면/발판 위 Y = 1.02m)
-    /// </summary>
     private void SpawnBounceMarker(SkippingStone.BounceRecord record, int index)
     {
         GameObject marker = new GameObject($"ReplayMarker_{index}_{record.grade}");
         marker.transform.SetParent(transform);
-        Vector3 markerPos = new Vector3(record.position.x, 1.02f, record.position.z);
+        Vector3 markerPos = new Vector3(record.position.x, baseReplayLevel + 0.12f, record.position.z);
         marker.transform.position = markerPos;
 
         LineRenderer lr = marker.AddComponent<LineRenderer>();
@@ -864,7 +834,6 @@ public class TopDownReplayManager : MonoBehaviour
 
         Color mColor = bounceMarkerColor;
 
-        // 기본 반지름 15m (390m 뷰포트 기준 약 30픽셀)
         float baseRadius = 15f;
         float ringWidth = Mathf.Clamp(currentOrthoSize * 0.007f, 0.15f, 3.2f);
 
@@ -915,7 +884,6 @@ public class TopDownReplayManager : MonoBehaviour
 
         markerObjects.Add(marker);
 
-        // 🌟 착수 순간 0.15초 물결 파문 팝업 애니메이션
         if (gameObject.activeInHierarchy)
         {
             StartCoroutine(MarkerPopRoutine(marker, markerScale, 0.15f));
@@ -969,9 +937,6 @@ public class TopDownReplayManager : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// 다시 보기(Replay Again) 클릭 시: 1구간부터 완주 지점까지 부드럽게 연속 드로잉 재시작
-    /// </summary>
     public void ReplayAgain()
     {
         if (gameController != null) gameController.requireTouchRelease = false;
@@ -985,9 +950,6 @@ public class TopDownReplayManager : MonoBehaviour
         StartDrawingAnimation();
     }
 
-    /// <summary>
-    /// 결과 보기(Confirm) 클릭 시
-    /// </summary>
     public void FinishReplayAndShowResult()
     {
         if (drawCoroutine != null) StopCoroutine(drawCoroutine);
@@ -999,7 +961,6 @@ public class TopDownReplayManager : MonoBehaviour
 
         ClearVisualMarkers();
 
-        // 🌟 리플레이 종료 시 다음 게임 비행을 위해 3D 트레일 정상 복원
         if (stone == null) stone = FindAnyObjectByType<SkippingStone>();
         if (stone != null && stone.trail != null)
         {
@@ -1007,21 +968,18 @@ public class TopDownReplayManager : MonoBehaviour
             stone.trail.Clear();
         }
 
-        // 1. 메인 URP 카메라 원복
-        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null) 
-                                  ? gameController.dualCamera 
+        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null)
+                                  ? gameController.dualCamera
                                   : FindAnyObjectByType<DualCameraSetup>();
         if (dualCam != null)
         {
             dualCam.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
         }
 
-        // 2. 최종 결과창 표시 또는 비행테스트 모드 복귀
         if (gameController != null)
         {
             if (isFromFlightTest)
             {
-                // 🌟 비행 테스트 종료 시 모드 선택 상태로 복귀하고 테스트 UI를 다시 활성화합니다.
                 gameController.ReturnToModeSelect();
                 if (EnvironmentTestHelper.Instance != null)
                 {
