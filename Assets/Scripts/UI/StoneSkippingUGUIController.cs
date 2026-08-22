@@ -1,3 +1,4 @@
+using System;
 using UnityEngine;
 using UnityEngine.UI;
 
@@ -49,7 +50,8 @@ public class StoneSkippingUGUIController : MonoBehaviour
     [SerializeField] private GameObject replayObj;
     [SerializeField] private Text replayTitleText;
     [SerializeField] private Text replaySummaryText;
-    [SerializeField] private Button replayRetryBtn;
+    [UnityEngine.Serialization.FormerlySerializedAs("replayRetryBtn")]
+    [SerializeField] private Button replayReDrawBtn;
     [SerializeField] private Button replayResultBtn;
 
     [Header("8. 결과 모달 (Result)")]
@@ -60,8 +62,10 @@ public class StoneSkippingUGUIController : MonoBehaviour
     [SerializeField] private Text resultSpecialScoreText;
     [SerializeField] private Text resultTotalScoreText;
     [SerializeField] private Text resultCoinText;
+    [SerializeField] private Button resultReplayBtn;
     [SerializeField] private Button resultRetryBtn;
-    [SerializeField] private Button resultLobbyBtn;
+    [UnityEngine.Serialization.FormerlySerializedAs("resultLobbyBtn")]
+    [SerializeField] private Button resultDoneBtn;
 
     [Header("9. 서브 모달 (수족관 & 스킨)")]
     [SerializeField] private GameObject aquariumModalObj;
@@ -101,6 +105,27 @@ public class StoneSkippingUGUIController : MonoBehaviour
             return;
         }
         Instance = this;
+
+#if ENABLE_INPUT_SYSTEM
+        // New Input System UI Input Module 자동 복구 및 마우스/터치 기본 액션 바인딩
+        var inputModule = FindAnyObjectByType<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+        if (inputModule != null)
+        {
+            if (inputModule.actionsAsset == null)
+            {
+                inputModule.AssignDefaultActions();
+            }
+        }
+        else
+        {
+            var eventSystem = FindAnyObjectByType<UnityEngine.EventSystems.EventSystem>();
+            if (eventSystem != null)
+            {
+                var mod = eventSystem.gameObject.AddComponent<UnityEngine.InputSystem.UI.InputSystemUIInputModule>();
+                mod.AssignDefaultActions();
+            }
+        }
+#endif
 
         if (gameController == null)
             gameController = FindAnyObjectByType<GameController>();
@@ -176,37 +201,133 @@ public class StoneSkippingUGUIController : MonoBehaviour
             if (CanInteract() && gameController != null) gameController.LaunchStone();
         });
 
-        // 리플레이
-        if (replayRetryBtn != null) replayRetryBtn.onClick.AddListener(() =>
+        // 7. 리플레이 패널
+        if (replayReDrawBtn == null && replayObj != null)
         {
-            if (CanInteract() && gameController != null)
+            var btns = replayObj.GetComponentsInChildren<Button>(true);
+            foreach (var b in btns)
             {
-                if (gameController.topDownReplay != null)
+                if (b.name.IndexOf("ReDraw", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    b.name.IndexOf("Retry", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    b.name.IndexOf("다시", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    replayReDrawBtn = b;
+                    break;
+                }
+            }
+        }
+        if (replayReDrawBtn != null)
+        {
+            replayReDrawBtn.onClick.RemoveAllListeners();
+            replayReDrawBtn.onClick.AddListener(() =>
+            {
+                if (CanInteract() && gameController != null && gameController.topDownReplay != null)
+                {
                     gameController.topDownReplay.ReplayAgain();
-                else
-                    gameController.RestartGame();
-            }
-        });
-        if (replayResultBtn != null) replayResultBtn.onClick.AddListener(() =>
-        {
-            if (CanInteract() && gameController != null)
-            {
-                if (gameController.topDownReplay != null)
-                    gameController.topDownReplay.FinishReplayAndShowResult();
-                else
-                    gameController.ShowFinalResultDirect(gameController.stone != null ? gameController.stone.totalDistance : 0f);
-            }
-        });
+                }
+            });
+        }
 
-        // 결과
-        if (resultRetryBtn != null) resultRetryBtn.onClick.AddListener(() =>
+        if (replayResultBtn == null && replayObj != null)
         {
-            if (CanInteract() && gameController != null) gameController.RestartGame();
-        });
-        if (resultLobbyBtn != null) resultLobbyBtn.onClick.AddListener(() =>
+            var btns = replayObj.GetComponentsInChildren<Button>(true);
+            foreach (var b in btns)
+            {
+                if (b.name.IndexOf("Result", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    b.name.IndexOf("결과", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    replayResultBtn = b;
+                    break;
+                }
+            }
+        }
+        if (replayResultBtn != null)
         {
-            if (CanInteract() && gameController != null) gameController.ReturnToModeSelect();
-        });
+            replayResultBtn.onClick.RemoveAllListeners();
+            replayResultBtn.onClick.AddListener(() =>
+            {
+                if (CanInteract() && gameController != null)
+                {
+                    if (gameController.topDownReplay != null)
+                        gameController.topDownReplay.FinishReplayAndShowResult();
+                    else
+                        gameController.ShowFinalResultDirect(gameController.stone != null ? gameController.stone.totalDistance : 0f);
+                }
+            });
+        }
+
+        // 8. 결과 화면
+        if (resultReplayBtn == null && resultObj != null)
+        {
+            var btns = resultObj.GetComponentsInChildren<Button>(true);
+            foreach (var b in btns)
+            {
+                if (b.name.IndexOf("Replay", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    b.name.IndexOf("리플레이", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    resultReplayBtn = b;
+                    break;
+                }
+            }
+        }
+        if (resultReplayBtn != null)
+        {
+            resultReplayBtn.onClick.RemoveAllListeners();
+            resultReplayBtn.onClick.AddListener(() =>
+            {
+                if (CanInteract() && gameController != null)
+                {
+                    float dist = gameController.stone != null ? gameController.stone.totalDistance : (gameController.distanceScore / 10f);
+                    gameController.currentState = GameController.GameState.Replay;
+                    if (gameController.topDownReplay == null)
+                    {
+                        gameController.topDownReplay = FindAnyObjectByType<TopDownReplayManager>() ?? gameController.GetComponent<TopDownReplayManager>() ?? gameController.gameObject.AddComponent<TopDownReplayManager>();
+                    }
+                    if (gameController.topDownReplay != null)
+                    {
+                        gameController.topDownReplay.StartReplay(dist);
+                    }
+                }
+            });
+        }
+        if (resultRetryBtn != null)
+        {
+            resultRetryBtn.onClick.RemoveAllListeners();
+            resultRetryBtn.onClick.AddListener(() =>
+            {
+                if (CanInteract() && gameController != null) gameController.RestartGame();
+            });
+        }
+        if (resultDoneBtn == null && resultObj != null)
+        {
+            var btns = resultObj.GetComponentsInChildren<Button>(true);
+            foreach (var b in btns)
+            {
+                if (b.name.IndexOf("Done", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    b.name.IndexOf("Finish", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    b.name.IndexOf("완료", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                    b.name.IndexOf("Lobby", StringComparison.OrdinalIgnoreCase) >= 0)
+                {
+                    resultDoneBtn = b;
+                    break;
+                }
+            }
+        }
+        if (resultDoneBtn != null)
+        {
+            resultDoneBtn.onClick.RemoveAllListeners();
+            resultDoneBtn.onClick.AddListener(() =>
+            {
+                if (CanInteract())
+                {
+                    if (gameController != null) gameController.FinishMatchAndReturnToMapSelect();
+                    if (SkippingStones.UI.MetaUIManager.Instance != null)
+                    {
+                        SkippingStones.UI.MetaUIManager.Instance.ShowScreen(SkippingStones.UI.MetaScreen.MapSelect);
+                    }
+                }
+            });
+        }
 
         // 🛠️ 개발자 메뉴 버튼 바인딩
         if (devDayBtn != null) devDayBtn.onClick.AddListener(() =>
@@ -301,6 +422,24 @@ public class StoneSkippingUGUIController : MonoBehaviour
 
     private void UpdateUIVisibilityByState()
     {
+        if (gameController == null) return;
+
+        // 🌟 MetaUIManager가 메타 화면(타이틀, 로비, 맵선택, 결과) 제어 중이면 인게임 UGUI 비활성화
+        if (SkippingStones.UI.MetaUIManager.Instance != null && SkippingStones.UI.MetaUIManager.Instance.currentScreen != SkippingStones.UI.MetaScreen.InGame)
+        {
+            if (topBarObj != null) topBarObj.SetActive(false);
+            if (modeSelectObj != null) modeSelectObj.SetActive(false);
+            if (positioningObj != null) positioningObj.SetActive(false);
+            if (aimingObj != null) aimingObj.SetActive(false);
+            if (chargingObj != null) chargingObj.SetActive(false);
+            if (flightHudObj != null) flightHudObj.SetActive(false);
+            if (replayObj != null) replayObj.SetActive(false);
+            if (resultObj != null) resultObj.SetActive(false);
+            if (aquariumModalObj != null) aquariumModalObj.SetActive(false);
+            if (stoneSelectorModalObj != null) stoneSelectorModalObj.SetActive(false);
+            return;
+        }
+
         var state = gameController.currentState;
         bool showDevMenu = (EnvironmentTestHelper.Instance != null && EnvironmentTestHelper.Instance.showTestUI);
 

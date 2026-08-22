@@ -245,6 +245,7 @@ public class TopDownReplayManager : MonoBehaviour
         cachedFinalDist = finalDist;
         if (stone == null) stone = FindAnyObjectByType<SkippingStone>();
         if (gameController == null) gameController = FindAnyObjectByType<GameController>();
+        if (gameController != null) gameController.currentState = GameController.GameState.Replay;
 
         if (stone != null)
         {

@@ -56,9 +56,32 @@ public class RiverSpawner : MonoBehaviour
         }
     }
 
+    [Header("수면 높이 연동")]
+    public float waterHeight = 16.0f;
+
+    private float GetCurrentWaterLevel()
+    {
+        WaterSurface ws = FindAnyObjectByType<WaterSurface>();
+        if (ws != null)
+        {
+            Collider c = ws.GetComponent<Collider>();
+            if (c != null) return c.bounds.max.y;
+            return ws.transform.position.y;
+        }
+
+        GameObject water = GameObject.Find("WaterSurface") ?? GameObject.Find("Water_Surface");
+        if (water != null)
+        {
+            Collider col = water.GetComponent<Collider>();
+            if (col != null) return col.bounds.max.y;
+            return water.transform.position.y;
+        }
+        return waterHeight;
+    }
+
     /// <summary>
     /// 🏆 장거리 모드: 0m~4800m 전 구간에 부스트 패드, 바위 장애물, 물고기, 친구 깃발, 연잎 군락 배치
-    /// Water_Surface의 전체 가로폭을 활용하고 수직 레이캐스트로 땅속 스폰 방지
+    /// 실제 굽이치는 강 중심선(RiverCenter)을 정확히 추적하여 물길 내부에만 스폰
     /// </summary>
     private void GenerateLongDistanceRiver()
     {
@@ -67,36 +90,42 @@ public class RiverSpawner : MonoBehaviour
         startBankPos = Vector3.zero;
         spawnDirection = Vector3.forward;
 
-        GetWaterXBounds(out float minX, out float maxX);
+        float curWaterY = GetCurrentWaterLevel();
+        RiverValleyTerrainGenerator terrainGen = FindAnyObjectByType<RiverValleyTerrainGenerator>();
 
-        // 1. 🚀 가속 부스트 패드 (Water_Surface 전체 폭에 걸쳐 좌/중/우 균등 분산)
+        // 1. 🚀 가속 부스트 패드 (강물 중심 기준 좌/중/우 균등 분산)
         for (float bDist = 45f; bDist < riverLength - 80f; bDist += Random.Range(35f, 65f))
         {
-            float leftX = Random.Range(minX, minX * 0.3f);
-            float centerX = Random.Range(minX * 0.3f, maxX * 0.3f);
-            float rightX = Random.Range(maxX * 0.3f, maxX);
+            float centerOffset = (terrainGen != null) ? (terrainGen.GetRiverCenterX(bDist) - terrainGen.sizeX * 0.5f) : 0f;
+            float halfWaterW = 16f; // 안전 수면 반폭
 
-            TrySpawnBoostPad(new Vector3(leftX, 0.05f, bDist + Random.Range(-4f, 4f)));
-            TrySpawnBoostPad(new Vector3(centerX, 0.05f, bDist + Random.Range(-4f, 4f)));
-            TrySpawnBoostPad(new Vector3(rightX, 0.05f, bDist + Random.Range(-4f, 4f)));
+            float leftX = centerOffset + Random.Range(-halfWaterW * 0.85f, -halfWaterW * 0.25f);
+            float midX = centerOffset + Random.Range(-halfWaterW * 0.2f, halfWaterW * 0.2f);
+            float rightX = centerOffset + Random.Range(halfWaterW * 0.25f, halfWaterW * 0.85f);
+
+            TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, bDist + Random.Range(-4f, 4f)));
+            TrySpawnBoostPad(new Vector3(midX, curWaterY + 0.05f, bDist + Random.Range(-4f, 4f)));
+            TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, bDist + Random.Range(-4f, 4f)));
         }
 
-        // 2. 🪨 강 장애물(바위) Water_Surface 전폭 균등 분산 배치
+        // 2. 🪨 강 장애물(바위) 강 중심 좌우 분산 배치
         for (float d = 50f; d < riverLength; d += Random.Range(20f, 38f))
         {
-            float sideOffset = Random.Range(minX, maxX);
-            TrySpawnObstacleRock(new Vector3(sideOffset, 0f, d + Random.Range(-5f, 5f)));
+            float centerOffset = (terrainGen != null) ? (terrainGen.GetRiverCenterX(d) - terrainGen.sizeX * 0.5f) : 0f;
+            float sideOffset = centerOffset + Random.Range(-15f, 15f);
+            TrySpawnObstacleRock(new Vector3(sideOffset, curWaterY, d + Random.Range(-5f, 5f)));
         }
 
-        // 3. 🐟 튀어오르는 물고기 Water_Surface 전폭 스폰 (좌/중/우)
+        // 3. 🐟 튀어오르는 물고기 강물 중심 기준 스폰
         for (float fDist = 40f; fDist < riverLength - 60f; fDist += Random.Range(45f, 85f))
         {
-            float fX1 = Random.Range(minX, minX * 0.3f);
-            float fX2 = Random.Range(minX * 0.3f, maxX * 0.3f);
-            float fX3 = Random.Range(maxX * 0.3f, maxX);
-            TrySpawnFish(new Vector3(fX1, 0f, fDist), fDist);
-            TrySpawnFish(new Vector3(fX2, 0f, fDist + Random.Range(6f, 16f)), fDist);
-            TrySpawnFish(new Vector3(fX3, 0f, fDist + Random.Range(12f, 24f)), fDist);
+            float centerOffset = (terrainGen != null) ? (terrainGen.GetRiverCenterX(fDist) - terrainGen.sizeX * 0.5f) : 0f;
+            float fX1 = centerOffset + Random.Range(-14f, -4f);
+            float fX2 = centerOffset + Random.Range(-3f, 3f);
+            float fX3 = centerOffset + Random.Range(4f, 14f);
+            TrySpawnFish(new Vector3(fX1, curWaterY, fDist), fDist);
+            TrySpawnFish(new Vector3(fX2, curWaterY, fDist + Random.Range(6f, 16f)), fDist);
+            TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(12f, 24f)), fDist);
         }
 
         // 4. 🚩 친구 거리 깃발 (0 ~ 4800m 랭킹 이정표)
@@ -104,16 +133,18 @@ public class RiverSpawner : MonoBehaviour
         float[] friendDists = { 120f, 310f, 580f, 920f, 1500f, 2300f, 3300f, 4500f };
         for (int i = 0; i < friends.Length; i++)
         {
-            float flagX = (i % 2 == 0) ? Random.Range(minX * 0.8f, minX * 0.2f) : Random.Range(maxX * 0.2f, maxX * 0.8f);
-            Vector3 fPos = new Vector3(flagX, 0f, friendDists[i]);
+            float zPos = friendDists[i];
+            float centerOffset = (terrainGen != null) ? (terrainGen.GetRiverCenterX(zPos) - terrainGen.sizeX * 0.5f) : 0f;
+            float flagX = centerOffset + ((i % 2 == 0) ? -13f : 13f);
+            Vector3 fPos = new Vector3(flagX, curWaterY, zPos);
             if (IsValidWaterPosition(fPos))
             {
-                CreateFriendFlag(fPos, friends[i], $"{i + 1}위", friendDists[i]);
+                CreateFriendFlag(fPos, friends[i], $"{i + 1}위", zPos);
             }
         }
 
-        // 5. 🪷 연잎 및 연꽃 군락 Water_Surface 전폭 풍성 생성
-        CreateLilyPadsGrid(minX, maxX, 30f, riverLength);
+        // 5. 🪷 연잎 및 연꽃 군락 강물 중심 기준 풍성 생성
+        CreateLilyPadsGridMeander(terrainGen, 30f, riverLength, curWaterY);
         CleanupOldGroundObjects();
     }
 
@@ -124,7 +155,8 @@ public class RiverSpawner : MonoBehaviour
     {
         ClearExistingEntities();
 
-        startBankPos = new Vector3(-20f, 0f, 700f);
+        float curWaterY = GetCurrentWaterLevel();
+        startBankPos = new Vector3(-20f, curWaterY, 700f);
         spawnDirection = Vector3.forward;
 
         // 1. 🎯 플로팅 타겟 과녁 (Floating Target Rings) 수면 전체 분산 배치
@@ -137,7 +169,7 @@ public class RiverSpawner : MonoBehaviour
                 {
                     float xPos = targetLanes[col] + Random.Range(-3f, 3f);
                     float zPos = z + Random.Range(-12f, 12f);
-                    CreateTargetRing(new Vector3(xPos, 0.04f, zPos));
+                    CreateTargetRing(new Vector3(xPos, curWaterY + 0.04f, zPos));
                 }
             }
         }
@@ -147,22 +179,22 @@ public class RiverSpawner : MonoBehaviour
         {
             float x1 = Random.Range(-22f, -5f);
             float x2 = Random.Range(5f, 22f);
-            CreateBoostPad(new Vector3(x1, 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
-            CreateBoostPad(new Vector3(x2, 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
+            CreateBoostPad(new Vector3(x1, curWaterY + 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
+            CreateBoostPad(new Vector3(x2, curWaterY + 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
         }
 
         // 3. 🐟 튀어오르는 물고기 (Jumping Fish) 수면 전역 배치
         for (float z = 45f; z < 1350f; z += 45f)
         {
             float xPos = Random.Range(-23f, 23f);
-            SpawnSingleFish(new Vector3(xPos, 0f, z + Random.Range(-10f, 10f)), z);
+            SpawnSingleFish(new Vector3(xPos, curWaterY, z + Random.Range(-10f, 10f)), z);
         }
 
         // 4. 🪨 장애물 바위 수면 전역 배치
         for (float z = 60f; z < 1350f; z += 50f)
         {
             float xPos = Random.Range(-24f, 24f);
-            CreateObstacleRock(new Vector3(xPos, 0f, z + Random.Range(-12f, 12f)));
+            CreateObstacleRock(new Vector3(xPos, curWaterY, z + Random.Range(-12f, 12f)));
         }
 
         // 5. 🚩 친구 거리 깃발
@@ -171,11 +203,11 @@ public class RiverSpawner : MonoBehaviour
         for (int i = 0; i < friends.Length; i++)
         {
             float xSide = (i % 2 == 0) ? -18f : 18f;
-            CreateFriendFlag(new Vector3(xSide, 0f, friendZDistances[i]), friends[i], $"{i + 1}위", friendZDistances[i]);
+            CreateFriendFlag(new Vector3(xSide, curWaterY, friendZDistances[i]), friends[i], $"{i + 1}위", friendZDistances[i]);
         }
 
         // 6. 🪷 풍성한 연잎 및 연꽃 군락
-        CreateLilyPadsGrid(-26f, 26f, 30f, 1350f);
+        CreateLilyPadsGrid(-26f, 26f, 30f, 1350f, curWaterY);
         CleanupOldGroundObjects();
     }
 
@@ -250,7 +282,37 @@ public class RiverSpawner : MonoBehaviour
         }
     }
 
-    private void CreateLilyPadsGrid(float minX, float maxX, float minZ, float maxZ)
+    private void CreateLilyPadsGridMeander(RiverValleyTerrainGenerator terrainGen, float minZ, float maxZ, float waterY)
+    {
+        Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
+        Material lilyMat = (shader != null) ? new Material(shader) { name = "LilyPadMat" } : null;
+        if (lilyMat != null)
+        {
+            lilyMat.SetColor("_BaseColor", new Color(0.12f, 0.58f, 0.28f, 1f));
+            if (lilyMat.HasProperty("_Smoothness")) lilyMat.SetFloat("_Smoothness", 0.4f);
+        }
+
+        Material flowerMat = (shader != null) ? new Material(shader) { name = "LotusFlowerMat" } : null;
+        if (flowerMat != null) flowerMat.SetColor("_BaseColor", new Color(0.98f, 0.65f, 0.85f, 1f));
+
+        for (float z = minZ; z < maxZ; z += Random.Range(20f, 35f))
+        {
+            float centerOffset = (terrainGen != null) ? (terrainGen.GetRiverCenterX(z) - terrainGen.sizeX * 0.5f) : 0f;
+            float x1 = centerOffset + Random.Range(-13f, -5f);
+            float x2 = centerOffset + Random.Range(-3f, 3f);
+            float x3 = centerOffset + Random.Range(5f, 13f);
+
+            Vector3 p1 = new Vector3(x1, waterY + 0.04f, z + Random.Range(-5f, 5f));
+            Vector3 p2 = new Vector3(x2, waterY + 0.04f, z + Random.Range(-5f, 5f));
+            Vector3 p3 = new Vector3(x3, waterY + 0.04f, z + Random.Range(-5f, 5f));
+
+            if (IsValidWaterPosition(p1)) SpawnSingleLilyCluster(p1, lilyMat, flowerMat);
+            if (IsValidWaterPosition(p2)) SpawnSingleLilyCluster(p2, lilyMat, flowerMat);
+            if (IsValidWaterPosition(p3)) SpawnSingleLilyCluster(p3, lilyMat, flowerMat);
+        }
+    }
+
+    private void CreateLilyPadsGrid(float minX, float maxX, float minZ, float maxZ, float waterY)
     {
         Shader shader = Shader.Find("Universal Render Pipeline/Lit") ?? Shader.Find("Standard");
         Material lilyMat = (shader != null) ? new Material(shader) { name = "LilyPadMat" } : null;
@@ -270,9 +332,9 @@ public class RiverSpawner : MonoBehaviour
             float x2 = Random.Range(minX * 0.3f, maxX * 0.3f);
             float x3 = Random.Range(maxX * 0.3f, maxX);
 
-            Vector3 p1 = new Vector3(x1, 0.04f, z + Random.Range(-5f, 5f));
-            Vector3 p2 = new Vector3(x2, 0.04f, z + Random.Range(-5f, 5f));
-            Vector3 p3 = new Vector3(x3, 0.04f, z + Random.Range(-5f, 5f));
+            Vector3 p1 = new Vector3(x1, waterY + 0.04f, z + Random.Range(-5f, 5f));
+            Vector3 p2 = new Vector3(x2, waterY + 0.04f, z + Random.Range(-5f, 5f));
+            Vector3 p3 = new Vector3(x3, waterY + 0.04f, z + Random.Range(-5f, 5f));
 
             if (IsValidWaterPosition(p1)) SpawnSingleLilyCluster(p1, lilyMat, flowerMat);
             if (IsValidWaterPosition(p2)) SpawnSingleLilyCluster(p2, lilyMat, flowerMat);
@@ -336,6 +398,7 @@ public class RiverSpawner : MonoBehaviour
     public void SpawnChunkEntities(float chunkStartZ)
     {
         float chunkEndZ = chunkStartZ + 1500f;
+        float curWaterY = GetCurrentWaterLevel();
 
         // 해당 구간의 기존 엔티티 제거
         for (int i = transform.childCount - 1; i >= 0; i--)
@@ -359,16 +422,16 @@ public class RiverSpawner : MonoBehaviour
             float centerX = Random.Range(minX * 0.3f, maxX * 0.3f);
             float rightX = Random.Range(maxX * 0.3f, maxX);
 
-            TrySpawnBoostPad(new Vector3(leftX, 0.05f, z + Random.Range(-4f, 4f)));
-            TrySpawnBoostPad(new Vector3(centerX, 0.05f, z + Random.Range(-4f, 4f)));
-            TrySpawnBoostPad(new Vector3(rightX, 0.05f, z + Random.Range(-4f, 4f)));
+            TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, z + Random.Range(-4f, 4f)));
+            TrySpawnBoostPad(new Vector3(centerX, curWaterY + 0.05f, z + Random.Range(-4f, 4f)));
+            TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, z + Random.Range(-4f, 4f)));
         }
 
         // 2. 🪨 장애물 바위 Water_Surface 전폭 균등 분산 배치
         for (float z = chunkStartZ + 50f; z < chunkEndZ; z += Random.Range(20f, 38f))
         {
             float x = Random.Range(minX, maxX);
-            TrySpawnObstacleRock(new Vector3(x, 0f, z + Random.Range(-5f, 5f)));
+            TrySpawnObstacleRock(new Vector3(x, curWaterY, z + Random.Range(-5f, 5f)));
         }
 
         // 3. 🐟 물고기 Water_Surface 전폭 스폰 (좌/중/우)
@@ -377,13 +440,13 @@ public class RiverSpawner : MonoBehaviour
             float x1 = Random.Range(minX, minX * 0.3f);
             float x2 = Random.Range(minX * 0.3f, maxX * 0.3f);
             float x3 = Random.Range(maxX * 0.3f, maxX);
-            TrySpawnFish(new Vector3(x1, 0f, z), z);
-            TrySpawnFish(new Vector3(x2, 0f, z + Random.Range(6f, 16f)), z);
-            TrySpawnFish(new Vector3(x3, 0f, z + Random.Range(12f, 24f)), z);
+            TrySpawnFish(new Vector3(x1, curWaterY, z), z);
+            TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(6f, 16f)), z);
+            TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(12f, 24f)), z);
         }
 
         // 4. 🪷 연잎 군락 Water_Surface 전폭 풍성 생성
-        CreateLilyPadsGrid(minX, maxX, chunkStartZ + 20f, chunkEndZ - 20f);
+        CreateLilyPadsGrid(minX, maxX, chunkStartZ + 20f, chunkEndZ - 20f, curWaterY);
     }
 
     /// <summary>
@@ -425,14 +488,16 @@ public class RiverSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 상공에서 수직 레이캐스트: 지형(Ground)이 수면(Y=0)보다 높이 솟아 있으면 False (땅속 스폰 100% 방지)
+    /// 상공에서 수직 레이캐스트: 지형(Ground)이 수면보다 높이 솟아 있으면 False (땅속 스폰 100% 방지)
     /// </summary>
     private bool IsValidWaterPosition(Vector3 pos)
     {
-        Vector3 rayOrigin = new Vector3(pos.x, raycastHeight, pos.z);
-        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, raycastHeight + 5f, groundLayerMask))
+        float curWater = GetCurrentWaterLevel();
+        float rayStart = Mathf.Max(pos.y + 30f, curWater + 50f);
+        Vector3 rayOrigin = new Vector3(pos.x, rayStart, pos.z);
+        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 80f, groundLayerMask))
         {
-            if (hit.point.y > 0.25f) return false;
+            if (hit.point.y > curWater + 0.35f) return false;
         }
         return true;
     }

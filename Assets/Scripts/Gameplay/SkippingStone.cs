@@ -10,19 +10,27 @@ public class SkippingStone : MonoBehaviour
     public GameObject customStonePrefab;
 
     [Header("물리 및 이동 속성")]
-    public float forwardPower = 23f;
+    [Tooltip("전방 투척 파워 (수평 속도, m/s)")]
+    public float forwardPower = 13.0f;
 
-    [Tooltip("초기 발사 시 위쪽으로 솟구치는 상승력 (첫 착수까지 1.2~1.4초 시원한 포물선)")]
-    public float initialUpwardForce = 5.5f;
+    [Tooltip("초기 발사 시 위쪽으로 솟구치는 상승력")]
+    public float initialUpwardForce = 4.2f;
 
     [Tooltip("수면 바운스 시 위로 튀어오르는 기본 반사력 기준값")]
-    public float baseBounceUpForce = 5.2f;
+    public float baseBounceUpForce = 4.0f;
 
     [Tooltip("최대 수평 이동 속도 상한선")]
-    public float maxHorizontalSpeed = 36f;
+    public float maxHorizontalSpeed = 18.0f;
 
-    public float gravityScale = 1.35f;
+    [Tooltip("중력 가속도 배율")]
+    public float gravityScale = 1.45f;
+
+    [Tooltip("공기 저항 감쇠")]
     public float airDrag = 0.998f;
+
+    [Header("비행 시 비주얼 연출")]
+    [Tooltip("비행 중 돌의 시각적 확대 배율 (기본: 1.0f 원본 크기 유지, 필요시 확대 가능)")]
+    public float inFlightVisualScale = 1.0f;
 
     [Header("타이밍 판정 관용도 (기본 기준값)")]
     [Tooltip("타이밍 알림 및 판정이 시작되는 수면 위 높이 (m)")]
@@ -50,6 +58,16 @@ public class SkippingStone : MonoBehaviour
     public Material stoneCustomMaterial;
     public Color trailStartColor = new Color(0.25f, 0.85f, 1.0f, 0.40f);
     public Color trailEndColor = new Color(0.15f, 0.70f, 1.0f, 0f);
+
+    [Header("🎯 리듬 링 비주얼 세부 설정")]
+    [Tooltip("수면 링의 선 두께")]
+    public float ringLineWidth = 0.032f;
+    [Tooltip("퍼펙트 타깃 링의 기본 반경(m)")]
+    public float ringTargetRadius = 0.29f;
+    [Tooltip("바깥 수축 링의 시작 최대 배율")]
+    public float ringMaxMultiplier = 5.2f;
+    [Tooltip("돌-수면 수직 가이드 레이저 선 두께")]
+    public float dropLineWidth = 0.006f;
 
     [Header("상태 모니터링")]
     public bool isThrown = false;
@@ -394,15 +412,23 @@ public class SkippingStone : MonoBehaviour
         if (visualChild == null) yield break;
 
         visualChild.localScale = Vector3.one;
+
+        // 배율이 1.0f에 가까우면 부드럽게 유지
+        if (Mathf.Abs(inFlightVisualScale - 1.0f) < 0.01f)
+        {
+            visualChild.localScale = Vector3.one;
+            yield break;
+        }
+
         float elapsed = 0f;
-        float duration = 1.0f;
-        float targetScale = 4.4f;
+        float duration = 0.8f;
+        float targetScale = inFlightVisualScale;
 
         while (elapsed < duration)
         {
             elapsed += Time.deltaTime;
             float rawT = Mathf.Clamp01(elapsed / duration);
-            float easeProgress = Mathf.Pow(rawT, 2.5f);
+            float easeProgress = Mathf.Pow(rawT, 2.0f);
             float s = Mathf.Lerp(1.0f, targetScale, easeProgress);
             if (visualChild != null)
             {

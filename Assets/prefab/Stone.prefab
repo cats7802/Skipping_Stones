@@ -34,7 +34,7 @@ Transform:
   m_Children:
   - {fileID: 8721514691103881942}
   m_Father: {fileID: 0}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+  m_LocalEulerAnglesHint: {x: 90, y: 0, z: 0}
 --- !u!65 &1761512339604967842
 BoxCollider:
   m_ObjectHideFlags: 0
@@ -96,16 +96,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStone
   customStonePrefab: {fileID: 7764890063275383968}
-  forwardPower: 23
-  initialUpwardForce: 5.5
-  baseBounceUpForce: 5.2
-  maxHorizontalSpeed: 36
-  gravityScale: 1.35
+  forwardPower: 13
+  initialUpwardForce: 4.2
+  baseBounceUpForce: 4
+  maxHorizontalSpeed: 18
+  gravityScale: 1.45
   airDrag: 0.998
-  timingWindowHeight: 2.4
-  perfectDistance: 0.7
-  greatDistance: 1.45
-  goodDistance: 2.4
+  inFlightVisualScale: 1
+  timingWindowHeight: 2.88
+  perfectDistance: 0.797
+  greatDistance: 1.6
+  goodDistance: 2.79
   minSkimSkips: 5
   maxSkimSkips: 30
   trail: {fileID: 0}
@@ -113,6 +114,10 @@ MonoBehaviour:
   stoneCustomMaterial: {fileID: 0}
   trailStartColor: {r: 0.25, g: 0.85, b: 1, a: 0.4}
   trailEndColor: {r: 0.15, g: 0.7, b: 1, a: 0}
+  ringLineWidth: 0.0921
+  ringTargetRadius: 0.377
+  ringMaxMultiplier: 6.23
+  dropLineWidth: 0.009
   isThrown: 0
   isSunk: 0
   isCrashed: 0
@@ -123,6 +128,7 @@ MonoBehaviour:
   skimDistance: 0
   isInTimingWindow: 0
   bounceHistory: []
+  waterLevel: 0
 --- !u!1001 &9116325896878660925
 PrefabInstance:
   m_ObjectHideFlags: 0

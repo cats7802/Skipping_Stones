@@ -61,6 +61,20 @@ public class RhythmRingIndicator : MonoBehaviour
 
     private void CreateRingLines()
     {
+        // 🌟 기존에 생성된 링 오브젝트가 씬에 남아있으면 즉시 정리 (중복 생성 방지)
+        if (innerObj != null) Destroy(innerObj);
+        if (outerObj != null) Destroy(outerObj);
+        if (dropObj != null) Destroy(dropObj);
+
+        foreach (var oldInner in GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
+        {
+            if (oldInner != null && (oldInner.name == "InnerTargetRing_WaterFixed" || oldInner.name == "OuterShrinkingRing_WaterFixed" || oldInner.name == "VerticalDropLine_Guide"))
+            {
+                if (Application.isPlaying) Destroy(oldInner);
+                else DestroyImmediate(oldInner);
+            }
+        }
+
         Shader lineShader = Shader.Find("Universal Render Pipeline/Particles/Unlit")
                             ?? Shader.Find("Sprites/Default")
                             ?? Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply");
@@ -86,8 +100,8 @@ public class RhythmRingIndicator : MonoBehaviour
         dropLine = dropObj.AddComponent<LineRenderer>();
         dropLine.useWorldSpace = true;
         dropLine.positionCount = 2;
-        dropLine.startWidth = 0.005f;
-        dropLine.endWidth = 0.008f;
+        dropLine.startWidth = 0.006f;
+        dropLine.endWidth = 0.009f;
         dropLine.material = lineMat;
         dropLine.enabled = false;
     }
@@ -143,8 +157,11 @@ public class RhythmRingIndicator : MonoBehaviour
         // 수면 위 0.05m 높이에 정확히 안착
         Vector3 waterImpactCenter = new Vector3(stone.transform.position.x, waterLevel + 0.05f, stone.transform.position.z);
 
-        float compensatedTargetRadius = targetRingRadius;
-        float compensatedLineWidth = lineWidth;
+        // SkippingStone 인스펙터 설정값 실시간 1:1 동기화
+        float compensatedTargetRadius = (stone != null && stone.ringTargetRadius > 0.01f) ? stone.ringTargetRadius : targetRingRadius;
+        float compensatedLineWidth = (stone != null && stone.ringLineWidth > 0.001f) ? stone.ringLineWidth : lineWidth;
+        float curMaxMultiplier = (stone != null && stone.ringMaxMultiplier > 1.0f) ? stone.ringMaxMultiplier : maxRingMultiplier;
+        float curDropLineWidth = (stone != null && stone.dropLineWidth > 0.001f) ? stone.dropLineWidth : 0.006f;
 
         if (innerRing != null)
         {
@@ -162,12 +179,19 @@ public class RhythmRingIndicator : MonoBehaviour
 
         DrawFlatCircle(innerRing, waterImpactCenter, compensatedTargetRadius, currentColor);
 
-        float currentOuterRadius = compensatedTargetRadius * Mathf.Lerp(1.0f, maxRingMultiplier, ratio);
+        float currentOuterRadius = compensatedTargetRadius * Mathf.Lerp(1.0f, curMaxMultiplier, ratio);
         DrawFlatCircle(outerRing, waterImpactCenter + Vector3.up * 0.005f, currentOuterRadius, currentColor);
 
+        // 🌟 돌에서 수면 링 중심까지 수직으로 떨어지는 가이드 레이저 라인 활성화
         if (dropLine != null)
         {
-            dropLine.enabled = false;
+            dropLine.enabled = true;
+            dropLine.startWidth = curDropLineWidth;
+            dropLine.endWidth = curDropLineWidth * 1.5f;
+            dropLine.startColor = currentColor;
+            dropLine.endColor = currentColor;
+            dropLine.SetPosition(0, stone.transform.position);
+            dropLine.SetPosition(1, waterImpactCenter);
         }
     }
 

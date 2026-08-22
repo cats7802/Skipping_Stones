@@ -71,11 +71,20 @@ public class FloatingTargetZone : MonoBehaviour
         DestroyImmediate(centerRing.GetComponent<Collider>());
     }
 
+    private float baseSpawnY = 16.04f;
+    private bool hasInitializedY = false;
+
     private void Update()
     {
         if (isHit) return;
 
-        float bobY = 0.04f + Mathf.Sin(Time.time * 2f + transform.position.x) * 0.02f;
+        if (!hasInitializedY)
+        {
+            baseSpawnY = transform.position.y;
+            hasInitializedY = true;
+        }
+
+        float bobY = baseSpawnY + Mathf.Sin(Time.time * 2f + transform.position.x) * 0.02f;
         transform.position = new Vector3(transform.position.x, bobY, transform.position.z);
 
         if (stoneTrans == null)
@@ -90,7 +99,7 @@ public class FloatingTargetZone : MonoBehaviour
         Vector2 tPos = new Vector2(transform.position.x, transform.position.z);
         float dist = Vector2.Distance(sPos, tPos);
 
-        if (dist <= targetRadius && stonePos.y < 1.2f && stonePos.y > -0.3f)
+        if (dist <= targetRadius && Mathf.Abs(stonePos.y - transform.position.y) < 1.2f)
         {
             HitTarget(dist);
         }

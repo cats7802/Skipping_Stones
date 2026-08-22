@@ -347,19 +347,65 @@ public class StoneThrowerCharacter : MonoBehaviour
 
     public void InitializeCharacter()
     {
-        RefreshPlayerPositionGuide();
-        int total = GetTotalWaypointsCount();
-        currentWaypointIndex = total > 1 ? total / 2 : 0;
-        ApplyCurrentWaypointTarget();
-        basePosition = currentPosition;
-
-        transform.position = basePosition;
-        transform.rotation = baseRotation;
-        HoldZeroFramePose();
         FindHandAndDummySocket(true);
         EnsureHandDummyStone();
         DetectAnimationClipFps();
+
+        var gc = FindAnyObjectByType<GameController>();
+        if (gc == null || gc.currentMode == GameController.GameMode.TargetAccuracy)
+        {
+            RefreshPlayerPositionGuide();
+            int total = GetTotalWaypointsCount();
+            currentWaypointIndex = total > 1 ? total / 2 : 0;
+            ApplyCurrentWaypointTarget();
+            basePosition = currentPosition;
+            transform.position = basePosition;
+            transform.rotation = baseRotation;
+        }
+
         HoldZeroFramePose();
+    }
+
+    public void SetHandStonePrefab(GameObject stonePrefab)
+    {
+        if (dummy01Socket == null) FindHandAndDummySocket(true);
+        Transform parentSocket = (dummy01Socket != null) ? dummy01Socket : rightHandBone;
+        if (parentSocket == null) return;
+
+        Transform existing = parentSocket.Find("HandDummyStone");
+        if (existing != null)
+        {
+            if (Application.isPlaying) Destroy(existing.gameObject);
+            else DestroyImmediate(existing.gameObject);
+        }
+
+        GameObject prefabToUse = stonePrefab;
+        if (prefabToUse == null) prefabToUse = Resources.Load<GameObject>("Stone");
+#if UNITY_EDITOR
+        if (prefabToUse == null)
+        {
+            prefabToUse = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/prefab/Stone.prefab");
+        }
+#endif
+        if (prefabToUse != null)
+        {
+            GameObject dummyObj = Instantiate(prefabToUse, parentSocket);
+            dummyObj.name = "HandDummyStone";
+            dummyObj.transform.localPosition = stoneOffset;
+            dummyObj.transform.localRotation = Quaternion.Euler(stoneDummyRotationEuler);
+            dummyObj.transform.localScale = Vector3.one;
+
+            // 물리 콜라이더 및 컴포넌트 제거 (순수 시각 더미용)
+            foreach (var col in dummyObj.GetComponentsInChildren<Collider>(true))
+            {
+                if (Application.isPlaying) Destroy(col);
+                else DestroyImmediate(col);
+            }
+            var ss = dummyObj.GetComponent<SkippingStone>();
+            if (ss != null) Destroy(ss);
+            var rb = dummyObj.GetComponent<Rigidbody>();
+            if (rb != null) Destroy(rb);
+        }
     }
 
     private void EnsureHandDummyStone()
@@ -367,32 +413,7 @@ public class StoneThrowerCharacter : MonoBehaviour
         Transform parentSocket = (dummy01Socket != null) ? dummy01Socket : rightHandBone;
         if (parentSocket != null && parentSocket.Find("HandDummyStone") == null)
         {
-            GameObject stonePrefab = Resources.Load<GameObject>("Stone");
-#if UNITY_EDITOR
-            if (stonePrefab == null)
-            {
-                stonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/prefab/Stone.prefab");
-            }
-#endif
-            if (stonePrefab != null)
-            {
-                GameObject dummyObj = Instantiate(stonePrefab, parentSocket);
-                dummyObj.name = "HandDummyStone";
-                dummyObj.transform.localPosition = stoneOffset;
-                dummyObj.transform.localRotation = Quaternion.Euler(stoneDummyRotationEuler);
-                dummyObj.transform.localScale = Vector3.one;
-
-                // 물리 콜라이더 및 컴포넌트 제거 (순수 시각 더미용)
-                foreach (var col in dummyObj.GetComponentsInChildren<Collider>(true))
-                {
-                    if (Application.isPlaying) Destroy(col);
-                    else DestroyImmediate(col);
-                }
-                var ss = dummyObj.GetComponent<SkippingStone>();
-                if (ss != null) Destroy(ss);
-                var rb = dummyObj.GetComponent<Rigidbody>();
-                if (rb != null) Destroy(rb);
-            }
+            SetHandStonePrefab(null);
         }
     }
 

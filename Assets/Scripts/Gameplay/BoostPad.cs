@@ -64,7 +64,7 @@ public class BoostPad : MonoBehaviour
         Vector3 stonePos = stoneTrans.position;
         Vector2 stoneP = new Vector2(stonePos.x, stonePos.z);
         Vector2 padP = new Vector2(transform.position.x, transform.position.z);
-        if (Vector2.Distance(stoneP, padP) < 3.2f && stonePos.y < 1.6f && stonePos.y > -0.5f)
+        if (Vector2.Distance(stoneP, padP) < 3.2f && Mathf.Abs(stonePos.y - transform.position.y) < 1.5f)
         {
             TriggerBoost();
         }
