@@ -20,6 +20,13 @@
 | 8 | **수면 셰이더/머티리얼** | `Assets/3D/BG/Water_MAT.mat` | `Assets/Resources/Water_MAT.mat` | ✅ 동기화됨 |
 | 9 | **스카이박스 머티리얼** | `Assets/Materials/Skybox_Procedural_MAT.mat` | `Assets/Resources/Skybox_Procedural_MAT.mat` | ✅ 동기화됨 |
 | 10 | **오디오 사운드** | `Assets/Resources/Audio/` (효과음 9종) | `Assets/Resources/Audio/` | ✅ 자체 보유 |
+| 11 | **부스트 패드 프리팹** | `Assets/prefab/BoostPad.prefab` | `Assets/Resources/BoostPad.prefab` | ✅ 등록 완료 |
+| 12 | **장애물 바위 프리팹** | `Assets/prefab/ObstacleRock.prefab` | `Assets/Resources/ObstacleRock.prefab` | ✅ 등록 완료 |
+| 13 | **타겟 과녁 프리팹** | `Assets/prefab/TargetZone.prefab` | `Assets/Resources/TargetZone.prefab` | ✅ 등록 완료 |
+| 14 | **친구 깃발 프리팹** | `Assets/prefab/FriendFlag.prefab` | `Assets/Resources/FriendFlag.prefab` | ✅ 등록 완료 |
+| 15 | **점핑 물고기 프리팹** | `Assets/prefab/JumpingFish.prefab` | `Assets/Resources/JumpingFish.prefab` | ✅ 등록 완료 |
+| 16 | **연잎 군락 프리팹** | `Assets/prefab/LilyPadCluster.prefab` | `Assets/Resources/LilyPadCluster.prefab` | ✅ 등록 완료 |
+| 17 | **스타일라이즈드 수면 머티리얼** | `Assets/Materials/M_StylizedWater.mat` | `Assets/Resources/M_StylizedWater.mat` | ✅ 동기화됨 |
 
 ---
 
