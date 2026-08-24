@@ -56,7 +56,13 @@
 ---
 
 ## 🎯 3. 다음 작업 예정 항목 (Next Action Items)
+- **⚡ [최우선 수정] 리듬 판정 및 입력 랙/연타 방지 개편 ([SkippingStone.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Gameplay/SkippingStone.cs) / [RhythmRingIndicator.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Visuals/RhythmRingIndicator.cs))**:
+  - **1) 단 1회 입력 소비 (Single-Shot Input Consumption)**: 한 번 하강할 때 오직 1번의 터치만 판정 기회로 인정 (연타 꼼수 시 첫 터치로 인한 Early/Miss 처리로 연타 차단).
+  - **2) 수면 도달 예상 시간(Time-to-Impact) 기반 판정 전환**: 기존 높이/거리(`distToWater`) 기준의 불균일 판정을 탈피하고, `거리 / 수직속도` 시간(초) 기반(Perfect: ±40ms, Great: ±90ms)으로 고정하여 속도와 무관한 균일하고 쫀득한 리듬 타격감 보장.
+  - **3) 리듬 링 떨림/중복 생성 버그 수정**: 리듬 링 인디케이터가 떨려 보이거나 여러 개가 겹쳐서 스폰/표시되는 렌더링/풀링 버그 전면 점검 및 단일 싱글톤 제어로 안정화.
 - **맵 스트리밍 시스템 개편 및 최적화**:
   - `LakeEnvironmentManager`의 1,500m 청크 릴레이 방식 점검 및 다중 바이옴 모듈형 청크 구조화 논의.
 - **수면 인터랙션 오브젝트 규칙 정립**:
   - 부스트/바위/물고기 충돌 시 물리 및 점수 피드백 규칙 체계화.
+
+

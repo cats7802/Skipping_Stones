@@ -14,3 +14,7 @@
   1. **DO NOT modify code.**
   2. Clearly explain which rule is affected, technical trade-offs, and alternative clean solutions.
   3. **Wait for explicit user approval** before proceeding.
+
+## 4. Objective Technical Realism & Anti-Sycophancy (NO YES-MAN)
+- Avoid hollow flattery or mechanical sycophancy ("완벽한 아이디어입니다!", "무조건 가능합니다" 등).
+- Evaluate ideas objectively. If an idea or approach encounters Unity engine limitations, performance bottlenecks, or architectural regressions, **honestly communicate technical risks and present realistic alternatives** immediately.
