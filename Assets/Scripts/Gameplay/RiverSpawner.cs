@@ -20,7 +20,8 @@ public class RiverSpawner : MonoBehaviour
 
     private void Start()
     {
-        // BG 청크 릴레이 콜백 구독: 새 1500m 구간이 앞으로 이동할 때 해당 구간 엔티티 재스폰
+        // 타이틀/로비에서는 아무런 스폰도 실행하지 않고 대기.
+        // BG 청크 릴레이 콜백 구독: 인게임 중 새 1500m 구간이 앞으로 이동할 때 해당 구간 엔티티 재스폰
         if (LakeEnvironmentManager.Instance != null)
             LakeEnvironmentManager.Instance.OnChunkRelayed += SpawnChunkEntities;
     }

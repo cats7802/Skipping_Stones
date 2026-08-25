@@ -249,8 +249,29 @@ public class GameController : MonoBehaviour
         currentSessionData = session ?? new MatchSessionData();
         currentMode = currentSessionData.gameMode;
 
+        GameObject stonePrefab = currentSessionData.stonePrefabOverride;
+        if (stonePrefab == null && !string.IsNullOrEmpty(currentSessionData.stoneId))
+        {
+            var dm = GameDataManager.Instance;
+            if (dm != null && dm.stoneCatalog != null)
+            {
+                var info = dm.stoneCatalog.Find(s => s.id == currentSessionData.stoneId || (s.prefabPath != null && s.prefabPath.Contains(currentSessionData.stoneId)));
+                if (info != null && !string.IsNullOrEmpty(info.prefabPath))
+                {
+#if UNITY_EDITOR
+                    stonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(info.prefabPath);
+#else
+                    string rPath = info.prefabPath;
+                    if (rPath.StartsWith("Assets/prefab/")) rPath = rPath.Substring("Assets/prefab/".Length);
+                    if (rPath.EndsWith(".prefab")) rPath = rPath.Substring(0, rPath.Length - ".prefab".Length);
+                    stonePrefab = Resources.Load<GameObject>(rPath);
+#endif
+                }
+            }
+        }
+        if (stonePrefab == null) stonePrefab = defaultStonePrefab;
+
         GameObject charPrefab = currentSessionData.characterPrefabOverride != null ? currentSessionData.characterPrefabOverride : defaultCharacterPrefab;
-        GameObject stonePrefab = currentSessionData.stonePrefabOverride != null ? currentSessionData.stonePrefabOverride : defaultStonePrefab;
         GameObject mapPrefab = currentSessionData.mapPrefabOverride != null ? currentSessionData.mapPrefabOverride : defaultMapPrefab;
 
         StartGameSession(charPrefab, stonePrefab, mapPrefab, currentMode);
@@ -261,8 +282,8 @@ public class GameController : MonoBehaviour
         currentMode = mode;
         if (stonePrefab != null) defaultStonePrefab = stonePrefab;
 
-        SetupCharacter(charPrefab);
         SetupMapEnvironment(mapPrefab);
+        SetupCharacter(charPrefab);
         ResetToPositioning();
     }
 
@@ -304,6 +325,12 @@ public class GameController : MonoBehaviour
         }
 
         RiverSpawner spawner = FindAnyObjectByType<RiverSpawner>();
+        if (spawner == null)
+        {
+            GameObject spawnerObj = new GameObject("[Auto_RiverSpawner]");
+            spawner = spawnerObj.AddComponent<RiverSpawner>();
+        }
+
         if (spawner != null)
         {
             if (character != null)
@@ -354,16 +381,19 @@ public class GameController : MonoBehaviour
         if (character == null) return;
         ResolveSceneReferences();
 
-        if (currentMode == GameMode.TargetAccuracy && _playerPositionRoot != null && _playerPositionRoot.childCount > 0)
+        if (currentMode == GameMode.TargetAccuracy)
         {
-            int safeIdx = Mathf.Clamp(targetPlatformIndex, 0, _playerPositionRoot.childCount - 1);
-            Transform targetSpawn = _playerPositionRoot.GetChild(safeIdx);
+            character.RefreshPlayerPositionGuide();
+            int total = character.GetTotalWaypointsCount();
+            int safeIdx = (total > 1) ? Mathf.Clamp(targetPlatformIndex, 0, total - 1) : 0;
+            character.SetWaypointIndex(safeIdx);
 
-            character.basePosition = targetSpawn.position;
-            character.currentPosition = targetSpawn.position;
-            character.baseRotation = targetSpawn.rotation;
-            character.transform.position = targetSpawn.position;
-            character.transform.rotation = targetSpawn.rotation;
+            Vector3 spawnPos = character.GetWaypointWorldPos(safeIdx);
+            character.basePosition = spawnPos;
+            character.currentPosition = spawnPos;
+            character.baseRotation = Quaternion.Euler(0f, 90f, 0f);
+            character.transform.position = spawnPos;
+            character.transform.rotation = character.baseRotation;
             return;
         }
 

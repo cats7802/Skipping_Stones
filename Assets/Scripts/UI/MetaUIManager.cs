@@ -58,6 +58,7 @@ namespace SkippingStones.UI
         [Header("로비 3D 쇼케이스 프리팹 & 카메라")]
         [SerializeField] private GameObject lobbyPrefab;
         private GameObject spawnedLobbyInstance;
+        private SkippingStones.Visuals.LobbyStoneShowcaseController spawnedLobbyController;
         private Camera cachedMainCamera;
 
         // 9:16 가상 좌표계 변환 필드
@@ -195,6 +196,29 @@ namespace SkippingStones.UI
                     spawnedLobbyInstance.SetActive(true);
                 }
 
+                // Lobby 3D 스톤 셀렉터 컨트롤러 캐싱
+                if (spawnedLobbyInstance != null)
+                {
+                    spawnedLobbyController = spawnedLobbyInstance.GetComponentInChildren<SkippingStones.Visuals.LobbyStoneShowcaseController>();
+                    if (spawnedLobbyController == null)
+                    {
+                        spawnedLobbyController = spawnedLobbyInstance.AddComponent<SkippingStones.Visuals.LobbyStoneShowcaseController>();
+                    }
+
+                    if (spawnedLobbyController != null)
+                    {
+                        spawnedLobbyController.OnSelectedStoneChanged += (idx, prefab) =>
+                        {
+                            var dm = GameDataManager.Instance;
+                            if (dm != null && prefab != null)
+                            {
+                                dm.UserData.selectedStoneId = prefab.name;
+                                dm.SaveUserData();
+                            }
+                        };
+                    }
+                }
+
                 // 2. 메인 카메라 비활성화 (로비 카메라 우선 구동)
                 if (cachedMainCamera != null)
                 {
@@ -209,6 +233,7 @@ namespace SkippingStones.UI
                     Destroy(spawnedLobbyInstance);
                     spawnedLobbyInstance = null;
                 }
+                spawnedLobbyController = null;
 
                 if (cachedMainCamera != null)
                 {
@@ -557,9 +582,7 @@ namespace SkippingStones.UI
                 }
             }
 
-            // 2. 하단 3D 스톤 셀렉터 다이얼 좌우 안내 화살표 (다이얼 링 지점 Y=865, 좌: 110, 우: 275)
-            GUI.Label(new Rect(110, 865, 50, 50), "⇦", _titleStyle);
-            GUI.Label(new Rect(275, 865, 50, 50), "⇨", _titleStyle);
+
 
             // 3. 하단 독 바 & GO 버튼 (최하단 Y=1150으로 바짝 밀착)
             if (DrawResponsiveButton(new Rect(30, 1150, 130, 95), "🛒\n상점", _glassBtnStyle))
@@ -621,11 +644,19 @@ namespace SkippingStones.UI
 
             if (DrawResponsiveButton(new Rect(150, 140, 250, 60), isLong ? "🔘 1500m 원거리" : "⚪ 1500m 원거리", isLong ? _tabActiveStyle : _tabInactiveStyle))
             {
-                if (dm != null) dm.UserData.selectedGameMode = GameController.GameMode.LongDistance;
+                if (dm != null)
+                {
+                    dm.UserData.selectedGameMode = GameController.GameMode.LongDistance;
+                    dm.SaveUserData();
+                }
             }
             if (DrawResponsiveButton(new Rect(410, 140, 270, 60), !isLong ? "🔘 🎯 강 건너기(타깃)" : "⚪ 🎯 강 건너기(타깃)", !isLong ? _tabActiveStyle : _tabInactiveStyle))
             {
-                if (dm != null) dm.UserData.selectedGameMode = GameController.GameMode.TargetAccuracy;
+                if (dm != null)
+                {
+                    dm.UserData.selectedGameMode = GameController.GameMode.TargetAccuracy;
+                    dm.SaveUserData();
+                }
             }
 
             // 맵 메타 정보 및 썸네일 결정

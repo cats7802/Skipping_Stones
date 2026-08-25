@@ -42,16 +42,6 @@ public class StoneThrowerCharacter : MonoBehaviour
         InitializeCharacter();
     }
 
-    private void Start()
-    {
-        InitializeCharacter();
-    }
-
-    private void OnEnable()
-    {
-        InitializeCharacter();
-    }
-
     [Header("PP(Player_Position) 강변 가이드 리본")]
     public Transform playerPositionMeshObj;
     [Tooltip("지형 표면과 발바닥 사이의 추가 높이 오프셋")]
@@ -350,19 +340,6 @@ public class StoneThrowerCharacter : MonoBehaviour
         FindHandAndDummySocket(true);
         EnsureHandDummyStone();
         DetectAnimationClipFps();
-
-        var gc = FindAnyObjectByType<GameController>();
-        if (gc == null || gc.currentMode == GameController.GameMode.TargetAccuracy)
-        {
-            RefreshPlayerPositionGuide();
-            int total = GetTotalWaypointsCount();
-            currentWaypointIndex = total > 1 ? total / 2 : 0;
-            ApplyCurrentWaypointTarget();
-            basePosition = currentPosition;
-            transform.position = basePosition;
-            transform.rotation = baseRotation;
-        }
-
         HoldZeroFramePose();
     }
 
@@ -372,11 +349,14 @@ public class StoneThrowerCharacter : MonoBehaviour
         Transform parentSocket = (dummy01Socket != null) ? dummy01Socket : rightHandBone;
         if (parentSocket == null) return;
 
-        Transform existing = parentSocket.Find("HandDummyStone");
-        if (existing != null)
+        // 🌟 기존에 소켓 밑에 남아있던 모든 HandDummyStone 오브젝트들을 즉시 완전 삭제 (중복 생성 방지)
+        for (int i = parentSocket.childCount - 1; i >= 0; i--)
         {
-            if (Application.isPlaying) Destroy(existing.gameObject);
-            else DestroyImmediate(existing.gameObject);
+            Transform child = parentSocket.GetChild(i);
+            if (child.name.StartsWith("HandDummyStone") || child.name.Contains("Stone"))
+            {
+                DestroyImmediate(child.gameObject);
+            }
         }
 
         GameObject prefabToUse = stonePrefab;
@@ -395,16 +375,29 @@ public class StoneThrowerCharacter : MonoBehaviour
             dummyObj.transform.localRotation = Quaternion.Euler(stoneDummyRotationEuler);
             dummyObj.transform.localScale = Vector3.one;
 
-            // 물리 콜라이더 및 컴포넌트 제거 (순수 시각 더미용)
-            foreach (var col in dummyObj.GetComponentsInChildren<Collider>(true))
+            // 1. 커스텀 스크립트 먼저 제거하여 의존성 해제
+            var customScripts = dummyObj.GetComponentsInChildren<MonoBehaviour>(true);
+            foreach (var s in customScripts)
             {
-                if (Application.isPlaying) Destroy(col);
-                else DestroyImmediate(col);
+                if (s == null) continue;
+                if (Application.isPlaying) DestroyImmediate(s);
             }
-            var ss = dummyObj.GetComponent<SkippingStone>();
-            if (ss != null) Destroy(ss);
-            var rb = dummyObj.GetComponent<Rigidbody>();
-            if (rb != null) Destroy(rb);
+
+            // 2. 콜라이더 제거
+            var cols = dummyObj.GetComponentsInChildren<Collider>(true);
+            foreach (var col in cols)
+            {
+                if (col == null) continue;
+                if (Application.isPlaying) DestroyImmediate(col);
+            }
+
+            // 3. 리지드바디 마지막 제거
+            var rbs = dummyObj.GetComponentsInChildren<Rigidbody>(true);
+            foreach (var rb in rbs)
+            {
+                if (rb == null) continue;
+                if (Application.isPlaying) DestroyImmediate(rb);
+            }
         }
     }
 
@@ -413,7 +406,9 @@ public class StoneThrowerCharacter : MonoBehaviour
         Transform parentSocket = (dummy01Socket != null) ? dummy01Socket : rightHandBone;
         if (parentSocket != null && parentSocket.Find("HandDummyStone") == null)
         {
-            SetHandStonePrefab(null);
+            var gc = FindAnyObjectByType<GameController>();
+            GameObject prefab = (gc != null && gc.defaultStonePrefab != null) ? gc.defaultStonePrefab : null;
+            SetHandStonePrefab(prefab);
         }
     }
 

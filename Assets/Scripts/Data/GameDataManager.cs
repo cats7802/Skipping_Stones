@@ -17,6 +17,7 @@ namespace SkippingStones.Data
         [Header("마스터 카탈로그")]
         public List<CharacterInfoData> characterCatalog = new List<CharacterInfoData>();
         public List<MapInfoData> mapCatalog = new List<MapInfoData>();
+        public List<StoneInfoData> stoneCatalog = new List<StoneInfoData>();
 
         public event Action<UserPersistentData> OnUserDataChanged;
         public event Action<int, int> OnStaminaChanged; // current, max
@@ -125,6 +126,49 @@ namespace SkippingStones.Data
                     difficultyStars = 5,
                     courseLength = 4000f,
                     isUnlocked = false
+                });
+            }
+
+            if (stoneCatalog.Count == 0)
+            {
+                stoneCatalog.Add(new StoneInfoData
+                {
+                    id = "default",
+                    name = "기본 조약돌",
+                    description = "표면이 매끄러워 물수제비에 최적화된 기본 돌",
+                    prefabPath = "Assets/prefab/Stone/Stone.prefab",
+                    unlockGoldCost = 0,
+                    isUnlocked = true
+                });
+
+                stoneCatalog.Add(new StoneInfoData
+                {
+                    id = "flat_slate",
+                    name = "납작 청석판",
+                    description = "아주 얇고 넓어 완벽한 수면 반사력을 자랑하는 파란 돌",
+                    prefabPath = "Assets/prefab/Stone/Stone_Blue.prefab",
+                    unlockGoldCost = 0,
+                    isUnlocked = true
+                });
+
+                stoneCatalog.Add(new StoneInfoData
+                {
+                    id = "emerald_pebble",
+                    name = "에메랄드 자갈",
+                    description = "호숫가 깊은 곳에서 발견되는 초록빛 행운의 돌",
+                    prefabPath = "Assets/prefab/Stone/Stone_Green.prefab",
+                    unlockGoldCost = 2000,
+                    isUnlocked = true // TODO: 테스트 후 false로 복원
+                });
+
+                stoneCatalog.Add(new StoneInfoData
+                {
+                    id = "crimson_flint",
+                    name = "붉은 부싯돌",
+                    description = "화산 지대에서 채집된 뜨거운 붉은 돌. 강력한 바운스를 자랑한다.",
+                    prefabPath = "Assets/prefab/Stone/Stone_red.prefab",
+                    unlockGoldCost = 5000,
+                    isUnlocked = true // TODO: 테스트 후 false로 복원
                 });
             }
         }

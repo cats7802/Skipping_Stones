@@ -29,6 +29,18 @@ namespace SkippingStones.Data
         public bool isUnlocked = true;
     }
 
+    [Serializable]
+    public class StoneInfoData
+    {
+        public string id;
+        public string name;
+        public string description;
+        /// <summary>프리팹 경로 (Assets/prefab/Stone/xxx.prefab)</summary>
+        public string prefabPath;
+        public int unlockGoldCost = 0;
+        public bool isUnlocked = false;
+    }
+
     /// <summary>
     /// 메타 UI에서 인게임(GameController)으로 주입하는 일회성 매치 시작 파라미터 DTO
     /// </summary>

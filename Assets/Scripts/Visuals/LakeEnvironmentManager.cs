@@ -89,12 +89,25 @@ public class LakeEnvironmentManager : MonoBehaviour
     private void Start()
     {
         InitReferences();
+        // 타이틀/로비에서는 인게임 배경 청크를 사전 생성하지 않고 대기
+        // 인게임 세션 시작 시 GameController -> SetupEnvironmentForSession()에서 호출
+    }
+
+    public void SetupEnvironmentForSession()
+    {
         ResetEnvironment();
         SetupBGChunks();
     }
 
     private void Update()
     {
+        // 인게임 상태가 아닐 때는 배경 스트리밍 갱신 중단
+        if (SkippingStones.UI.MetaUIManager.Instance != null &&
+            SkippingStones.UI.MetaUIManager.Instance.currentScreen != SkippingStones.UI.MetaScreen.InGame)
+        {
+            return;
+        }
+
         UpdateBGStreaming();
     }
 
