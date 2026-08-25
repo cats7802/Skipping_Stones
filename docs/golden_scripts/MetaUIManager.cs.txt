@@ -1,4 +1,5 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using SkippingStones.Data;
 using SkippingStones.Auth;
@@ -53,6 +54,11 @@ namespace SkippingStones.UI
         public int selectedCharIndex = 0;
         public int selectedStoneIndex = 0;
         public int selectedMapIndex = 0;
+
+        [Header("로비 3D 쇼케이스 프리팹 & 카메라")]
+        [SerializeField] private GameObject lobbyPrefab;
+        private GameObject spawnedLobbyInstance;
+        private Camera cachedMainCamera;
 
         // 9:16 가상 좌표계 변환 필드
         private float currentScale = 1f;
@@ -152,6 +158,63 @@ namespace SkippingStones.UI
             currentModal = MetaModal.None;
             requireTouchRelease = true;
             lastTransitionTime = Time.unscaledTime;
+
+            UpdateLobbyShowcase(screen);
+        }
+
+        /// <summary>
+        /// 화면 전환에 따른 로비 3D 디오라마 및 메인 카메라 활성화/비활성화 제어
+        /// </summary>
+        private void UpdateLobbyShowcase(MetaScreen screen)
+        {
+            if (cachedMainCamera == null)
+            {
+                cachedMainCamera = Camera.main;
+            }
+
+            if (screen == MetaScreen.Lobby)
+            {
+                // 1. 로비 3D 프리팹 스폰 (미스폰 시)
+                if (spawnedLobbyInstance == null)
+                {
+                    GameObject prefabToUse = lobbyPrefab;
+#if UNITY_EDITOR
+                    if (prefabToUse == null)
+                    {
+                        prefabToUse = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/Lobby.prefab");
+                    }
+#endif
+                    if (prefabToUse != null)
+                    {
+                        spawnedLobbyInstance = Instantiate(prefabToUse);
+                        spawnedLobbyInstance.name = "[Lobby_3D_Showcase]";
+                    }
+                }
+                else
+                {
+                    spawnedLobbyInstance.SetActive(true);
+                }
+
+                // 2. 메인 카메라 비활성화 (로비 카메라 우선 구동)
+                if (cachedMainCamera != null)
+                {
+                    cachedMainCamera.enabled = false;
+                }
+            }
+            else
+            {
+                // 로비가 아닐 때: 로비 인스턴스 숨김/삭제 및 메인 카메라 복구
+                if (spawnedLobbyInstance != null)
+                {
+                    Destroy(spawnedLobbyInstance);
+                    spawnedLobbyInstance = null;
+                }
+
+                if (cachedMainCamera != null)
+                {
+                    cachedMainCamera.enabled = true;
+                }
+            }
         }
 
         public void OpenModal(MetaModal modal)
@@ -474,16 +537,10 @@ namespace SkippingStones.UI
         {
             DrawTopHeaderBar();
 
-            // 중앙 캐릭터 & 돌 뷰 카드
-            GUI.Box(new Rect(40, 150, 640, 780), "<b>🏝️ 수변 발판 & 장비 프리뷰</b>", _cardBoxStyle);
-
             var dm = GameDataManager.Instance;
-            string charName = (dm != null && dm.characterCatalog.Count > selectedCharIndex) ? dm.characterCatalog[selectedCharIndex].name : "민우";
-            string stoneName = (StoneInventory.Instance != null) ? StoneInventory.Instance.GetCurrentStone().name : "기본 돌";
 
-            // 캐릭터 스위처
-            GUI.Label(new Rect(70, 240, 580, 40), $"선택 캐릭터: <b>{charName}</b>", _labelStyle);
-            if (DrawResponsiveButton(new Rect(70, 300, 80, 60), "◀", _glassBtnStyle))
+            // 1. 캐릭터 스위처 (배경 박스 및 텍스트 삭제, 좌/우 화살표만 상단 3D 뷰에 배치)
+            if (DrawResponsiveButton(new Rect(60, 320, 80, 80), "◀", _glassBtnStyle))
             {
                 if (dm != null && dm.characterCatalog.Count > 0)
                 {
@@ -491,7 +548,7 @@ namespace SkippingStones.UI
                     dm.UserData.selectedCharacterId = dm.characterCatalog[selectedCharIndex].id;
                 }
             }
-            if (DrawResponsiveButton(new Rect(570, 300, 80, 60), "▶", _glassBtnStyle))
+            if (DrawResponsiveButton(new Rect(580, 320, 80, 80), "▶", _glassBtnStyle))
             {
                 if (dm != null && dm.characterCatalog.Count > 0)
                 {
@@ -500,42 +557,25 @@ namespace SkippingStones.UI
                 }
             }
 
-            // 돌 스위처
-            GUI.Label(new Rect(70, 480, 580, 40), $"선택 조약돌: <b>{stoneName}</b>", _labelStyle);
-            if (DrawResponsiveButton(new Rect(70, 540, 80, 60), "◀", _glassBtnStyle))
-            {
-                if (StoneInventory.Instance != null)
-                {
-                    var inv = StoneInventory.Instance;
-                    selectedStoneIndex = (selectedStoneIndex - 1 + inv.stones.Count) % inv.stones.Count;
-                    inv.SelectStone(selectedStoneIndex);
-                }
-            }
-            if (DrawResponsiveButton(new Rect(570, 540, 80, 60), "▶", _glassBtnStyle))
-            {
-                if (StoneInventory.Instance != null)
-                {
-                    var inv = StoneInventory.Instance;
-                    selectedStoneIndex = (selectedStoneIndex + 1) % inv.stones.Count;
-                    inv.SelectStone(selectedStoneIndex);
-                }
-            }
+            // 2. 하단 3D 스톤 셀렉터 다이얼 좌우 안내 화살표 (다이얼 링 지점 Y=865, 좌: 110, 우: 275)
+            GUI.Label(new Rect(110, 865, 50, 50), "⇦", _titleStyle);
+            GUI.Label(new Rect(275, 865, 50, 50), "⇨", _titleStyle);
 
-            // 하단 3단 독 바 & GO 버튼
-            if (DrawResponsiveButton(new Rect(40, 960, 130, 80), "🛒\n상점", _glassBtnStyle))
+            // 3. 하단 독 바 & GO 버튼 (최하단 Y=1150으로 바짝 밀착)
+            if (DrawResponsiveButton(new Rect(30, 1150, 130, 95), "🛒\n상점", _glassBtnStyle))
             {
                 OpenModal(MetaModal.Shop);
             }
-            if (DrawResponsiveButton(new Rect(185, 960, 130, 80), "📖\n도감", _glassBtnStyle))
+            if (DrawResponsiveButton(new Rect(175, 1150, 130, 95), "📖\n도감", _glassBtnStyle))
             {
                 OpenModal(MetaModal.Collection);
             }
-            if (DrawResponsiveButton(new Rect(330, 960, 130, 80), "🏆\n랭킹", _glassBtnStyle))
+            if (DrawResponsiveButton(new Rect(320, 1150, 130, 95), "🏆\n랭킹", _glassBtnStyle))
             {
                 OpenModal(MetaModal.Rank);
             }
 
-            if (DrawResponsiveButton(new Rect(480, 950, 200, 95), "🚀 GO!\n(맵 선택)", _primaryBtnStyle))
+            if (DrawResponsiveButton(new Rect(465, 1140, 225, 110), "🚀 GO!\n(맵 선택)", _primaryBtnStyle))
             {
                 ShowScreen(MetaScreen.MapSelect);
             }
@@ -543,9 +583,33 @@ namespace SkippingStones.UI
         #endregion
 
         #region 3. 맵 & 모드 선택 화면
+        private readonly List<GameObject> envMgrPrefabs = new List<GameObject>();
+        private bool envMgrScanned = false;
+
+        private void ScanEnvManagers()
+        {
+            if (envMgrScanned) return;
+            envMgrPrefabs.Clear();
+
+#if UNITY_EDITOR
+            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/BG_Env" });
+            foreach (var guid in guids)
+            {
+                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab != null && prefab.GetComponent<LakeEnvironmentManager>() != null)
+                {
+                    envMgrPrefabs.Add(prefab);
+                }
+            }
+#endif
+            envMgrScanned = true;
+        }
+
         private void DrawMapSelectScreen()
         {
             DrawTopHeaderBar();
+            ScanEnvManagers();
 
             if (DrawResponsiveButton(new Rect(40, 140, 90, 60), "⬅️ 뒤로", _glassBtnStyle))
             {
@@ -564,27 +628,50 @@ namespace SkippingStones.UI
                 if (dm != null) dm.UserData.selectedGameMode = GameController.GameMode.TargetAccuracy;
             }
 
-            // 맵 카드 뷰
-            string mapName = (dm != null && dm.mapCatalog.Count > selectedMapIndex) ? dm.mapCatalog[selectedMapIndex].name : "에메랄드 호수";
-            string mapDesc = (dm != null && dm.mapCatalog.Count > selectedMapIndex) ? dm.mapCatalog[selectedMapIndex].description : "";
+            // 맵 메타 정보 및 썸네일 결정
+            int totalMaps = Mathf.Max(1, envMgrPrefabs.Count);
+            if (selectedMapIndex >= totalMaps) selectedMapIndex = 0;
 
-            GUI.Box(new Rect(40, 220, 640, 480), $"<b>🗺️ {mapName}</b>\n\n{mapDesc}", _cardBoxStyle);
+            string mapName = "에메랄드 호수";
+            Sprite mapThumb = null;
 
-            if (DrawResponsiveButton(new Rect(60, 400, 70, 60), "◀", _glassBtnStyle))
+            if (envMgrPrefabs.Count > selectedMapIndex && envMgrPrefabs[selectedMapIndex] != null)
             {
-                if (dm != null && dm.mapCatalog.Count > 0)
+                var lem = envMgrPrefabs[selectedMapIndex].GetComponent<LakeEnvironmentManager>();
+                if (lem != null)
                 {
-                    selectedMapIndex = (selectedMapIndex - 1 + dm.mapCatalog.Count) % dm.mapCatalog.Count;
-                    dm.UserData.selectedMapId = dm.mapCatalog[selectedMapIndex].id;
+                    if (!string.IsNullOrEmpty(lem.mapTitle)) mapName = lem.mapTitle;
+                    mapThumb = lem.mapThumbnail;
                 }
             }
-            if (DrawResponsiveButton(new Rect(590, 400, 70, 60), "▶", _glassBtnStyle))
+            else if (dm != null && dm.mapCatalog.Count > selectedMapIndex)
             {
-                if (dm != null && dm.mapCatalog.Count > 0)
-                {
-                    selectedMapIndex = (selectedMapIndex + 1) % dm.mapCatalog.Count;
-                    dm.UserData.selectedMapId = dm.mapCatalog[selectedMapIndex].id;
-                }
+                mapName = dm.mapCatalog[selectedMapIndex].name;
+            }
+
+            // 맵 카드 뷰
+            GUI.Box(new Rect(40, 220, 640, 480), string.Empty, _cardBoxStyle);
+            GUI.Label(new Rect(60, 235, 600, 40), $"<b>🗺️ {mapName}</b>", _titleStyle);
+
+            // 썸네일 이미지 드로잉
+            Rect thumbRect = new Rect(80, 285, 560, 395);
+            if (mapThumb != null && mapThumb.texture != null)
+            {
+                GUI.DrawTexture(thumbRect, mapThumb.texture, ScaleMode.ScaleAndCrop);
+            }
+            else
+            {
+                GUI.Box(thumbRect, "\n\n\n\n🖼️ 맵 썸네일 이미지 미등록\n(LakeEnvironmentManager.mapThumbnail)", _cardBoxStyle);
+            }
+
+            // 좌우 맵 넘김 버튼
+            if (DrawResponsiveButton(new Rect(60, 450, 70, 60), "◀", _glassBtnStyle))
+            {
+                selectedMapIndex = (selectedMapIndex - 1 + totalMaps) % totalMaps;
+            }
+            if (DrawResponsiveButton(new Rect(590, 450, 70, 60), "▶", _glassBtnStyle))
+            {
+                selectedMapIndex = (selectedMapIndex + 1) % totalMaps;
             }
 
             // 코스 미니맵 바
@@ -609,6 +696,11 @@ namespace SkippingStones.UI
                 }
 
                 MatchSessionData session = dm.CreateCurrentMatchSession();
+                if (envMgrPrefabs.Count > selectedMapIndex)
+                {
+                    session.mapPrefabOverride = envMgrPrefabs[selectedMapIndex];
+                }
+
                 ShowScreen(MetaScreen.InGame);
 
                 if (GameController.Instance != null)

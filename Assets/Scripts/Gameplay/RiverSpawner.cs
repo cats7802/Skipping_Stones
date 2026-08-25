@@ -251,6 +251,14 @@ public class RiverSpawner : MonoBehaviour
 
     private void EnsurePrefabsLoaded()
     {
+#if UNITY_EDITOR
+        if (boostPadPrefab == null) boostPadPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/BoostPad.prefab");
+        if (obstacleRockPrefab == null) obstacleRockPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/ObstacleRock.prefab");
+        if (targetZonePrefab == null) targetZonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/TargetZone.prefab");
+        if (friendFlagPrefab == null) friendFlagPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/FriendFlag.prefab");
+        if (jumpingFishPrefab == null) jumpingFishPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/JumpingFish.prefab");
+        if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/LilyPadCluster.prefab");
+#endif
         if (boostPadPrefab == null) boostPadPrefab = Resources.Load<GameObject>("BoostPad");
         if (obstacleRockPrefab == null) obstacleRockPrefab = Resources.Load<GameObject>("ObstacleRock");
         if (targetZonePrefab == null) targetZonePrefab = Resources.Load<GameObject>("TargetZone");

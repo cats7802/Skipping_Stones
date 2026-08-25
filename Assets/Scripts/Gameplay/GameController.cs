@@ -65,14 +65,26 @@ public class GameController : MonoBehaviour
         set => _topDownReplay = value;
     }
 
-    [SerializeField] private Transform _currentLaunchPier;
+    [SerializeField] private Transform _currentLaunchPlatform;
+    public Transform currentLaunchPlatform
+    {
+        get => _currentLaunchPlatform;
+        set => _currentLaunchPlatform = value;
+    }
+
+    // 🌟 레거시 호환 프로퍼티
     public Transform currentLaunchPier
     {
-        get => _currentLaunchPier;
-        set => _currentLaunchPier = value;
+        get => _currentLaunchPlatform;
+        set => _currentLaunchPlatform = value;
     }
 
     [SerializeField] private Transform _playerPositionRoot;
+    public Transform playerPositionRoot
+    {
+        get => _playerPositionRoot;
+        set => _playerPositionRoot = value;
+    }
 
     [Header("3. 기본 프리팹")]
     public GameObject defaultCharacterPrefab;
@@ -155,17 +167,71 @@ public class GameController : MonoBehaviour
             _topDownReplay = FindAnyObjectByType<TopDownReplayManager>() ?? GetComponent<TopDownReplayManager>() ?? gameObject.AddComponent<TopDownReplayManager>();
         }
 
-        if (_currentLaunchPier == null)
+        if (_currentLaunchPlatform == null)
         {
-            GameObject platformObj = GameObject.Find("Lakeside_Platform") ?? GameObject.Find("Lakeside_WoodenPier") ?? GameObject.Find("Pier");
-            if (platformObj != null) _currentLaunchPier = platformObj.transform;
+            _currentLaunchPlatform = FindPlatformInScene();
         }
 
         if (_playerPositionRoot == null)
         {
-            GameObject ppObj = GameObject.Find("Player_Position");
-            if (ppObj != null) _playerPositionRoot = ppObj.transform;
+            _playerPositionRoot = FindPlayerPositionRootInScene();
         }
+    }
+
+    /// <summary>
+    /// 🌟 씬 루트 및 배경 프리팹/청크 하위에서 투척 발판(Platform)을 다중 표준으로 탐색
+    /// </summary>
+    public static Transform FindPlatformInScene()
+    {
+        string[] candidateNames = { "Lakeside_Platform", "Platform", "Lakeside_WoodenPier", "Pier" };
+
+        // 1. 루트 직접 탐색
+        foreach (var name in candidateNames)
+        {
+            GameObject obj = GameObject.Find(name);
+            if (obj != null) return obj.transform;
+        }
+
+        // 2. BG 청크 하위 자식 탐색
+        var allObjs = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var obj in allObjs)
+        {
+            foreach (var name in candidateNames)
+            {
+                if (obj.name.Equals(name, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return obj.transform;
+                }
+            }
+        }
+        return null;
+    }
+
+    /// <summary>
+    /// 🌟 씬 루트 및 배경 프리팹 하위에서 타깃 모드 위치 그룹(Player_Position) 탐색
+    /// </summary>
+    public static Transform FindPlayerPositionRootInScene()
+    {
+        string[] candidateNames = { "Player_Position", "PlayerPosition", "Player_Positions" };
+
+        foreach (var name in candidateNames)
+        {
+            GameObject obj = GameObject.Find(name);
+            if (obj != null) return obj.transform;
+        }
+
+        var allObjs = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var obj in allObjs)
+        {
+            foreach (var name in candidateNames)
+            {
+                if (obj.name.Equals(name, System.StringComparison.OrdinalIgnoreCase))
+                {
+                    return obj.transform;
+                }
+            }
+        }
+        return null;
     }
 
     public void SelectGameMode(GameMode mode)
@@ -202,6 +268,24 @@ public class GameController : MonoBehaviour
 
     private void SetupMapEnvironment(GameObject mapPrefab)
     {
+        // 🌟 3번 맵 선택에서 넘겨받은 환경 매니저 프리팹이 있다면 씬에 인스턴스화
+        if (mapPrefab != null)
+        {
+            LakeEnvironmentManager existingMgr = FindAnyObjectByType<LakeEnvironmentManager>();
+            if (existingMgr != null)
+            {
+                DestroyImmediate(existingMgr.gameObject);
+            }
+
+            GameObject newMgrObj = Instantiate(mapPrefab, Vector3.zero, Quaternion.identity);
+            newMgrObj.name = mapPrefab.name;
+        }
+
+        if (LakeEnvironmentManager.Instance != null)
+        {
+            LakeEnvironmentManager.Instance.SetupBGChunks();
+        }
+
         ResolveSceneReferences();
 
         if (currentLaunchPier != null)
@@ -754,13 +838,27 @@ public class GameController : MonoBehaviour
     {
         if (stone == null || stone.isSunk || stone.isCrashed) return;
 
-        if (stone.TryRhythmBounce(steerAngleDegrees, out string timingGrade))
+        bool bounced = stone.TryRhythmBounce(steerAngleDegrees, out string timingGrade);
+        if (bounced)
         {
             lastTimingText = timingGrade;
         }
         else
         {
-            lastTimingText = "💦 너무 이름 (Too Early!)";
+            if (timingGrade == "💦 TOO EARLY")
+            {
+                lastTimingText = "💦 너무 이름 (Too Early!)";
+            }
+            else if (timingGrade == "ALREADY TAPPED")
+            {
+                // 이미 이번 하강에서 탭을 소모한 상태 (연타 무시)
+                return;
+            }
+            else
+            {
+                // 상공 비행 중 (Option B: 무시)
+                return;
+            }
         }
 
         StopCoroutine(nameof(ClearTimingTextAfterDelay));

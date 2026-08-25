@@ -73,15 +73,45 @@ public class EnvironmentTestHelper : MonoBehaviour
         if (pressF1) showTestUI = !showTestUI;
     }
 
+    private void OnGUI()
+    {
+        // 🌟 F1 키 또는 인스펙터 showTestUI 체크 시 화면 좌상단에 테스트 오버레이 표시
+        if (!showTestUI) return;
+
+        GUILayout.BeginArea(new Rect(20, 20, 260, 220), GUI.skin.box);
+        GUILayout.Label("🚀 [스트리밍 & 갓모드 테스트 메뉴]", GUI.skin.label);
+        GUILayout.Space(5);
+
+        string flyBtnText = isAutoFlying ? "⏹️ 갓모드 비행 중지 (Stop)" : "▶️ 3,500m 갓모드 자동비행 시작";
+        GUI.color = isAutoFlying ? Color.red : Color.green;
+        if (GUILayout.Button(flyBtnText, GUILayout.Height(38)))
+        {
+            ToggleAutoFlyGodMode();
+        }
+        GUI.color = Color.white;
+
+        GUILayout.Space(8);
+        GUILayout.Label($"현재 비거리: {simulatedDistance:F1} m");
+        if (LakeEnvironmentManager.Instance != null)
+        {
+            GUILayout.Label($"청크 크기: {LakeEnvironmentManager.Instance.autoChunkSize:F0} m");
+        }
+
+        GUILayout.Space(8);
+        if (GUILayout.Button("창 닫기 (F1)", GUILayout.Height(26)))
+        {
+            showTestUI = false;
+        }
+
+        GUILayout.EndArea();
+    }
+
     public void SetPreviewDistance(float dist)
     {
         simulatedDistance = dist;
         if (LakeEnvironmentManager.Instance != null)
         {
-            if (dist <= 500f) LakeEnvironmentManager.Instance.ApplyPresetDirect(LakeEnvironmentManager.Instance.dayPreset);
-            else if (dist <= 2500f) LakeEnvironmentManager.Instance.ApplyPresetDirect(LakeEnvironmentManager.Instance.sunsetPreset);
-            else if (dist <= 4000f) LakeEnvironmentManager.Instance.ApplyPresetDirect(LakeEnvironmentManager.Instance.twilightPreset);
-            else LakeEnvironmentManager.Instance.ApplyPresetDirect(LakeEnvironmentManager.Instance.nightPreset);
+            LakeEnvironmentManager.Instance.UpdateEnvironmentByDistance(dist);
         }
         Debug.Log($"[EnvironmentTestHelper] 🌍 환경 미리보기 비거리 설정: {dist:F0}m");
     }

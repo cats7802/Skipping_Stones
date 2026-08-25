@@ -2,14 +2,8 @@ using UnityEngine;
 
 
 
-[ExecuteAlways]
 public class LakeEnvironmentManager : MonoBehaviour
-
 {
-    [Header("청크 오브젝트 참조")]
-    public GameObject chunk0;
-    public GameObject chunk1;
-    public GameObject chunk2;
     private static bool isQuitting = false;
     private static LakeEnvironmentManager _instance;
 
@@ -18,30 +12,46 @@ public class LakeEnvironmentManager : MonoBehaviour
         get
         {
             if (isQuitting) return null;
-
             if (_instance == null)
             {
                 _instance = FindAnyObjectByType<LakeEnvironmentManager>();
-                if (_instance == null && !isQuitting)
-                {
-                    GameObject helperObj = new GameObject("[AutoBootstrap_LakeEnvironmentManager]");
-                    _instance = helperObj.AddComponent<LakeEnvironmentManager>();
-                }
             }
             return _instance;
         }
     }
 
-    public enum MapCycleMode
+    [System.Serializable]
+    public class ChunkSlot
     {
-        Sequential, // 순차 순환 (0 -> 1 -> 2 -> 0...)
-        Random      // 무작위 순환
+        [Tooltip("이 슬롯의 기본(메인) 맵 프리팹 (필수 등록 - 비어있을 시 명시적 오류 발생)")]
+        public GameObject baseMapPrefab;
+
+        [Tooltip("체크 시 아래 변주 목록 중 랜덤하게 선택하여 스폰합니다.")]
+        public bool useVariations = false;
+
+        [Tooltip("변주(랜덤) 프리팹 목록 (useVariations 체크 시 활성화)")]
+        public GameObject[] variationPrefabs;
     }
 
-    [Header("배경 맵 목록 및 순환 방식")]
-    [Tooltip("1개만 넣으면 단일 반복, 여러 개를 넣으면 설정된 모드로 순환합니다.")]
-    public GameObject[] mapPrefabs;
-    public MapCycleMode cycleMode = MapCycleMode.Sequential;
+    [Header("0. 맵 메타 정보")]
+    [Tooltip("3번 맵 선택 및 로비/인게임 UI에 표시될 맵 이름(타이틀)")]
+    public string mapTitle = "호수 (Lake)";
+
+    [Tooltip("3번 맵 선택 및 로비 UI에 표시될 2D 맵 썸네일 이미지")]
+    public Sprite mapThumbnail;
+
+    [Header("1. 모듈러 스토리 시퀀스 설정")]
+    [Tooltip("시작 전용 맵 프리팹 (SM, 비어있을 시 슬롯 1번의 Base Map 사용)")]
+    public GameObject startMapPrefab;
+
+    [Tooltip("루프 슬롯 목록")]
+    public System.Collections.Generic.List<ChunkSlot> loopSlots = new System.Collections.Generic.List<ChunkSlot>();
+
+    [Tooltip("엔딩 맵 프리팹 (EM, 비어있거나 목표 거리 미지정 시 무한 루프)")]
+    public GameObject endingMapPrefab;
+
+    [Tooltip("엔딩 맵 진입 목표 거리 (0 이하 시 무한 루프)")]
+    public float targetClearDistance = 0f;
 
     private void Awake()
     {
@@ -51,14 +61,6 @@ public class LakeEnvironmentManager : MonoBehaviour
             return;
         }
         _instance = this;
-    }
-
-    private void OnEnable()
-    {
-        if (_instance == null) _instance = this;
-        InitReferences();
-        ResetEnvironment();
-        SetupBGChunks();
     }
 
     private void OnApplicationQuit()
@@ -73,130 +75,6 @@ public class LakeEnvironmentManager : MonoBehaviour
             _instance = null;
         }
     }
-
-    public enum EnvironmentTheme
-    {
-        DynamicJourney, // 🌟 0~4500m 비거리에 따라 낮 -> 노을 -> 밤으로 실시간 자동 전환
-        ClearDay,       // ☀️ 맑은 낮 고정
-        Sunset,         // 🌅 황금빛 노을 고정
-        Twilight,       // 🌆 짙은 석양/땅거미 고정
-        MoonlitNight    // 🌙 달빛 밤 호수 고정
-    }
-
-    [Header("테마 설정")]
-    public EnvironmentTheme currentTheme = EnvironmentTheme.DynamicJourney;
-
-    [Header("거리 구간 설정 (4단계)")]
-    public float dayEndDistance = 1500f;       // 0m ~ 1500m: 맑은 낮
-    public float sunsetEndDistance = 3000f;    // 1500m ~ 3000m: 황금빛 노을
-    public float nightStartDistance = 4500f;   // 3000m ~ 4500m: 짙은 석양 -> 밤
-
-    [Header("🎨 환경 머티리얼 에셋 직결")]
-    public Material groundMaterial;
-    public Material mountainMaterial;
-    public Material waterMaterial;
-    public Material skyboxMaterial;
-
-    #region 테마별 환경 프리셋 정의
-
-    [System.Serializable]
-    public struct EnvironmentPreset
-    {
-        public string name;
-        public Color skyTop;
-        public Color skyEquator;
-        public Color skyHorizon;
-        public Color groundAmbient;
-        public Color sunLightColor;
-        public float sunLightIntensity;
-        public Vector3 sunLightRotation;
-        public Color fogColor;
-        public float fogDensity;
-        public Color mountainColor;
-        public Color waterDeepColor;
-        public Color waterShallowColor;
-        public Color waterRippleColor;
-    }
-
-    [Header("1단계: 청량한 맑은 날")]
-    public EnvironmentPreset dayPreset = new EnvironmentPreset
-    {
-        name = "ClearDay",
-        skyTop = new Color(0.15f, 0.52f, 0.95f),
-        skyEquator = new Color(0.48f, 0.78f, 0.98f),
-        skyHorizon = new Color(0.85f, 0.95f, 1.0f),
-        groundAmbient = new Color(0.25f, 0.38f, 0.28f),
-        sunLightColor = new Color(1.0f, 0.98f, 0.92f),
-        sunLightIntensity = 1.45f,
-        sunLightRotation = new Vector3(48f, -28f, 0f),
-        fogColor = new Color(0.72f, 0.88f, 0.98f),
-        fogDensity = 0.0008f,
-        mountainColor = new Color(0.24f, 0.36f, 0.45f),
-        waterDeepColor = new Color(0.02f, 0.48f, 0.85f, 1f),
-        waterShallowColor = new Color(0.08f, 0.72f, 0.92f, 1f),
-        waterRippleColor = new Color(1f, 1f, 1f, 1f)
-    };
-
-    [Header("2단계: 황금빛 노을")]
-    public EnvironmentPreset sunsetPreset = new EnvironmentPreset
-    {
-        name = "Sunset",
-        skyTop = new Color(0.22f, 0.18f, 0.42f),
-        skyEquator = new Color(0.92f, 0.45f, 0.20f),
-        skyHorizon = new Color(1.0f, 0.78f, 0.28f),
-        groundAmbient = new Color(0.22f, 0.15f, 0.16f),
-        sunLightColor = new Color(1.0f, 0.65f, 0.28f),
-        sunLightIntensity = 1.55f,
-        sunLightRotation = new Vector3(16f, -18f, 0f),
-        fogColor = new Color(0.88f, 0.48f, 0.26f),
-        fogDensity = 0.0014f,
-        mountainColor = new Color(0.32f, 0.20f, 0.28f),
-        waterDeepColor = new Color(0.52f, 0.22f, 0.35f, 1f),
-        waterShallowColor = new Color(1.0f, 0.72f, 0.35f, 1f),
-        waterRippleColor = new Color(1.0f, 0.88f, 0.65f, 1f)
-    };
-
-    [Header("3단계: 짙은 석양/땅거미")]
-    public EnvironmentPreset twilightPreset = new EnvironmentPreset
-    {
-        name = "Twilight",
-        skyTop = new Color(0.10f, 0.08f, 0.25f),
-        skyEquator = new Color(0.58f, 0.20f, 0.38f),
-        skyHorizon = new Color(0.88f, 0.35f, 0.24f),
-        groundAmbient = new Color(0.12f, 0.08f, 0.12f),
-        sunLightColor = new Color(0.88f, 0.42f, 0.28f),
-        sunLightIntensity = 1.15f,
-        sunLightRotation = new Vector3(6f, -12f, 0f),
-        fogColor = new Color(0.38f, 0.16f, 0.32f),
-        fogDensity = 0.0017f,
-        mountainColor = new Color(0.18f, 0.12f, 0.22f),
-        waterDeepColor = new Color(0.24f, 0.10f, 0.26f, 1f),
-        waterShallowColor = new Color(0.88f, 0.40f, 0.32f, 1f),
-        waterRippleColor = new Color(1.0f, 0.60f, 0.50f, 1f)
-    };
-
-    [Header("4단계: 달빛/별빛 밤 호수")]
-    public EnvironmentPreset nightPreset = new EnvironmentPreset
-    {
-        name = "MoonlitNight",
-        skyTop = new Color(0.02f, 0.04f, 0.10f),
-        skyEquator = new Color(0.06f, 0.12f, 0.24f),
-        skyHorizon = new Color(0.12f, 0.20f, 0.38f),
-        groundAmbient = new Color(0.04f, 0.06f, 0.10f),
-        sunLightColor = new Color(0.45f, 0.60f, 0.85f),
-        sunLightIntensity = 0.45f,
-        sunLightRotation = new Vector3(-25f, 35f, 0f),
-        fogColor = new Color(0.06f, 0.10f, 0.20f),
-        fogDensity = 0.0020f,
-        mountainColor = new Color(0.06f, 0.08f, 0.15f),
-        waterDeepColor = new Color(0.02f, 0.05f, 0.15f, 1f),
-        waterShallowColor = new Color(0.18f, 0.32f, 0.58f, 1f),
-        waterRippleColor = new Color(0.70f, 0.85f, 1.0f, 1f)
-    };
-
-    #endregion
-
-    private Light mainLight;
 
     [Header("청크 자동 측정 정보")]
     [Tooltip("자동 감지된 배경 1청크의 Z축 길이")]
@@ -223,8 +101,6 @@ public class LakeEnvironmentManager : MonoBehaviour
     public void InitReferences()
     {
         EnsureDirectionalLight();
-        EnsureMaterials();
-        CleanUpLegacyObjects();
 
         if (GetComponent<EnvironmentTestHelper>() == null)
         {
@@ -234,230 +110,140 @@ public class LakeEnvironmentManager : MonoBehaviour
 
     private void InitializeFirstChunk()
     {
-        if (chunk0 == null)
+        if (baseBGChunk0 == null)
         {
             // 씬 내 Terrain이 속한 최상위 부모를 첫 번째 청크로 자동 지정 (이름 무관)
             Terrain terrain = FindAnyObjectByType<Terrain>();
             if (terrain != null)
             {
-                chunk0 = terrain.transform.parent != null ? terrain.transform.parent.gameObject : terrain.gameObject;
+                baseBGChunk0 = terrain.transform.parent != null ? terrain.transform.parent.gameObject : terrain.gameObject;
             }
         }
     }
 
-    private GameObject GetMapPrefabForChunk(int chunkIndex)
+    /// <summary>
+    /// 🌟 청크 인덱스 및 위치에 따른 프리팹 결정 (엄격한 검증 및 에러 검출)
+    /// </summary>
+    public GameObject GetMapPrefabForChunk(int chunkIndex, float targetZ = 0f)
     {
-        if (mapPrefabs != null && mapPrefabs.Length > 0)
+        // 0번 시작 청크인 경우: StartMap이 있으면 최우선 반환
+        if (chunkIndex == 0 && startMapPrefab != null)
         {
-            if (cycleMode == MapCycleMode.Random && mapPrefabs.Length > 1)
-            {
-                int randIdx = (chunkIndex == 0) ? 0 : UnityEngine.Random.Range(0, mapPrefabs.Length);
-                return mapPrefabs[randIdx];
-            }
-            else
-            {
-                int seqIdx = chunkIndex % mapPrefabs.Length;
-                return mapPrefabs[seqIdx];
-            }
+            ValidatePrefabPlatform(startMapPrefab, "StartMapPrefab (SM)");
+            return startMapPrefab;
         }
-        return chunk0;
+
+        // 엔딩 목표 거리 도달 및 엔딩 맵 지정 시: EM 반환
+        if (targetClearDistance > 0f && targetZ >= targetClearDistance && endingMapPrefab != null)
+        {
+            return endingMapPrefab;
+        }
+
+        // 슬롯이 설정되어 있는 경우
+        if (loopSlots != null && loopSlots.Count > 0)
+        {
+            int slotIdx = (chunkIndex == 0) ? 0 : (chunkIndex - 1) % loopSlots.Count;
+            var slot = loopSlots[slotIdx];
+            if (slot == null)
+            {
+                Debug.LogError($"[LakeEnvironmentManager] ❌ 루프 슬롯 [{slotIdx + 1}] 데이터가 비어있습니다! (인스펙터 확인 필요)");
+                return baseBGChunk0;
+            }
+
+            if (slot.baseMapPrefab == null)
+            {
+                Debug.LogError($"[LakeEnvironmentManager] ❌ 루프 슬롯 [{slotIdx + 1}]의 BaseMapPrefab이 등록되지 않았습니다! (인스펙터 확인 필요)");
+                return baseBGChunk0;
+            }
+
+            // 0번 시작 위치로 사용될 베이스 맵인 경우 발판 존재 여부 엄격 검증
+            if (chunkIndex == 0)
+            {
+                ValidatePrefabPlatform(slot.baseMapPrefab, $"LoopSlot [{slotIdx + 1}] BaseMap");
+            }
+
+            // 변주 체크박스가 켜져 있고 유효한 변주 프리팹이 등록되어 있는 경우
+            if (slot.useVariations && slot.variationPrefabs != null && slot.variationPrefabs.Length > 0)
+            {
+                // BaseMap을 포함한 변주 후보 풀 구성
+                System.Collections.Generic.List<GameObject> candidates = new System.Collections.Generic.List<GameObject>();
+                if (slot.baseMapPrefab != null) candidates.Add(slot.baseMapPrefab);
+                foreach (var v in slot.variationPrefabs)
+                {
+                    if (v != null) candidates.Add(v);
+                }
+
+                if (candidates.Count > 0)
+                {
+                    int rand = UnityEngine.Random.Range(0, candidates.Count);
+                    return candidates[rand];
+                }
+            }
+
+            return slot.baseMapPrefab;
+        }
+
+        // 슬롯이 아예 비어있는데 씬에 BG_01도 없는 경우 콘솔 에러 출력
+        if (baseBGChunk0 == null)
+        {
+            Debug.LogError("[LakeEnvironmentManager] ❌ 씬에 배치된 배경(BG_01)도 없고, 루프 슬롯(loopSlots)도 비어있어 맵을 스폰할 수 없습니다!");
+        }
+
+        return baseBGChunk0;
     }
-    private void EnsureMaterials()
+
+    /// <summary>
+    /// 🌟 시작 맵 프리팹 내부에 투척 발판(Platform)이 존재하는지 엄격 검증
+    /// </summary>
+    private void ValidatePrefabPlatform(GameObject prefab, string slotDescription)
     {
-        if (skyboxMaterial == null || !skyboxMaterial.HasProperty("_SkyTint"))
+        if (prefab == null) return;
+        string[] platformNames = { "Lakeside_Platform", "Platform", "Lakeside_WoodenPier", "Pier" };
+        bool hasPlatform = false;
+        foreach (var pName in platformNames)
         {
-            skyboxMaterial = Resources.Load<Material>("Skybox_Procedural_MAT");
-            if (skyboxMaterial == null)
+            if (prefab.transform.Find(pName) != null)
             {
-                Shader skyShader = Shader.Find("Skybox/Procedural");
-                if (skyShader != null)
-                {
-                    skyboxMaterial = new Material(skyShader);
-                    skyboxMaterial.name = "Dynamic_Procedural_Skybox";
-                }
+                hasPlatform = true;
+                break;
             }
         }
 
-        if (skyboxMaterial != null && RenderSettings.skybox != skyboxMaterial)
+        if (!hasPlatform)
         {
-            RenderSettings.skybox = skyboxMaterial;
-        }
-
-        if (mountainMaterial == null)
-        {
-            mountainMaterial = Resources.Load<Material>("Mountain_MAT");
-            if (mountainMaterial == null)
+            // 하위 깊은 자식까지 전수 검색
+            var allTransforms = prefab.GetComponentsInChildren<Transform>(true);
+            foreach (var t in allTransforms)
             {
-                var mountainObj = GameObject.Find("Left_Mountains") ?? GameObject.Find("Right_Mountains");
-                if (mountainObj != null)
+                foreach (var pName in platformNames)
                 {
-                    var mr = mountainObj.GetComponent<MeshRenderer>();
-                    if (mr != null) mountainMaterial = mr.sharedMaterial;
+                    if (t.name.Equals(pName, System.StringComparison.OrdinalIgnoreCase))
+                    {
+                        hasPlatform = true;
+                        break;
+                    }
                 }
+                if (hasPlatform) break;
             }
         }
-        if (groundMaterial == null)
-        {
-            groundMaterial = Resources.Load<Material>("Ground_MAT");
-        }
-        if (waterMaterial == null)
-        {
-            waterMaterial = Resources.Load<Material>("Water_MAT");
-            if (waterMaterial == null)
-            {
-                var ws = GameObject.Find("Water_Surface");
-                if (ws != null)
-                {
-                    var mr = ws.GetComponent<MeshRenderer>();
-                    if (mr != null) waterMaterial = mr.sharedMaterial;
-                }
-            }
-        }
-    }
 
-    private void CleanUpLegacyObjects()
-    {
-        string[] legacyNames = {
-            "Environment_SunMoonDisc", "Sunset_SunDisc", "ClearDay_SunDisc",
-            "VFX_LakeSurfaceMist", "VFX_SunsetWaterDust"
-        };
-
-        foreach (var name in legacyNames)
+        if (!hasPlatform)
         {
-            var obj = GameObject.Find(name);
-            if (obj != null) DestroyImmediate(obj);
+            Debug.LogError($"[LakeEnvironmentManager] ❌ 시작 지점으로 사용될 [{slotDescription}] 프리팹('{prefab.name}') 내부에 발판(Platform/Lakeside_Platform) 오브젝트가 없습니다! 캐릭터가 스폰될 수 없습니다.");
         }
     }
 
     public void ResetEnvironment()
     {
         ClearDynamicChunks();
-
-        if (currentTheme == EnvironmentTheme.DynamicJourney || currentTheme == EnvironmentTheme.ClearDay)
-        {
-            ApplyPresetDirect(dayPreset);
-        }
-        else if (currentTheme == EnvironmentTheme.Sunset)
-        {
-            ApplyPresetDirect(sunsetPreset);
-        }
-        else if (currentTheme == EnvironmentTheme.Twilight)
-        {
-            ApplyPresetDirect(twilightPreset);
-        }
-        else if (currentTheme == EnvironmentTheme.MoonlitNight)
-        {
-            ApplyPresetDirect(nightPreset);
-        }
     }
 
     public void UpdateEnvironmentByDistance(float distance)
     {
-        EnvironmentPreset target;
-
-        if (distance <= dayEndDistance)
-        {
-            float blendT = Mathf.SmoothStep(0f, 1f, Mathf.InverseLerp(dayEndDistance * 0.5f, dayEndDistance, distance));
-            target = LerpPreset(dayPreset, sunsetPreset, blendT * 0.55f);
-        }
-        else if (distance <= sunsetEndDistance)
-        {
-            float t = Mathf.Clamp01((distance - dayEndDistance) / (sunsetEndDistance - dayEndDistance));
-            target = LerpPreset(sunsetPreset, twilightPreset, Mathf.SmoothStep(0f, 1f, t));
-        }
-        else if (distance <= nightStartDistance)
-        {
-            float t = Mathf.Clamp01((distance - sunsetEndDistance) / (nightStartDistance - sunsetEndDistance));
-            target = LerpPreset(twilightPreset, nightPreset, Mathf.SmoothStep(0f, 1f, t));
-        }
-        else
-        {
-            target = nightPreset;
-        }
-
-        ApplyPresetDirect(target);
+        // 추후 유니티 표준 Lighting & Volume 전환 전까지 노옵(No-Op) 처리
     }
 
-    private EnvironmentPreset LerpPreset(EnvironmentPreset a, EnvironmentPreset b, float t)
-    {
-        return new EnvironmentPreset
-        {
-            name = (t > 0.5f) ? b.name : a.name,
-            skyTop = Color.Lerp(a.skyTop, b.skyTop, t),
-            skyEquator = Color.Lerp(a.skyEquator, b.skyEquator, t),
-            skyHorizon = Color.Lerp(a.skyHorizon, b.skyHorizon, t),
-            groundAmbient = Color.Lerp(a.groundAmbient, b.groundAmbient, t),
-            sunLightColor = Color.Lerp(a.sunLightColor, b.sunLightColor, t),
-            sunLightIntensity = Mathf.Lerp(a.sunLightIntensity, b.sunLightIntensity, t),
-            sunLightRotation = Vector3.Lerp(a.sunLightRotation, b.sunLightRotation, t),
-            fogColor = Color.Lerp(a.fogColor, b.fogColor, t),
-            fogDensity = Mathf.Lerp(a.fogDensity, b.fogDensity, t),
-            mountainColor = Color.Lerp(a.mountainColor, b.mountainColor, t),
-            waterDeepColor = Color.Lerp(a.waterDeepColor, b.waterDeepColor, t),
-            waterShallowColor = Color.Lerp(a.waterShallowColor, b.waterShallowColor, t),
-            waterRippleColor = Color.Lerp(a.waterRippleColor, b.waterRippleColor, t)
-        };
-    }
-
-    public void ApplyPresetDirect(EnvironmentPreset p)
-    {
-        EnsureDirectionalLight();
-        EnsureMaterials();
-
-        if (mainLight != null)
-        {
-            mainLight.color = p.sunLightColor;
-            mainLight.intensity = p.sunLightIntensity;
-            mainLight.transform.rotation = Quaternion.Euler(p.sunLightRotation);
-        }
-
-        if (skyboxMaterial != null)
-        {
-            if (RenderSettings.skybox != skyboxMaterial) RenderSettings.skybox = skyboxMaterial;
-            if (skyboxMaterial.HasProperty("_SkyTint")) skyboxMaterial.SetColor("_SkyTint", p.skyTop);
-            if (skyboxMaterial.HasProperty("_GroundColor")) skyboxMaterial.SetColor("_GroundColor", p.groundAmbient);
-            float exposure = (p.name == "MoonlitNight") ? 0.22f : (p.name == "Twilight") ? 0.65f : 1.25f;
-            if (skyboxMaterial.HasProperty("_Exposure")) skyboxMaterial.SetFloat("_Exposure", exposure);
-            float thick = (p.name == "Sunset") ? 1.5f : (p.name == "Twilight") ? 1.9f : 0.85f;
-            if (skyboxMaterial.HasProperty("_AtmosphereThickness")) skyboxMaterial.SetFloat("_AtmosphereThickness", thick);
-        }
-
-        if (Camera.main != null)
-        {
-            Camera.main.clearFlags = CameraClearFlags.Skybox;
-            Camera.main.backgroundColor = p.skyTop;
-        }
-
-        if (mountainMaterial != null)
-        {
-            if (mountainMaterial.HasProperty("_BaseColor")) mountainMaterial.SetColor("_BaseColor", p.mountainColor);
-            else if (mountainMaterial.HasProperty("_Color")) mountainMaterial.SetColor("_Color", p.mountainColor);
-        }
-
-        if (waterMaterial != null)
-        {
-            if (waterMaterial.HasProperty("_BaseColor")) waterMaterial.SetColor("_BaseColor", p.waterDeepColor);
-            if (waterMaterial.HasProperty("_ShallowColor")) waterMaterial.SetColor("_ShallowColor", p.waterShallowColor);
-            if (waterMaterial.HasProperty("_RippleColor")) waterMaterial.SetColor("_RippleColor", p.waterRippleColor);
-            if (waterMaterial.HasProperty("_FoamIntensity")) waterMaterial.SetFloat("_FoamIntensity", 0.65f);
-            if (waterMaterial.HasProperty("_DepthThreshold")) waterMaterial.SetFloat("_DepthThreshold", 0.20f);
-        }
-
-        RenderSettings.ambientMode = UnityEngine.Rendering.AmbientMode.Trilight;
-        RenderSettings.ambientSkyColor = p.skyTop;
-        RenderSettings.ambientEquatorColor = p.skyEquator;
-        RenderSettings.ambientGroundColor = p.groundAmbient;
-
-        DualCameraSetup dualCam = FindAnyObjectByType<DualCameraSetup>();
-        bool isTopDownReplay = (dualCam != null && dualCam.currentMode == DualCameraSetup.CameraMode.TopDownReplay);
-
-        RenderSettings.fog = !isTopDownReplay;
-        RenderSettings.fogMode = FogMode.ExponentialSquared;
-        RenderSettings.fogColor = p.fogColor;
-        RenderSettings.fogDensity = p.fogDensity;
-
-        DynamicGI.UpdateEnvironment();
-    }
+    private Light mainLight;
 
     private void EnsureDirectionalLight()
     {
@@ -512,8 +298,6 @@ public class LakeEnvironmentManager : MonoBehaviour
     {
         InitializeFirstChunk(); // 🌟 첫 번째 청크 자동 인식
 
-        if (chunk0 == null && (mapPrefabs == null || mapPrefabs.Length == 0)) return;
-
         if (baseBGChunk0 == null)
         {
             baseBGChunk0 = GameObject.Find("BG_01");
@@ -528,6 +312,20 @@ public class LakeEnvironmentManager : MonoBehaviour
                 }
             }
         }
+
+        // 🌟 씬에 미리 배치된 BG_01이 없다면, 슬롯 설정 프리팹(0m 기준)을 직접 인스턴스화하여 0번 청크로 생성
+        if (baseBGChunk0 == null)
+        {
+            GameObject prefab0 = GetMapPrefabForChunk(0, 0f);
+            if (prefab0 != null)
+            {
+                Transform parentTransform = transform.parent != null ? transform.parent : transform;
+                baseBGChunk0 = Instantiate(prefab0, Vector3.zero, Quaternion.identity, parentTransform);
+                baseBGChunk0.name = $"{prefab0.name}_Section_0_0m";
+            }
+        }
+
+        if (baseBGChunk0 == null && (loopSlots == null || loopSlots.Count == 0)) return;
 
         AutoDetectChunkSize();
         spawnedChunkIndices.Add(0);
@@ -545,16 +343,32 @@ public class LakeEnvironmentManager : MonoBehaviour
         if (baseBGChunk0 == null) return null;
 
         float targetZ = chunkIndex * autoChunkSize;
+        GameObject sourcePrefab = GetMapPrefabForChunk(chunkIndex, targetZ) ?? baseBGChunk0;
+        if (sourcePrefab == null) return null;
 
-        GameObject newChunk = Instantiate(baseBGChunk0, baseBGChunk0.transform.parent);
-        newChunk.name = $"BG_01_Section_{chunkIndex}_{targetZ:F0}m";
+        Transform parentTransform = (baseBGChunk0 != null && baseBGChunk0.transform.parent != null) ? baseBGChunk0.transform.parent : transform;
+        GameObject newChunk = Instantiate(sourcePrefab, parentTransform);
+        newChunk.name = $"{sourcePrefab.name}_Section_{chunkIndex}_{targetZ:F0}m";
 
-        newChunk.transform.localPosition = baseBGChunk0.transform.localPosition + new Vector3(0f, 0f, targetZ);
-        newChunk.transform.localRotation = baseBGChunk0.transform.localRotation;
-        newChunk.transform.localScale = baseBGChunk0.transform.localScale;
+        Vector3 basePos = (baseBGChunk0 != null) ? baseBGChunk0.transform.localPosition : Vector3.zero;
+        Quaternion baseRot = (baseBGChunk0 != null) ? baseBGChunk0.transform.localRotation : Quaternion.identity;
+        Vector3 baseScale = (baseBGChunk0 != null) ? baseBGChunk0.transform.localScale : Vector3.one;
 
-        Transform duplicatePier = newChunk.transform.Find("Lakeside_WoodenPier");
-        if (duplicatePier != null) Destroy(duplicatePier.gameObject);
+        newChunk.transform.localPosition = basePos + new Vector3(0f, 0f, targetZ);
+        newChunk.transform.localRotation = baseRot;
+        newChunk.transform.localScale = baseScale;
+
+        // 🌟 복제 청크 내 발판 및 타깃 위치 그룹(PP) 자동 제거
+        string[] cleanNames = { "Lakeside_Platform", "Platform", "Lakeside_WoodenPier", "Pier", "Player_Position", "PlayerPosition", "Player_Positions" };
+        foreach (var cleanName in cleanNames)
+        {
+            Transform dupObj = newChunk.transform.Find(cleanName);
+            if (dupObj != null)
+            {
+                if (Application.isPlaying) Destroy(dupObj.gameObject);
+                else DestroyImmediate(dupObj.gameObject);
+            }
+        }
 
         Transform ws = newChunk.transform.Find("Water_Surface");
         if (ws != null)

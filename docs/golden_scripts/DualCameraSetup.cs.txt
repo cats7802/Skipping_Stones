@@ -68,11 +68,11 @@ public class DualCameraSetup : MonoBehaviour
     public float shoulderLookForward = 14.0f;
     public float shoulderLookHeight = 1.3f;
 
-    [Header("3단계: 비행 추적 카메라 (돌과 리듬 링 세로 9:16 위에서 3번째 55~60% 구간 배치)")]
-    public float flightDistBack = 4.8f;
-    public float flightHeight = 1.85f;
-    public float flightLookForward = 8.5f;
-    public float flightLookHeight = -0.45f;
+    [Header("3단계: 비행 추적 카메라 (돌과 리듬 링 세로 9:16 위에서 3번째 3/6 구간 배치)")]
+    public float flightDistBack = 5.5f;
+    public float flightHeight = 2.4f;
+    public float flightLookForward = 7.5f;
+    public float flightLookHeight = -2.2f;
     [Tooltip("조작 직후 돌이 먼저 꺾인 뒤 다음 바운스까지 카메라가 정후방으로 돌아오는 보간 속도")]
     public float headingCatchupSpeed = 4.2f;
     private Vector3 smoothedFlightHeading = Vector3.forward;
@@ -89,10 +89,10 @@ public class DualCameraSetup : MonoBehaviour
 
     private void Awake()
     {
-        flightDistBack = 4.8f;
-        flightHeight = 1.85f;
-        flightLookForward = 8.5f;
-        flightLookHeight = -0.45f;
+        flightDistBack = 5.5f;
+        flightHeight = 2.4f;
+        flightLookForward = 7.5f;
+        flightLookHeight = -2.2f;
         EnsureReferences();
     }
 
@@ -245,9 +245,14 @@ public class DualCameraSetup : MonoBehaviour
                 smoothedFlightHeading = Vector3.Slerp(smoothedFlightHeading, targetHeading, Time.deltaTime * dynamicCatchupSpeed);
                 Vector3 moveDir = smoothedFlightHeading.normalized;
 
-                // 🌟 [수정] 0f 하드코딩 제거: 실제 돌의 월드 좌표(stonePos)를 기준으로 비행 카메라 위치 및 LookAt 설정
-                targetOffset = stonePos - (moveDir * flightDistBack) + (Vector3.up * flightHeight);
-                targetLookOffset = stonePos + (forwardDir * flightLookForward) + (Vector3.up * flightLookHeight);
+                // 🌟 과거의 다이내믹 Y축 바운스 추적 공식 복원 (수면 상대 높이 100% 연동)
+                float relativeStoneY = Mathf.Max(0f, stonePos.y - waterLevel);
+                float dynamicCamY = waterLevel + (relativeStoneY * 0.75f) + flightHeight;
+                float dynamicLookY = waterLevel + (relativeStoneY * 0.35f) + flightLookHeight;
+
+                Vector3 stoneXZ = new Vector3(stonePos.x, 0f, stonePos.z);
+                targetOffset = stoneXZ - (moveDir * flightDistBack) + (Vector3.up * dynamicCamY);
+                targetLookOffset = stoneXZ + (forwardDir * flightLookForward) + (Vector3.up * dynamicLookY);
                 break;
         }
 
@@ -281,9 +286,10 @@ public class DualCameraSetup : MonoBehaviour
             }
             else
             {
-                mainCam.transform.position = Vector3.Lerp(mainCam.transform.position, targetOffset, Time.deltaTime * followSmoothSpeed);
+                // 🌟 비행 중 카메라가 고속 돌(18m/s)을 쫓아갈 때 Lerp 지연으로 인한 고스팅/떨림(Camera Jitter) 원천 차단
+                mainCam.transform.position = targetOffset;
                 Quaternion desiredRot = Quaternion.LookRotation((targetLookOffset - mainCam.transform.position).normalized);
-                mainCam.transform.rotation = Quaternion.Slerp(mainCam.transform.rotation, desiredRot, Time.deltaTime * followSmoothSpeed);
+                mainCam.transform.rotation = desiredRot;
             }
         }
 

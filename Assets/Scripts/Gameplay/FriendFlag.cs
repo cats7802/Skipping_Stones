@@ -14,17 +14,19 @@ public class FriendFlag : MonoBehaviour
         // 🌟 유저가 프리팹이나 씬에서 이미 자식 메쉬를 세팅해 두었는지 1차 검사
         if (transform.childCount > 0) return;
 
-        // 🌟 Resources/FriendFlag.prefab 유저 프리팹 로드 검사
-        GameObject userPrefab = Resources.Load<GameObject>("FriendFlag");
+        GameObject userPrefab = null;
+#if UNITY_EDITOR
+        userPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/FriendFlag.prefab");
+#endif
+        if (userPrefab == null) userPrefab = Resources.Load<GameObject>("FriendFlag");
+
         if (userPrefab != null)
         {
             Instantiate(userPrefab, transform);
             return;
         }
 
-        // 🌟 없을 때만 임시 더미 생성 + 친절한 콘솔 알림
         CreateFlagVisuals();
-        Debug.LogWarning("💡 [프리팹 알림] 'FriendFlag'에 3D 프리팹이 없어 임시 더미로 자동 생성했습니다. (Assets/Resources/FriendFlag.prefab 등록 시 자동 대체)");
     }
 
     private void CreateFlagVisuals()

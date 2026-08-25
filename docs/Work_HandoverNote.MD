@@ -2,67 +2,57 @@
 
 > **프로젝트명**: Stone Skipping (물수제비 마스터 3D)  
 > **엔진 및 해상도**: Unity 6 (6000.5.8f1) / 모바일 세로 9:16 (720x1280 Virtual Native)  
-> **정리 시점**: 아키텍처 규칙/스크립트 히스토리 시스템 구축, 수면 오브젝트 프리팹 단일화/스폰 정상화, 갓모드 S자 궤적 동기화 완료 (0 Error / 0 Warning)
+> **정리 시점**: 로비 UI 단순화, 3D 디오라마/카메라 동적 로딩, 스톤 셀렉터 캐러셀 구현 및 ⚠️ 더미 궤도 이탈 이슈 기록 (0 Error / 0 Warning)
 
 ---
 
 ## 🎯 1. 오늘 구현 및 문제 해결 완료된 핵심 내역
 
-### 1) 📜 스크립트 히스토리 및 골든 베이스라인 시스템 구축
-* **규칙 체계화 ([script_history_protocol.md](file:///d:/Git_Hub/Skipping_Stones/docs/rules/script_history_protocol.md))**:
-  - `docs/script_history/<ScriptName>.md`: 스크립트 수정 전 필독 및 수정 후 역할/금지사항/변경의도 영구 기록.
-  - `docs/golden_scripts/<ScriptName>.cs.txt`: 검증 완료된 무결점 스크립트 스냅샷 보관 (엔진 컴파일 간섭 배제).
-  - `docs/rules/`: `.agents/rules/`의 모든 룰을 1:1 미러링하여 외부 LLM 및 유니티 플러그인과 동일 표준 공유.
+### 1) 🎨 로비 UI 레이아웃 정리 & 안내 인디케이터 정렬 ([MetaUIManager.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/UI/MetaUIManager.cs))
+* **중앙 텍스트 및 어두운 배경창 제거**: 3D 로비 룸 디오라마가 시원하게 보이도록 불필요한 중앙 레이아웃 걷어냄.
+* **하단 독 바 밀착 정렬**: 상점, 도감, 랭킹, GO! 버튼을 최하단(`Y=1140~1150`)으로 밀착 배치.
+* **3D 스톤 셀렉터 안내 화살표**: 다이얼 링 좌우 지점(`X=110, 275`, `Y=865`)에 안내용 화살표(`⇦`, `⇨`) 배치.
+* **로비 3D 디오라마 및 카메라 전환**:
+  - `MetaScreen.Lobby` 진입 시 `Assets/prefab/Lobby.prefab` 인스턴스화.
+  - 씬 메인 카메라를 끄고 로비 내부의 전용 카메라(`Camera001`)로 자동 전환.
+  - 로비 퇴장 시 인스턴스 파괴 및 메인 카메라 자동 복구.
 
-### 2) 🌊 수면 엔티티 프리팹 전환 & `BoxCollider` 기반 스폰 정상화 ([RiverSpawner.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Gameplay/RiverSpawner.cs))
-* **런타임 임시 생성 코드 전면 박멸**:
-  - `BoostPad`, `ObstacleRock`, `TargetZone`, `FriendFlag`, `JumpingFish`, `LilyPadCluster` 6종 프리팹을 `Assets/Resources/`에 정식 저장.
-  - "프리팹이 없어 임시 더미로 생성합니다" 콘솔 Warning 100% 제거.
-* **수면 `BoxCollider` X축 전폭 기반 지형 회피 레이캐스트**:
-  - 좁은 하드코딩 폭(`16f`)을 완전히 없애고, 수면 `BoxCollider`의 `[minX, maxX]` 전폭으로 후보 좌표를 생성한 뒤 상공 수직 레이캐스트(`IsValidWaterPosition`)로 물 위만 안전 스폰.
-* **인스펙터 슬롯 지원**:
-  - `RiverSpawner` 인스펙터에 6종 프리팹 슬롯을 노출하여 에디터에서 드래그 앤 드롭으로 언제든 자유롭게 교체 가능하도록 개방.
-
-### 3) ⚙️ 인게임 초기화 라이프사이클 순서 보장 ([GameController.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Gameplay/GameController.cs))
-* **초기화 순서 정립**:
-  - `SetupCharacter` ➜ `SetupMapEnvironment` (지형/수면/콜라이더 배치 완료) ➜ `RiverSpawner.GenerateRiverEntitiesForMode` 순차 실행.
-  - 모드 첫 진입 시 지형 미준수로 인해 `0,0,0` 좌표에 엔티티가 뭉쳐서 스폰되던 타이밍 버그 원천 해결.
-
-### 4) 🚀 갓모드(자동 비행) 수면 높이 & S자 물길 곡선 추적 ([EnvironmentTestHelper.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Visuals/EnvironmentTestHelper.cs))
-* **수면 높이(Y=16m) 동적 연동**:
-  - 돌이 물속 바닥(Y=0m)에 잠겨 날아가던 문제를 해결하고 실제 수면 위에서 통통 튀도록 보정.
-* **S자 물길 곡선 추적**:
-  - `RiverValleyTerrainGenerator.GetRiverCenterX(z)`를 매 프레임 추적하여 돌이 산이나 땅을 뚫지 않고 굽이치는 물길 한가운데를 비행하도록 X좌표 연동.
-  - 3,500m 맵 스트리밍 테스트 정상화 완료.
+### 2) 🪨 로비 스톤 쇼케이스 컨트롤러 구현 ([LobbyStoneShowcaseController.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Visuals/LobbyStoneShowcaseController.cs))
+* **입력 감지 엔진**: New Input System (`Touchscreen`, `Mouse`) 및 Legacy Input을 통합 지원하는 스와이프 드래그 인식.
+* **회전 연출 엔진**:
+  - 하단 다이얼(`StoneSelector`): 30도 스냅 회전.
+  - 상단 스탠드(`Stone_Stand`): 120도 부드러운 가감속(SmoothStep) 회전.
+* **3슬롯 순환 버퍼 & 등 뒤 갱신**:
+  - 시작 시 슬롯 3개에 돌 3종을 미리 올려두고, 회전 완료 시 등 뒤(시야 밖)로 돌아간 슬롯만 다음 순서의 돌로 조용히 교체.
 
 ---
 
-## 📁 2. 관련 핵심 파일 및 문서 목록
+## ⚠️ 2. 현재 알려진 이상 현상 및 긴급 점검 필요 항목 (CRITICAL ISSUES)
 
-1. **스크립트 히스토리**:
-   - [RiverSpawner.md](file:///d:/Git_Hub/Skipping_Stones/docs/script_history/RiverSpawner.md)
-   - [GameController.md](file:///d:/Git_Hub/Skipping_Stones/docs/script_history/GameController.md)
-   - [EnvironmentTestHelper.md](file:///d:/Git_Hub/Skipping_Stones/docs/script_history/EnvironmentTestHelper.md)
-2. **골든 베이스라인 스냅샷**:
-   - `docs/golden_scripts/RiverSpawner.cs.txt`
-   - `docs/golden_scripts/GameController.cs.txt`
-   - `docs/golden_scripts/EnvironmentTestHelper.cs.txt`
-3. **리소스 동기화 매니페스트**:
-   - [resources_sync_manifest.md](file:///d:/Git_Hub/Skipping_Stones/docs/resources_sync_manifest.md)
-4. **엄격 규칙 아카이브**:
-   - [rule_compliance_and_exceptions.md](file:///d:/Git_Hub/Skipping_Stones/docs/rules/rule_compliance_and_exceptions.md)
-   - [script_history_protocol.md](file:///d:/Git_Hub/Skipping_Stones/docs/rules/script_history_protocol.md)
+> [!CAUTION]
+> **스톤 쇼케이스 회전 시 더미 궤도 이탈 현상 (진행 중 / Ongoing)**:
+> 1. **더미 위치/궤도 이탈**:
+>    - `Stone_Stand`가 회전할 때, 자식으로 물려있는 더미 3개(`Stone_Stage_01, 02, 03`)가 스탠드의 접시(홈) 위에 안착되어 있지 않고 접시 밖으로 튀어나가거나 궤도를 이탈하여 돌아다니는 이상 현상이 지속 발생 중.
+> 2. **원인 분석 및 점검 과제**:
+>    - 맥스 FBX(`SelectStage.fbx` / `Stone_Select.fbx`)의 `Stone_Stand` 중심축(피벗) 및 더미들의 로컬 좌표계 상관관계를 에디터 씬 뷰에서 정밀 재검증하여, 스탠드 회전 시 더미가 왜 원래 위치를 벗어나는지 근본적인 원인 규명 및 수정 필요.
 
 ---
 
-## 🎯 3. 다음 작업 예정 항목 (Next Action Items)
-- **⚡ [최우선 수정] 리듬 판정 및 입력 랙/연타 방지 개편 ([SkippingStone.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Gameplay/SkippingStone.cs) / [RhythmRingIndicator.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Visuals/RhythmRingIndicator.cs))**:
-  - **1) 단 1회 입력 소비 (Single-Shot Input Consumption)**: 한 번 하강할 때 오직 1번의 터치만 판정 기회로 인정 (연타 꼼수 시 첫 터치로 인한 Early/Miss 처리로 연타 차단).
-  - **2) 수면 도달 예상 시간(Time-to-Impact) 기반 판정 전환**: 기존 높이/거리(`distToWater`) 기준의 불균일 판정을 탈피하고, `거리 / 수직속도` 시간(초) 기반(Perfect: ±40ms, Great: ±90ms)으로 고정하여 속도와 무관한 균일하고 쫀득한 리듬 타격감 보장.
-  - **3) 리듬 링 떨림/중복 생성 버그 수정**: 리듬 링 인디케이터가 떨려 보이거나 여러 개가 겹쳐서 스폰/표시되는 렌더링/풀링 버그 전면 점검 및 단일 싱글톤 제어로 안정화.
-- **맵 스트리밍 시스템 개편 및 최적화**:
-  - `LakeEnvironmentManager`의 1,500m 청크 릴레이 방식 점검 및 다중 바이옴 모듈형 청크 구조화 논의.
-- **수면 인터랙션 오브젝트 규칙 정립**:
-  - 부스트/바위/물고기 충돌 시 물리 및 점수 피드백 규칙 체계화.
+## 📁 3. 관련 핵심 파일 및 문서 목록
 
+| 분류 | 파일 경로 | 설명 |
+| :--- | :--- | :--- |
+| **UI** | [MetaUIManager.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/UI/MetaUIManager.cs) | 로비 UI 배치 및 로비 3D 디오라마 라이프사이클 관리 |
+| **Visuals** | [LobbyStoneShowcaseController.cs](file:///d:/Git_Hub/Skipping_Stones/Assets/Scripts/Visuals/LobbyStoneShowcaseController.cs) | 3D 스톤 셀렉터 회전 및 슬롯 관리 컨트롤러 |
+| **Prefab** | [Assets/prefab/Lobby.prefab](file:///d:/Git_Hub/Skipping_Stones/Assets/prefab/Lobby.prefab) | 로비 3D 룸 디오라마 프리팹 (카메라, 스탠드, 다이얼 포함) |
+| **Script History** | [MetaUIManager.md](file:///d:/Git_Hub/Skipping_Stones/docs/script_history/MetaUIManager.md) | UI 매니저 변경 이력 |
+| **Script History** | [LobbyStoneShowcaseController.md](file:///d:/Git_Hub/Skipping_Stones/docs/script_history/LobbyStoneShowcaseController.md) | 쇼케이스 컨트롤러 이력 및 미해결 이상 현상 기록 |
+| **Rules** | [docs/rules/](file:///d:/Git_Hub/Skipping_Stones/docs/rules/) | 에이전트 협업 및 안전 개발 규칙 |
 
+---
+
+## 🚀 4. 다음 작업 계획
+1. **쇼케이스 더미 궤도 이탈 버그 완벽 해결**:
+   - `Stone_Stand`와 `Stone_Stage_01~03` 더미 간의 계층 구조 및 회전 축 일치화.
+2. **돌 인벤토리/도감 해금 데이터 연동**:
+   - `StoneInventory.cs`의 실제 해금 돌 목록과 턴테이블 쇼케이스 연동.

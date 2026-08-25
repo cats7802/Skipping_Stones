@@ -80,9 +80,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 1
   m_IsKinematic: 0
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 80
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!114 &5102100179024702752
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -101,8 +101,10 @@ MonoBehaviour:
   baseBounceUpForce: 5.2
   maxHorizontalSpeed: 36
   gravityScale: 1.35
-  airDrag: 0.998
-  timingWindowHeight: 2.4
+  timingWindowHeight: 2.8
+  perfectWindowTime: 0.1
+  greatWindowTime: 0.22
+  goodWindowTime: 0.38
   perfectDistance: 0.7
   greatDistance: 1.45
   goodDistance: 2.4

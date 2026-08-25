@@ -13,8 +13,10 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-25] 인게임 세션 라이프사이클 순서 보장 & 스포너 결합 정상화
-- **수정 목적**: 첫 모드 진입 시 캐릭터와 지형이 준비되기 전에 스포너가 돌아 0,0,0 좌표에 엔티티가 뭉치던 버그 해결.
+### [2026-08-25] 투척 발판(`Platform`) & 타깃 위치(`Player_Position`) 프리팹 통합 탐색 표준화
+- **수정 목적**: 배경 프리팹 내부 포함 구조 전환에 맞추어 `Platform` 및 `Player_Position`의 루트/자식 다중 Fallback 탐색 및 복제 청크 정리 지원.
 - **핵심 구조**:
-  - `StartGameSession` 내부 실행 순서를 `SetupCharacter` ➜ `SetupMapEnvironment` ➜ `RiverSpawner.GenerateRiverEntitiesForMode` 순서로 정립.
-  - `currentLaunchPier`의 실제 콜라이더 상단에 캐릭터를 정확히 배치한 후 스폰 방향 동기화.
+  - `FindPlatformInScene()`: `Lakeside_Platform`, `Platform`, `Lakeside_WoodenPier`, `Pier` 다중 탐색 지원.
+  - `FindPlayerPositionRootInScene()`: `Player_Position`, `PlayerPosition` 탐색 지원.
+  - 프로퍼티 `currentLaunchPlatform` 정식 도입 및 `currentLaunchPier` 하위 호환 유지.
+  - Unity 6 `FindObjectsByType` CS0618 경고 100% 제거.

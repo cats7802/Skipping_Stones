@@ -61,19 +61,10 @@ public class RhythmRingIndicator : MonoBehaviour
 
     private void CreateRingLines()
     {
-        // 🌟 기존에 생성된 링 오브젝트가 씬에 남아있으면 즉시 정리 (중복 생성 방지)
+        // 기존 생성된 하위 링 오브젝트 정리
         if (innerObj != null) Destroy(innerObj);
         if (outerObj != null) Destroy(outerObj);
         if (dropObj != null) Destroy(dropObj);
-
-        foreach (var oldInner in GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include))
-        {
-            if (oldInner != null && (oldInner.name == "InnerTargetRing_WaterFixed" || oldInner.name == "OuterShrinkingRing_WaterFixed" || oldInner.name == "VerticalDropLine_Guide"))
-            {
-                if (Application.isPlaying) Destroy(oldInner);
-                else DestroyImmediate(oldInner);
-            }
-        }
 
         Shader lineShader = Shader.Find("Universal Render Pipeline/Particles/Unlit")
                             ?? Shader.Find("Sprites/Default")
@@ -82,21 +73,21 @@ public class RhythmRingIndicator : MonoBehaviour
         Material lineMat = (lineShader != null) ? new Material(lineShader) : new Material(Shader.Find("Standard"));
 
         innerObj = new GameObject("InnerTargetRing_WaterFixed");
-        innerObj.transform.SetParent(null);
+        innerObj.transform.SetParent(transform);
         innerRing = innerObj.AddComponent<LineRenderer>();
         ConfigureLineRenderer(innerRing, lineMat, innerRingColor, lineWidth);
         innerRing.alignment = LineAlignment.TransformZ;
         innerObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         outerObj = new GameObject("OuterShrinkingRing_WaterFixed");
-        outerObj.transform.SetParent(null);
+        outerObj.transform.SetParent(transform);
         outerRing = outerObj.AddComponent<LineRenderer>();
         ConfigureLineRenderer(outerRing, lineMat, outerRingColor, lineWidth * 1.15f);
         outerRing.alignment = LineAlignment.TransformZ;
         outerObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         dropObj = new GameObject("VerticalDropLine_Guide");
-        dropObj.transform.SetParent(null);
+        dropObj.transform.SetParent(transform);
         dropLine = dropObj.AddComponent<LineRenderer>();
         dropLine.useWorldSpace = true;
         dropLine.positionCount = 2;
@@ -156,6 +147,10 @@ public class RhythmRingIndicator : MonoBehaviour
 
         // 수면 위 0.05m 높이에 정확히 안착
         Vector3 waterImpactCenter = new Vector3(stone.transform.position.x, waterLevel + 0.05f, stone.transform.position.z);
+
+        // 🌟 돌의 고속 스핀(1440도/s)과 피치가 링 라인 렌더러에 간섭하여 떨리는 현상 원천 차단 (월드 수평 고정)
+        if (innerObj != null) innerObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        if (outerObj != null) outerObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         // SkippingStone 인스펙터 설정값 실시간 1:1 동기화
         float compensatedTargetRadius = (stone != null && stone.ringTargetRadius > 0.01f) ? stone.ringTargetRadius : targetRingRadius;
@@ -236,6 +231,7 @@ public class RhythmRingIndicator : MonoBehaviour
 
         if (stone != null)
         {
+            if (innerObj != null) innerObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
             Vector3 center = new Vector3(stone.transform.position.x, waterLevel + 0.06f, stone.transform.position.z);
             DrawFlatCircle(innerRing, center, expandRadius, burstCol);
         }

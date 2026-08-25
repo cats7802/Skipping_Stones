@@ -32,17 +32,26 @@ public class SkippingStone : MonoBehaviour
     [Tooltip("비행 중 돌의 시각적 확대 배율 (기본: 1.0f 원본 크기 유지, 필요시 확대 가능)")]
     public float inFlightVisualScale = 1.0f;
 
-    [Header("타이밍 판정 관용도 (기본 기준값)")]
+    [Header("타이밍 판정 관용도 (Time-to-Impact 기준)")]
     [Tooltip("타이밍 알림 및 판정이 시작되는 수면 위 높이 (m)")]
-    public float timingWindowHeight = 2.4f;
+    public float timingWindowHeight = 2.8f;
 
-    [Tooltip("PERFECT 판정 기준 거리 (초기 m)")]
+    [Tooltip("PERFECT 판정 기준 착수 잔여 시간 (초, 표준 리듬게임 100ms)")]
+    public float perfectWindowTime = 0.100f;
+
+    [Tooltip("GREAT 판정 기준 착수 잔여 시간 (초, 표준 리듬게임 220ms)")]
+    public float greatWindowTime = 0.220f;
+
+    [Tooltip("GOOD 판정 기준 착수 잔여 시간 (초, 표준 리듬게임 380ms)")]
+    public float goodWindowTime = 0.380f;
+
+    [Tooltip("PERFECT 판정 기준 거리 (참조용 m)")]
     public float perfectDistance = 0.70f;
 
-    [Tooltip("GREAT 판정 기준 거리 (초기 m)")]
+    [Tooltip("GREAT 판정 기준 거리 (참조용 m)")]
     public float greatDistance = 1.45f;
 
-    [Tooltip("GOOD 판정 기준 거리 (초기 m)")]
+    [Tooltip("GOOD 판정 기준 거리 (참조용 m)")]
     public float goodDistance = 2.40f;
 
     [Header("마지막 '도로록~' 스키밍 피니시 설정")]
@@ -114,7 +123,7 @@ public class SkippingStone : MonoBehaviour
         rb.useGravity = false;
         rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
         rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        rb.interpolation = RigidbodyInterpolation.None;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
         startPosition = transform.position;
 
         SetupVisualModel();
@@ -329,6 +338,7 @@ public class SkippingStone : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
             rb.isKinematic = true;
             rb.useGravity = false;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
         }
 
         if (trail != null)
@@ -500,7 +510,8 @@ public class SkippingStone : MonoBehaviour
             isInTimingWindow = false;
         }
 
-        if (hasTappedInCurrentBounce && rb.linearVelocity.y < -0.12f && distToWater > 0.15f)
+        // 🌟 돌이 바운스되어 상승 중일 때 다음 하강을 위해 탭 상태 안전 리셋
+        if (rb.linearVelocity.y > 0.5f)
         {
             hasTappedInCurrentBounce = false;
             waterSubmergeTimer = 0f;
@@ -508,8 +519,8 @@ public class SkippingStone : MonoBehaviour
 
         if (isGodMode) return;
 
-        // 수면 착수 체크
-        if (distToWater <= -0.04f && rb.linearVelocity.y <= 0f && !hasTappedInCurrentBounce)
+        // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했을 때)
+        if (distToWater <= -0.04f && rb.linearVelocity.y <= 0f)
         {
             if (waterSubmergeTimer <= 0f)
             {
@@ -550,29 +561,30 @@ public class SkippingStone : MonoBehaviour
         if (!isThrown || isSunk || isCrashed || isSkimming) return false;
 
         float distToWater = transform.position.y - waterLevel;
+        float dynWindowHeight = Mathf.Lerp(timingWindowHeight, 1.4f, Mathf.Clamp01(skipCount / 30f));
 
-        if (hasTappedInCurrentBounce || rb.linearVelocity.y > 0.4f)
+        // 1. 방안 B: 타이밍 윈도우 진입 전(높은 상공)이거나 상승 중일 때의 탭은 무시 (소모하지 않음)
+        if (distToWater > dynWindowHeight || rb.linearVelocity.y > 0.4f)
+        {
+            timingGrade = "";
+            return false;
+        }
+
+        // 2. 이미 이번 하강에서 탭을 소모한 경우 연타 차단
+        if (hasTappedInCurrentBounce)
         {
             timingGrade = "ALREADY TAPPED";
             return false;
         }
 
-        float curGood = GetCurrentGoodDistance();
-        if (distToWater > curGood)
-        {
-            timingGrade = "💦 TOO EARLY";
-            return false;
-        }
-
+        // 3. 타이밍 윈도우 진입 후 첫 탭 -> 즉시 이번 하강 1회 기회 소모!
         hasTappedInCurrentBounce = true;
-        waterSubmergeTimer = 0f;
-        skipCount++;
 
-        float bounceForce = GetDynamicBounceForce(skipCount);
+        float verticalSpeed = Mathf.Max(0.5f, -rb.linearVelocity.y);
+        float timeToImpact = Mathf.Max(0f, distToWater) / verticalSpeed;
+
+        float bounceForce = GetDynamicBounceForce(skipCount + 1);
         float speedMultiplier = 1.0f;
-
-        float curPerfect = GetCurrentPerfectDistance();
-        float curGreat = GetCurrentGreatDistance();
 
         if (distToWater <= 0.02f)
         {
@@ -580,24 +592,33 @@ public class SkippingStone : MonoBehaviour
             bounceForce *= 0.85f;
             speedMultiplier = 0.90f;
         }
-        else if (distToWater <= curPerfect)
+        else if (timeToImpact <= perfectWindowTime)
         {
             timingGrade = "🔥 PERFECT! 🔥";
             bounceForce *= 1.25f;
             speedMultiplier = 1.08f;
         }
-        else if (distToWater <= curGreat)
+        else if (timeToImpact <= greatWindowTime)
         {
             timingGrade = "⚡ GREAT! ⚡";
             bounceForce *= 1.10f;
             speedMultiplier = 1.02f;
         }
-        else
+        else if (timeToImpact <= goodWindowTime)
         {
             timingGrade = "✨ GOOD";
             bounceForce *= 0.92f;
             speedMultiplier = 0.95f;
         }
+        else
+        {
+            // 타이밍 윈도우 내이지만 착수까지 너무 많이 남음 (Too Early) -> 탭 기회 소모 및 바운스 실패
+            timingGrade = "💦 TOO EARLY";
+            return false;
+        }
+
+        waterSubmergeTimer = 0f;
+        skipCount++;
 
         int comboTier = Mathf.Min(3, skipCount / 5);
         if (comboTier > 0)

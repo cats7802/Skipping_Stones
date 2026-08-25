@@ -80,9 +80,9 @@ Rigidbody:
   m_ImplicitTensor: 1
   m_UseGravity: 0
   m_IsKinematic: 1
-  m_Interpolate: 0
+  m_Interpolate: 1
   m_Constraints: 80
-  m_CollisionDetection: 0
+  m_CollisionDetection: 2
 --- !u!114 &5102100179024702752
 MonoBehaviour:
   m_ObjectHideFlags: 0
@@ -103,10 +103,13 @@ MonoBehaviour:
   gravityScale: 1.45
   airDrag: 0.998
   inFlightVisualScale: 1
-  timingWindowHeight: 2.88
-  perfectDistance: 0.797
-  greatDistance: 1.6
-  goodDistance: 2.79
+  timingWindowHeight: 2.8
+  perfectWindowTime: 0.1
+  greatWindowTime: 0.22
+  goodWindowTime: 0.38
+  perfectDistance: 0.7
+  greatDistance: 1.45
+  goodDistance: 2.4
   minSkimSkips: 5
   maxSkimSkips: 30
   trail: {fileID: 0}

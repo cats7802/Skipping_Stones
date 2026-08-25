@@ -9,17 +9,19 @@ public class ObstacleRock : MonoBehaviour
         // 🌟 유저가 프리팹이나 씬에서 이미 자식 메쉬를 세팅해 두었는지 1차 검사
         if (transform.childCount > 0) return;
 
-        // 🌟 Resources/ObstacleRock.prefab 유저 프리팹 로드 검사
-        GameObject userPrefab = Resources.Load<GameObject>("ObstacleRock");
+        GameObject userPrefab = null;
+#if UNITY_EDITOR
+        userPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/ObstacleRock.prefab");
+#endif
+        if (userPrefab == null) userPrefab = Resources.Load<GameObject>("ObstacleRock");
+
         if (userPrefab != null)
         {
             Instantiate(userPrefab, transform);
             return;
         }
 
-        // 🌟 없을 때만 임시 더미 생성 + 친절한 콘솔 알림
         CreateRockMesh();
-        Debug.LogWarning("💡 [프리팹 알림] 'ObstacleRock'에 3D 프리팹이 없어 임시 더미로 자동 생성했습니다. (Assets/Resources/ObstacleRock.prefab 등록 시 자동 대체)");
     }
 
     private void CreateRockMesh()

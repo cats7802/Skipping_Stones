@@ -78,16 +78,16 @@ public class TopDownReplayManager : MonoBehaviour
     /// </summary>
     public void UpdateBaseReplayLevel()
     {
-        GameObject pier = GameObject.Find("Lakeside_WoodenPier");
-        if (pier != null)
+        Transform platform = GameController.FindPlatformInScene();
+        if (platform != null)
         {
-            Collider pierCol = pier.GetComponent<Collider>();
+            Collider pierCol = platform.GetComponent<Collider>();
             if (pierCol != null)
             {
                 baseReplayLevel = pierCol.bounds.max.y;
                 return;
             }
-            baseReplayLevel = pier.transform.position.y + 0.2f;
+            baseReplayLevel = platform.position.y + 0.2f;
             return;
         }
 
@@ -296,11 +296,11 @@ public class TopDownReplayManager : MonoBehaviour
             thrower.RestoreVisibility();
         }
 
-        GameObject pier = GameObject.Find("Lakeside_WoodenPier");
-        if (pier != null)
+        Transform platform = GameController.FindPlatformInScene();
+        if (platform != null)
         {
-            pier.SetActive(true);
-            var pr = pier.GetComponent<Renderer>();
+            platform.gameObject.SetActive(true);
+            var pr = platform.GetComponent<Renderer>();
             if (pr != null) pr.enabled = true;
         }
 

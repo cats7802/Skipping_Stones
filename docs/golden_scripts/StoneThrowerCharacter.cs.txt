@@ -802,8 +802,8 @@ public class StoneThrowerCharacter : MonoBehaviour
 
         bool cameraLeadInTriggered = false;
         var charRenderers = GetComponentsInChildren<Renderer>(true);
-        GameObject pier = GameObject.Find("Lakeside_WoodenPier");
-        Renderer pierRenderer = (pier != null && pier.activeInHierarchy) ? pier.GetComponent<Renderer>() : null;
+        Transform platform = GameController.FindPlatformInScene();
+        Renderer pierRenderer = (platform != null && platform.gameObject.activeInHierarchy) ? platform.GetComponent<Renderer>() : null;
 
         float elapsed = 0f;
         while (elapsed < frame55Time)
@@ -870,10 +870,10 @@ public class StoneThrowerCharacter : MonoBehaviour
             }
         }
 
-        GameObject pier = GameObject.Find("Lakeside_WoodenPier");
-        if (pier != null)
+        Transform platform = GameController.FindPlatformInScene();
+        if (platform != null)
         {
-            var pr = pier.GetComponent<Renderer>();
+            var pr = platform.GetComponent<Renderer>();
             if (pr != null)
             {
                 pr.enabled = true;
