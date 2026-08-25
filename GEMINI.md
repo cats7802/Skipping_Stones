@@ -174,3 +174,17 @@ Think of it like running lint after a coding session—not after every keystroke
 - **Simple request** ("create a blue sphere at 1,2,3") → Verify immediately after
 - **Multi-step task** → Verify after each logical phase completes
 - **Batch operations** (created 5 objects) → One screenshot at the end, not five
+
+---
+
+## 🚨 AI Assistant 절대 운영 원칙 (Mandatory Operational Rules)
+
+1. **2시간 세션 만료 사전 알림**:
+   - 세션이 길어지거나 토큰 컨텍스트가 쌓여 판단력이 저하되기 시작하면, 억지로 코드를 비틀지 말고 **반드시 디렉터님께 새 대화창(New Session) 시작을 먼저 정중히 요청**할 것.
+2. **코드 꼬임 시 자문 및 서브에이전트 활용**:
+   - 혼자서 2회 이상 동일/유사 문제 해결에 실패하거나 꼬일 경우, 즉시 **서브에이전트(`browser_subagent` / 검색 / 다른 AI 관점 분석)**를 활용하여 객관적인 해결책을 검증해 올 것.
+3. **기존 백업(`git diff` / `docs/script_history/`) 필수 대조**:
+   - 멀쩡하던 기능이 망가지면 추측으로 고치지 말고, **반드시 기존 백업/커밋 내역과 1:1 diff 대조**를 먼저 수행하여 원인을 파악할 것.
+4. **요청된 범위 외 무단 수정 금지**:
+   - 디렉터님이 요청한 기능 외에 다른 멀쩡한 스크립트나 로직을 '개선'한답시고 임의로 건드리지 말 것.
+
