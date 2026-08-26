@@ -177,14 +177,35 @@ Think of it like running lint after a coding session—not after every keystroke
 
 ---
 
-## 🚨 AI Assistant 절대 운영 원칙 (Mandatory Operational Rules)
+## 🚨 AI Assistant 절대 운영 및 개발 원칙 (Mandatory Project Rules)
 
-1. **2시간 세션 만료 사전 알림**:
-   - 세션이 길어지거나 토큰 컨텍스트가 쌓여 판단력이 저하되기 시작하면, 억지로 코드를 비틀지 말고 **반드시 디렉터님께 새 대화창(New Session) 시작을 먼저 정중히 요청**할 것.
-2. **코드 꼬임 시 자문 및 서브에이전트 활용**:
-   - 혼자서 2회 이상 동일/유사 문제 해결에 실패하거나 꼬일 경우, 즉시 **서브에이전트(`browser_subagent` / 검색 / 다른 AI 관점 분석)**를 활용하여 객관적인 해결책을 검증해 올 것.
-3. **기존 백업(`git diff` / `docs/script_history/`) 필수 대조**:
-   - 멀쩡하던 기능이 망가지면 추측으로 고치지 말고, **반드시 기존 백업/커밋 내역과 1:1 diff 대조**를 먼저 수행하여 원인을 파악할 것.
-4. **요청된 범위 외 무단 수정 금지**:
-   - 디렉터님이 요청한 기능 외에 다른 멀쩡한 스크립트나 로직을 '개선'한답시고 임의로 건드리지 말 것.
+### 1. 🤝 에이전트 협업 & 사용자 승인 원칙 (Strict Approval & Anti-Sycophancy)
+- **질문/증상 문의 시 즉시 코드 수정 금지**: 분석, 설명, 구현 계획만 먼저 제시.
+- **명시적 승인 후 코딩**: "진행해", "수정해", "OK" 등 디렉터님의 명확한 승인 후에만 코드 수정 착수.
+- **룰 임의 우회 금지**: 하드코딩이나 임시 꼼수를 위해 룰을 임의 우회하지 말 것. 충돌 시 트레이드오프와 대안을 먼저 설명 후 승인 대기.
+- **객관적 기술 현실성 (NO YES-MAN)**: 영혼 없는 칭찬이나 무조건 동조를 지양하고, 엔진 한계나 병목 발생 시 기술적 위험과 대안을 솔직히 직언할 것.
+
+### 2. ⚡ Unity C# 표준 및 모바일 터치 안전 원칙
+- **Zero-Warning & Zero-Error**: C# 코드 수정 즉시 `dotnet build Assembly-CSharp.csproj` 및 `Editor.csproj`로 컴파일 검증 (CS0618 등 경고 0개 필수).
+- **하드코딩 금지**: 수면 높이, 강 너비, 고정 오프셋 등은 단일 진실 공급원(`WaterSurface`, `Presets`)으로부터 동적 참조.
+- **모바일 버튼 `isPressed` 금지**: UI 버튼은 단일 프레임 다운(`wasPressedThisFrame`, `TouchPhase.Began`)만 사용.
+- **터치 관통 방지 & 디바운스**: 화면 전환 시 `requireTouchRelease = true` 및 최소 0.20s~0.25s 쿨다운 적용. UI 터치 시 `Event.current.Use()`로 이벤트 소비.
+- **정직한 참조 (No Implicit AddComponent)**: 런타임 강제 `AddComponent` 남발 금지. 누락 시 Warning 로깅 및 인스펙터/프리팹 수정 유도.
+
+### 3. 📜 스크립트 히스토리 및 골든 베이스라인 시스템
+- **사전 검토**: 코어 스크립트(`Assets/Scripts/`) 수정 전 `docs/script_history/<ScriptName>.md` 필독 (과거 실패 사례, 불변 원칙 확인).
+- **사후 업데이트**: 수정/검증 완료 후 `docs/script_history/<ScriptName>.md` 갱신 및 `docs/golden_scripts/<ScriptName>.cs.txt` 골든 스냅샷 동기화.
+- **역행 분석**: 기능 이상 발생 시 추측으로 고치지 말고 `docs/golden_scripts/`와 즉시 1:1 diff 대조.
+
+### 4. 📁 문서화, 에셋 동기화 및 마무리 프로토콜
+- **`_Project/` 표준 구조 지향**: 신규 에셋은 자체 에셋 폴더 분리, 레거시 폴더는 승인 하에 점진적(1개 단위) 이동.
+- **Resources 동기화**: `docs/resources_sync_manifest.md` 에셋 수정 시 `Assets/Resources/` 클론 즉시 동기화.
+- **마무리 확인 게이트 (Mandatory)**: 작업 마무리/대화창 갱신 시 히스토리 검증 및 `docs/Work_HandoverNote.MD` 정리 후, *"오늘 수정한 스크립트의 히스토리와 인수인계서 정리를 완료했습니다. 지금까지의 작업 내용을 Git에 커밋 & 푸시할까요?"* 질문 필수.
+
+### 5. ⏱️ 간결한 응답 및 2시간 세션 트래커
+- 장황한 설명 지양, 간결하고 구조화된 보고.
+- 세션 2시간(120분) 초과 시 매 응답 푸터에 세션 시간 경과 및 새 대화창 갱신 권장 문구 표기.
+- 2회 이상 동일 문제로 코드 꼬임 발생 시 즉시 서브에이전트/검색/객관적 관점으로 해결책 재검증.
+- 디렉터님이 요청한 범위 외 정상 코드 무단 수정 절대 금지.
+
 

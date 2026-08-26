@@ -15,7 +15,8 @@ namespace SkippingStones.Visuals
     /// </summary>
     public class LobbyStoneShowcaseController : MonoBehaviour
     {
-        [Header("하이어라키 참조 (자동 검색)")]
+        [Header("하이어라키 참조 (자동 검색 또는 직접 연결)")]
+        [SerializeField] private Camera targetCamera;          // 로비 뷰 카메라 (직접 할당 또는 자동 검색)
         [SerializeField] private Transform dialTransform;      // 하단 다이얼 (StoneSelector)
         [SerializeField] private Transform stageTransform;     // 상단 3개 슬롯 회전대 (Stone_Stand)
         [SerializeField] private Transform[] stageSlots = new Transform[3]; // Stone_Stage_01, 03, 02
@@ -96,10 +97,26 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 계층 구조 내 부품 자동 탐색
+        /// 계층 구조 내 부품 및 렌더링 카메라 자동 탐색
         /// </summary>
         private void AutoFindReferences()
         {
+            if (targetCamera == null)
+            {
+                // 1. 하이어라키 내의 Camera001 또는 자식 카메라 우선 탐색
+                Camera[] allCams = FindObjectsByType<Camera>(FindObjectsInactive.Exclude);
+                foreach (var cam in allCams)
+                {
+                    if (cam.gameObject.activeInHierarchy && (cam.name.Contains("Camera001") || cam.name.Contains("Lobby") || cam.name.Contains("Select")))
+                    {
+                        targetCamera = cam;
+                        break;
+                    }
+                }
+                if (targetCamera == null) targetCamera = Camera.main;
+                if (targetCamera == null && allCams.Length > 0) targetCamera = allCams[0];
+            }
+
             if (dialTransform == null) dialTransform = FindDeepChild(transform, "StoneSelector");
             if (stageTransform == null) stageTransform = FindDeepChild(transform, "Stone_Stand");
 
@@ -159,7 +176,7 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 삭제 직전 검증된 정상 마우스/터치 드래그 입력 처리
+        /// 마우스/터치 드래그 입력 처리 (지정 로비 카메라 Raycast 기반)
         /// </summary>
         private void HandleInput()
         {
@@ -186,9 +203,12 @@ namespace SkippingStones.Visuals
 
             if (pointerDown)
             {
-                // Raycast로 다이얼이나 스탠드 본체를 터치했을 때만 돌 선택 드래그 활성화
-                Camera cam = Camera.main;
-                if (cam == null) cam = FindAnyObjectByType<Camera>();
+                Camera cam = targetCamera;
+                if (cam == null || !cam.gameObject.activeInHierarchy)
+                {
+                    AutoFindReferences();
+                    cam = targetCamera;
+                }
 
                 bool hitDial = false;
                 if (cam != null)
@@ -196,13 +216,12 @@ namespace SkippingStones.Visuals
                     Ray ray = cam.ScreenPointToRay(currentPointerPos);
                     if (Physics.Raycast(ray, out RaycastHit hit, 100f))
                     {
-                        // 터치한 대상이 다이얼 또는 스탠드의 하위인지 확인
-                        if (hit.transform.IsChildOf(transform) || 
-                            (dialTransform != null && hit.transform.IsChildOf(dialTransform)) ||
-                            (stageTransform != null && hit.transform.IsChildOf(stageTransform)))
-                        {
-                            hitDial = true;
-                        }
+                        // 1. 다이얼 또는 하위
+                        if (dialTransform != null && (hit.transform == dialTransform || hit.transform.IsChildOf(dialTransform))) hitDial = true;
+                        // 2. 스탠드 또는 하위
+                        else if (stageTransform != null && (hit.transform == stageTransform || hit.transform.IsChildOf(stageTransform))) hitDial = true;
+                        // 3. 로비 쇼케이스 하위 전체
+                        else if (hit.transform.IsChildOf(transform)) hitDial = true;
                     }
                 }
 

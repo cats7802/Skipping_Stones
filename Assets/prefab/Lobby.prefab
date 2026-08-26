@@ -46,6 +46,7 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c685f499c6c12714895f5d904c511eb5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Visuals.LobbyStoneShowcaseController
+  targetCamera: {fileID: 5510438674477548156}
   dialTransform: {fileID: 4011924925076610479}
   stageTransform: {fileID: 8808148862420122259}
   stageSlots:
@@ -72,10 +73,12 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 875d4e2eab715e2449ef682ed2d861a2, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Visuals.LobbyCharacterShowcaseController
-  stagingPosition: {fileID: 0}
+  targetCamera: {fileID: 5510438674477548156}
+  stagingPosition: {fileID: 8958744429749833219}
   characterPrefabs: []
   transitionDuration: 1
   entryOffsetDistance: 3.5
+  entryAngleOffset: 55
   rotationSensitivity: 0.4
   currentCharacterIndex: 0
   isTransitioning: 0
@@ -248,6 +251,10 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -6016672343454887409, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
+      propertyPath: m_Name
+      value: Lobby_CAM.Target
+      objectReference: {fileID: 0}
     - target: {fileID: -1592621781203033459, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalPosition.y
       value: 0.86
@@ -270,19 +277,23 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -439118283351685891, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.36073563
+      value: 0.36073688
       objectReference: {fileID: 0}
     - target: {fileID: -439118283351685891, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.04741631
+      value: 0.047416423
       objectReference: {fileID: 0}
     - target: {fileID: -439118283351685891, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.9235183
+      value: -0.92351764
       objectReference: {fileID: 0}
     - target: {fileID: -439118283351685891, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.12139037
+      value: 0.1213904
+      objectReference: {fileID: 0}
+    - target: {fileID: 507151811852313670, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
+      propertyPath: m_Name
+      value: Lobby_CAM
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_Name
@@ -327,5 +338,15 @@ PrefabInstance:
 --- !u!4 &3728143023852895466 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
+  m_PrefabInstance: {fileID: 3762686220634118913}
+  m_PrefabAsset: {fileID: 0}
+--- !u!20 &5510438674477548156 stripped
+Camera:
+  m_CorrespondingSourceObject: {fileID: 8669075145369344381, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
+  m_PrefabInstance: {fileID: 3762686220634118913}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &8958744429749833219 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5216406115634959618, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
   m_PrefabInstance: {fileID: 3762686220634118913}
   m_PrefabAsset: {fileID: 0}

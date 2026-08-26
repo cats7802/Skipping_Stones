@@ -15,7 +15,8 @@ namespace SkippingStones.Visuals
     /// </summary>
     public class LobbyCharacterShowcaseController : MonoBehaviour
     {
-        [Header("스테이징 기준점")]
+        [Header("하이어라키 참조 (카메라 & 스테이징)")]
+        [SerializeField] private Camera targetCamera;          // 로비 뷰 카메라 (직접 할당 또는 자동 검색)
         [SerializeField] private Transform stagingPosition; // Staging_Position 포함된 더미
 
         [Header("캐릭터 프리팹 목록 (자동 스캔)")]
@@ -24,6 +25,7 @@ namespace SkippingStones.Visuals
         [Header("트랜지션 및 회전 설정")]
         [SerializeField] private float transitionDuration = 0.55f;
         [SerializeField] private float entryOffsetDistance = 3.5f; // 스테이징 기준 좌/우 스폰 거리
+        [SerializeField] private float entryAngleOffset = 55f;     // 진입/퇴장 각도 보정 (기존 45도 + 10도 = 55도)
         [SerializeField] private float rotationSensitivity = 0.4f; // 드래그 회전 감도
 
         [Header("상태 모니터링")]
@@ -129,17 +131,34 @@ namespace SkippingStones.Visuals
                 GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
                 if (prefab != null && prefab.GetComponentInChildren<StoneThrowerCharacter>(true) != null)
                 {
-                    // 카탈로그 언락 여부 체크
-                    bool isUnlocked = true;
-                    if (dm != null && dm.characterCatalog != null && dm.characterCatalog.Count > 0)
+                    // 카탈로그 및 유저 세이브 해금 여부 엄격 체크
+                    bool isUnlocked = false;
+                    if (dm != null)
                     {
-                        var info = dm.characterCatalog.Find(c => c.id.Equals(prefab.name, StringComparison.OrdinalIgnoreCase) || 
-                                                                 prefab.name.Contains(c.id) ||
-                                                                 (c.prefabPath != null && c.prefabPath.Contains(prefab.name)));
-                        if (info != null)
+                        // 1. 유저 세이브에 직접 등록되어 있는지 확인
+                        if (dm.UserData != null && dm.UserData.unlockedCharacterIds != null)
                         {
-                            isUnlocked = info.isUnlocked;
+                            isUnlocked = dm.UserData.unlockedCharacterIds.Exists(id => 
+                                prefab.name.Equals(id, StringComparison.OrdinalIgnoreCase) || 
+                                prefab.name.Contains(id) || id.Contains(prefab.name));
                         }
+
+                        // 2. 카탈로그 isUnlocked 확인
+                        if (!isUnlocked && dm.characterCatalog != null && dm.characterCatalog.Count > 0)
+                        {
+                            var info = dm.characterCatalog.Find(c => c.id.Equals(prefab.name, StringComparison.OrdinalIgnoreCase) || 
+                                                                     prefab.name.Contains(c.id) ||
+                                                                     (c.prefabPath != null && c.prefabPath.Contains(prefab.name)));
+                            if (info != null)
+                            {
+                                isUnlocked = info.isUnlocked;
+                            }
+                        }
+                    }
+                    else
+                    {
+                        // 데이터매니저 미기동 시 기본 캐릭터 1종만 허용
+                        isUnlocked = prefab.name.ToLowerInvariant().Contains("boy") || prefab.name.ToLowerInvariant().Contains("default") || prefab.name.ToLowerInvariant().Contains("minwoo");
                     }
 
                     if (isUnlocked && !characterPrefabs.Contains(prefab))
@@ -154,13 +173,27 @@ namespace SkippingStones.Visuals
             {
                 if (p != null && p.GetComponentInChildren<StoneThrowerCharacter>(true) != null)
                 {
-                    bool isUnlocked = true;
-                    if (dm != null && dm.characterCatalog != null && dm.characterCatalog.Count > 0)
+                    bool isUnlocked = false;
+                    if (dm != null)
                     {
-                        var info = dm.characterCatalog.Find(c => c.id.Equals(p.name, StringComparison.OrdinalIgnoreCase) || p.name.Contains(c.id));
-                        if (info != null) isUnlocked = info.isUnlocked;
+                        if (dm.UserData != null && dm.UserData.unlockedCharacterIds != null)
+                        {
+                            isUnlocked = dm.UserData.unlockedCharacterIds.Exists(id => 
+                                p.name.Equals(id, StringComparison.OrdinalIgnoreCase) || 
+                                p.name.Contains(id) || id.Contains(p.name));
+                        }
+                        if (!isUnlocked && dm.characterCatalog != null && dm.characterCatalog.Count > 0)
+                        {
+                            var info = dm.characterCatalog.Find(c => c.id.Equals(p.name, StringComparison.OrdinalIgnoreCase) || p.name.Contains(c.id));
+                            if (info != null) isUnlocked = info.isUnlocked;
+                        }
                     }
-                    if (isUnlocked) characterPrefabs.Add(p);
+                    else
+                    {
+                        isUnlocked = p.name.ToLowerInvariant().Contains("boy") || p.name.ToLowerInvariant().Contains("default") || p.name.ToLowerInvariant().Contains("minwoo");
+                    }
+
+                    if (isUnlocked && !characterPrefabs.Contains(p)) characterPrefabs.Add(p);
                 }
             }
 #endif
@@ -205,8 +238,22 @@ namespace SkippingStones.Visuals
             if (pointerDown)
             {
                 // Raycast로 캐릭터 본체 콜라이더를 터치했는지 확인
-                Camera cam = Camera.main;
-                if (cam == null) cam = FindAnyObjectByType<Camera>();
+                Camera cam = targetCamera;
+                if (cam == null || !cam.gameObject.activeInHierarchy)
+                {
+                    Camera[] allCams = FindObjectsByType<Camera>(FindObjectsInactive.Exclude);
+                    foreach (var c in allCams)
+                    {
+                        if (c.gameObject.activeInHierarchy && (c.name.Contains("Camera001") || c.name.Contains("Lobby") || c.name.Contains("Select")))
+                        {
+                            targetCamera = c;
+                            cam = c;
+                            break;
+                        }
+                    }
+                    if (cam == null) cam = Camera.main;
+                    if (cam == null && allCams.Length > 0) cam = allCams[0];
+                }
 
                 bool hitCharacter = false;
                 if (cam != null && currentSpawnedCharacter != null)
@@ -235,8 +282,7 @@ namespace SkippingStones.Visuals
                 currentModelRotationY -= deltaX * rotationSensitivity;
                 if (currentSpawnedCharacter != null)
                 {
-                    Quaternion baseRot = stagingPosition != null ? stagingPosition.rotation : Quaternion.identity;
-                    currentSpawnedCharacter.transform.rotation = baseRot * Quaternion.Euler(0f, currentModelRotationY, 0f);
+                    currentSpawnedCharacter.transform.rotation = Quaternion.Euler(0f, currentModelRotationY, 0f);
                 }
             }
             else if (pointerUp)
@@ -277,9 +323,8 @@ namespace SkippingStones.Visuals
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
             Quaternion finalFrontRot = stagingPosition != null ? stagingPosition.rotation : transform.rotation;
 
-            // 로비 룸 및 카메라 45도 쿼터뷰에 맞춘 화면상 좌우 횡이동 축 계산 (로비 로컬 Y+45도)
-            Vector3 lobbyForward = transform.forward;
-            Vector3 moveDir = (Quaternion.Euler(0f, 45f, 0f) * transform.right).normalized;
+            // 로비 룸 및 카메라 쿼터뷰에 맞춘 화면상 좌우 횡이동 축 계산 (기본 55도 적용)
+            Vector3 moveDir = (Quaternion.Euler(0f, entryAngleOffset, 0f) * transform.right).normalized;
 
             Vector3 exitPos = centerPos + moveDir * (direction * entryOffsetDistance);
             Vector3 enterPos = centerPos - moveDir * (direction * entryOffsetDistance);

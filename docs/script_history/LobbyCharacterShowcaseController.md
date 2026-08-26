@@ -24,16 +24,9 @@
 
 ## 3. 변경 이력
 
-### [2026-08-26] 3D 캐릭터 쇼케이스 시스템 신규 구축 및 인게임 연동
+### [2026-08-26] 2차 수정: 카메라 직접 연결 슬롯 및 트랜지션 각도 보정 (55도)
 * **작업 내역**:
-  1. `LobbyCharacterShowcaseController.cs` 생성:
-     - `Staging_Position` 자동 검색 (대소문자/오타 무관).
-     - 화면 밖 ↔ 중앙 스무스 진입/퇴장 및 360도 드래그 회전.
-     - 캐릭터 선택 시 `GameDataManager.UserData.selectedCharacterId` 실시간 저장.
-  2. `MetaUIManager.cs`:
-     - 상단 3D 뷰의 ◀ / ▶ 버튼을 `LobbyCharacterShowcaseController`와 연결.
-     - 암묵적 `AddComponent` 제거 및 누락 시 Warning 로깅 구조 적용.
-  3. `GameController.cs`:
-     - 로비에서 고른 `selectedCharacterId`를 기반으로 인게임 시작 시 캐릭터 프리팹을 동적으로 스폰 및 교체.
-     - `LaunchStone()` 시 캐릭터 콜라이더와 돌 콜라이더 간 `Physics.IgnoreCollision` 적용 (투구 순간 튕김 방지).
-* **컴파일 검증**: `dotnet build Assembly-CSharp.csproj` 경고 0개, 오류 0개 완료.
+  1. `targetCamera` 직렬화 필드 추가: 씬의 `Camera001` 또는 로비 카메라 직접 할당 지원 및 자동 폴백.
+  2. `entryAngleOffset` 추가: 진입/퇴장 횡이동 각도를 기존 45도에서 **55도(+10도)**로 보정하여 쿼터뷰 카메라 시선과 완벽 일치.
+* **컴파일 검증**: `dotnet build` 경고 0개, 오류 0개 완료.
+

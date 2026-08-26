@@ -18,15 +18,9 @@
 - **현상 및 잔여 이슈**:
   - `Stone_Stand` 회전 시 더미(`Stone_Stage_01, 02, 03`)와 돌 인스턴스 간의 회전/위치 동기화 이슈 추가 조정 대기.
 
-### 2026-08-26: 7차 수정 (로비 돌 선택값 인게임 동기화 및 손 소켓 단일화)
+### 2026-08-26: 8차 수정 (인스펙터 타깃 카메라 직접 연결 및 다이얼 Raycast 개선)
 * **작업 내역**:
-  1. **로비 UI 정리**:
-     - `MetaUIManager.cs` 내 임시 `⇦`, `⇨` 버튼 완전 삭제 (순수 마우스/터치 드래그로만 전환).
-     - 로비에서 회전 완료 시 선택된 돌 ID(`selectedStoneId`)를 `GameDataManager.UserData`에 저장하도록 이벤트 연동.
-  2. **인게임 선택 돌 연동**:
-     - `GameController.StartGameSession`: 로비에서 선택한 `selectedStoneId`를 기반으로 해당 돌 프리팹을 로드하여 캐릭터 손 및 인게임 비행에 전달.
-  3. **캐릭터 손 소켓 중복 생성 방지 및 정리**:
-     - `StoneThrowerCharacter.cs`:
-       - `InitializeCharacter()` 내의 불필요한 위치 간섭 사족 코드 완전 삭제.
-       - `SetHandStonePrefab()`에서 손 소켓(`Dummy001`) 하위의 기존 돌을 `DestroyImmediate`로 즉시 0개로 비운 후 선택된 돌 1개만 정확히 쥐어주도록 정리.
-* **컴파일 검증**: `dotnet build Assembly-CSharp.csproj` 경고 0개, 오류 0개 완료.
+  1. `targetCamera` 직렬화 필드 추가: 인스펙터에서 `Camera001` 또는 로비 카메라를 직접 할당 가능하게 지원 (미할당 시 자동 탐색 및 폴백).
+  2. Raycast 히트 판정 개선: `targetCamera` 기반으로 `StoneSelector`, `Stone_Stand`, 하위 콜라이더 터치 시 100% 드래그가 정상 시작되도록 안전화.
+* **컴파일 검증**: `dotnet build` 경고 0개, 오류 0개 완료.
+

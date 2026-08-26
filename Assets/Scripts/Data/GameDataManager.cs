@@ -158,7 +158,7 @@ namespace SkippingStones.Data
                     description = "호숫가 깊은 곳에서 발견되는 초록빛 행운의 돌",
                     prefabPath = "Assets/prefab/Stone/Stone_Green.prefab",
                     unlockGoldCost = 2000,
-                    isUnlocked = true // TODO: 테스트 후 false로 복원
+                    isUnlocked = false // 상용 기본값: 잠김 (2000골드 구매 필요)
                 });
 
                 stoneCatalog.Add(new StoneInfoData
@@ -168,7 +168,7 @@ namespace SkippingStones.Data
                     description = "화산 지대에서 채집된 뜨거운 붉은 돌. 강력한 바운스를 자랑한다.",
                     prefabPath = "Assets/prefab/Stone/Stone_red.prefab",
                     unlockGoldCost = 5000,
-                    isUnlocked = true // TODO: 테스트 후 false로 복원
+                    isUnlocked = false // 상용 기본값: 잠김 (5000골드 구매 필요)
                 });
             }
         }
@@ -185,17 +185,103 @@ namespace SkippingStones.Data
                 catch (Exception ex)
                 {
                     Debug.LogWarning($"[GameDataManager] 세이브 로드 실패, 기본값 사용: {ex.Message}");
-                    UserData = new UserPersistentData();
+                    UserData = CreateDefaultUserData();
                 }
             }
             else
             {
-                UserData = new UserPersistentData();
+                UserData = CreateDefaultUserData();
             }
+
+            // 카탈로그 동기화: 유저의 unlocked 목록에 맞춰 카탈로그 isUnlocked 일치
+            SyncCatalogWithUserData();
 
             // 스태미나 시간 정산
             UpdateStaminaRegeneration();
             OnUserDataChanged?.Invoke(UserData);
+        }
+
+        /// <summary>
+        /// 기본 신규 유저 세이브 데이터 생성 (에디터 테스트 환경에서는 모든 해금 상태 지원)
+        /// </summary>
+        private UserPersistentData CreateDefaultUserData()
+        {
+            var data = new UserPersistentData();
+
+#if UNITY_EDITOR
+            // 🌟 에디터/개발 PC 테스트 모드: 모든 캐릭터/돌/맵 ALL 해금 + 테스트 골드 지급
+            data.userId = "dev_tester_local";
+            data.nickname = "개발자(QA)";
+            data.gold = 999999;
+            data.diamonds = 9999;
+            data.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old" };
+            data.unlockedStoneIds = new List<string> { "default", "flat_slate", "emerald_pebble", "crimson_flint" };
+            Debug.Log("🛠️ [GameDataManager] 에디터 테스트 모드 활성화: 모든 캐릭터/돌/맵 ALL 해금 프로필이 로드되었습니다.");
+#else
+            // 상용 배포: 순정 신규 유저 기본값
+            data.userId = "local_guest";
+            data.nickname = "조약돌 달인";
+            data.gold = 1200;
+            data.diamonds = 50;
+            data.unlockedCharacterIds = new List<string> { "boy_default" };
+            data.unlockedStoneIds = new List<string> { "default", "flat_slate" };
+#endif
+            return data;
+        }
+
+        /// <summary>
+        /// 유저 세이브 데이터의 해금 목록을 마스터 카탈로그에 동기화
+        /// </summary>
+        public void SyncCatalogWithUserData()
+        {
+            if (UserData == null) return;
+
+            if (characterCatalog != null && UserData.unlockedCharacterIds != null)
+            {
+                foreach (var c in characterCatalog)
+                {
+                    c.isUnlocked = UserData.unlockedCharacterIds.Contains(c.id);
+                }
+            }
+
+            if (stoneCatalog != null && UserData.unlockedStoneIds != null)
+            {
+                foreach (var s in stoneCatalog)
+                {
+                    s.isUnlocked = UserData.unlockedStoneIds.Contains(s.id);
+                }
+            }
+        }
+
+        [ContextMenu("🛠️ [DEV] 모든 캐릭터/돌 해금 (All Unlock)")]
+        public void DevUnlockAll()
+        {
+            if (UserData == null) UserData = new UserPersistentData();
+            UserData.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old" };
+            UserData.unlockedStoneIds = new List<string> { "default", "flat_slate", "emerald_pebble", "crimson_flint" };
+            UserData.gold = 999999;
+            UserData.diamonds = 9999;
+            SyncCatalogWithUserData();
+            SaveUserData();
+            Debug.Log("✅ [DEV] 모든 캐릭터/돌 해금 완료!");
+        }
+
+        [ContextMenu("🔄 [DEV] 신규 유저 순정 상태로 리셋 (Clean Reset)")]
+        public void DevResetToCleanUser()
+        {
+            PlayerPrefs.DeleteKey(SAVE_KEY);
+            UserData = new UserPersistentData
+            {
+                userId = "local_guest",
+                nickname = "조약돌 달인",
+                gold = 1200,
+                diamonds = 50,
+                unlockedCharacterIds = new List<string> { "boy_default" },
+                unlockedStoneIds = new List<string> { "default", "flat_slate" }
+            };
+            SyncCatalogWithUserData();
+            SaveUserData();
+            Debug.Log("🔄 [DEV] 신규 유저 순정 상태로 초기화 완료!");
         }
 
         public void SaveUserData()

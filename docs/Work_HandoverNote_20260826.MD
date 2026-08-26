@@ -46,6 +46,35 @@
 
 ---
 
-## 4. 컴파일 검증
+## 4. 🚀 차기 핵심 과제 등록 (Roadmap & Task Plan)
+
+### 📌 [주말/집중 세션 예정] 가벼운 3D 메쉬 기반 소켓 앵커 & 스마트 물길 추적 맵 시스템 개편
+* **추진 배경**:
+  - 기존의 Z축 일직선 스트리밍 한계를 극복하고, **원형 서킷 호수, 급커브 강, 다채로운 테마의 모듈러 맵**을 지원.
+  - 무거운 터레인 대신 **가벼운 3D 메쉬 프리팹**으로 제작하여 런타임 스폰 부하 0% 달성.
+* **핵심 구현 파이프라인**:
+  1. **진입 앵커 (`Start_Anchor`)**:
+     - 이전 청크의 출구와 100% 밀착 결합(위치 및 회전 매트릭스 일치).
+  2. **스마트 강줄기 자동 추적 (`River Stream Centerline`)**:
+     - 수작업 노가다 없이, 지형 골짜기/단면 스캔을 통해 굽이치는 물길 중심선을 코드가 자동 계산 (갓모드 및 카메라 스플라인 곡선 비행).
+  3. **끝 앵커 (`End_Anchor`)**:
+     - 다음 청크가 도킹할 위치와 각도를 제공하여 원형 서킷/무한 루프 완벽 지원.
+  4. **탑다운 직교 리플레이 연동 (`TopDownReplayManager`)**:
+     - 곡선/원형 비행 궤적에 맞춰 리플레이 카메라의 영역(Bounds) 자동 중앙 정렬 및 줌아웃(Auto-Framing) 연동.
+
+### 📌 [기획 결정] 모드별 전용 맵 매니저 분리 및 자동 스캔 아키텍처
+* **결정 사항**:
+  1. **롱디스턴스 전용 맵 매니저**: `LakeEnvironmentManager` (또는 `LongDistanceMapManager`)
+     - `mapTitle`, `mapThumbnail`, `targetClearDistance`, 소켓 앵커 모듈러 스트리밍 보유.
+  2. **타깃 모드 전용 맵 매니저**: `TargetAccuracyMapManager` (신규 분리)
+     - `mapTitle`, `mapThumbnail`, `targetDistance`, 정적 과녁/바위섬 단일 프리팹 보유.
+  3. **UI 스마트 스캔 (`MetaUIManager.ScanEnvManagers`)**:
+     - 상단 모드 탭(`LongDistance` vs `TargetAccuracy`)에 따라 해당 컴포넌트(`GetComponent<T>()`)를 가진 맵 프리팹만 1초 만에 100% 자동 필터링 스캔하여 썸네일과 목록 표출.
+  4. 현재는 **`롱디스턴스(원거리 비행)`** 모드의 완성도와 손맛에 100% 집중하여 먼저 오픈하고, 타깃 모드는 추후 독립 모드로 1.5단계에서 오픈.
+
+---
+
+## 5. 컴파일 검증
 * `dotnet build Assembly-CSharp.csproj`: **경고 0개, 오류 0개 (Clean Build)**
 * `dotnet build Assembly-CSharp-Editor.csproj`: **경고 0개, 오류 0개 (Clean Build)**
+
