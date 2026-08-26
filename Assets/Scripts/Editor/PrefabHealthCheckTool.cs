@@ -169,7 +169,7 @@ namespace SkippingStones.EditorTools
         #region 2. 돌(스톤) 프리팹 검증 & 수리
         private static void CheckStonePrefabs(ref int total, ref int errors, ref int warnings)
         {
-            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Stone", "Assets/prefab" });
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
@@ -177,10 +177,17 @@ namespace SkippingStones.EditorTools
                 if (prefab == null) continue;
 
                 var stone = prefab.GetComponentInChildren<SkippingStone>(true);
-                if (stone != null)
+                bool isStonePrefab = stone != null || path.Replace("\\", "/").Contains("prefab/Stone/");
+
+                if (isStonePrefab)
                 {
                     total++;
                     List<string> issues = new List<string>();
+
+                    if (stone == null)
+                    {
+                        issues.Add("❌ [필수] SkippingStone 컴포넌트 누락!");
+                    }
 
                     var rb = prefab.GetComponentInChildren<Rigidbody>(true);
                     if (rb == null)
@@ -208,17 +215,28 @@ namespace SkippingStones.EditorTools
 
         private static void FixStonePrefabs(ref int fixedCount)
         {
-            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Stone", "Assets/prefab" });
             foreach (string guid in guids)
             {
                 string path = AssetDatabase.GUIDToAssetPath(guid);
                 GameObject prefabRoot = PrefabUtility.LoadPrefabContents(path);
                 if (prefabRoot == null) continue;
 
-                bool modified = false;
                 var stone = prefabRoot.GetComponentInChildren<SkippingStone>(true);
-                if (stone != null)
+                bool isStonePrefab = stone != null || path.Replace("\\", "/").Contains("prefab/Stone/");
+
+                if (isStonePrefab)
                 {
+                    bool modified = false;
+
+                    // 0. SkippingStone 컴포넌트 없으면 추가
+                    if (stone == null)
+                    {
+                        stone = prefabRoot.AddComponent<SkippingStone>();
+                        modified = true;
+                        Debug.Log($"🛠️ [{prefabRoot.name}] SkippingStone 컴포넌트 정식 추가 완료!");
+                    }
+
                     // 1. Rigidbody 없으면 추가 및 세팅
                     var rb = prefabRoot.GetComponentInChildren<Rigidbody>(true);
                     if (rb == null)
