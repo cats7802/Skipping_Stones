@@ -59,6 +59,7 @@ namespace SkippingStones.UI
         [SerializeField] private GameObject lobbyPrefab;
         private GameObject spawnedLobbyInstance;
         private SkippingStones.Visuals.LobbyStoneShowcaseController spawnedLobbyController;
+        private SkippingStones.Visuals.LobbyCharacterShowcaseController spawnedCharacterController;
         private Camera cachedMainCamera;
 
         // 9:16 가상 좌표계 변환 필드
@@ -196,16 +197,15 @@ namespace SkippingStones.UI
                     spawnedLobbyInstance.SetActive(true);
                 }
 
-                // Lobby 3D 스톤 셀렉터 컨트롤러 캐싱
+                // Lobby 3D 스톤 셀렉터 & 캐릭터 쇼케이스 컨트롤러 캐싱 (프리팹에 정식 부착된 컴포넌트만 참조)
                 if (spawnedLobbyInstance != null)
                 {
                     spawnedLobbyController = spawnedLobbyInstance.GetComponentInChildren<SkippingStones.Visuals.LobbyStoneShowcaseController>();
                     if (spawnedLobbyController == null)
                     {
-                        spawnedLobbyController = spawnedLobbyInstance.AddComponent<SkippingStones.Visuals.LobbyStoneShowcaseController>();
+                        Debug.LogWarning("[MetaUIManager] Lobby 프리팹에 'LobbyStoneShowcaseController' 컴포넌트가 누락되어 있습니다! 프리팹에 스크립트를 추가해주세요.");
                     }
-
-                    if (spawnedLobbyController != null)
+                    else
                     {
                         spawnedLobbyController.OnSelectedStoneChanged += (idx, prefab) =>
                         {
@@ -216,6 +216,12 @@ namespace SkippingStones.UI
                                 dm.SaveUserData();
                             }
                         };
+                    }
+
+                    spawnedCharacterController = spawnedLobbyInstance.GetComponentInChildren<SkippingStones.Visuals.LobbyCharacterShowcaseController>();
+                    if (spawnedCharacterController == null)
+                    {
+                        Debug.LogWarning("[MetaUIManager] Lobby 프리팹에 'LobbyCharacterShowcaseController' 컴포넌트가 누락되어 있습니다! 프리팹에 스크립트를 추가해주세요.");
                     }
                 }
 
@@ -234,6 +240,7 @@ namespace SkippingStones.UI
                     spawnedLobbyInstance = null;
                 }
                 spawnedLobbyController = null;
+                spawnedCharacterController = null;
 
                 if (cachedMainCamera != null)
                 {
@@ -564,10 +571,14 @@ namespace SkippingStones.UI
 
             var dm = GameDataManager.Instance;
 
-            // 1. 캐릭터 스위처 (배경 박스 및 텍스트 삭제, 좌/우 화살표만 상단 3D 뷰에 배치)
+            // 1. 캐릭터 스위처 (좌/우 화살표 클릭 시 3D 쇼케이스 트랜지션 연동)
             if (DrawResponsiveButton(new Rect(60, 320, 80, 80), "◀", _glassBtnStyle))
             {
-                if (dm != null && dm.characterCatalog.Count > 0)
+                if (spawnedCharacterController != null)
+                {
+                    spawnedCharacterController.PreviousCharacter();
+                }
+                else if (dm != null && dm.characterCatalog.Count > 0)
                 {
                     selectedCharIndex = (selectedCharIndex - 1 + dm.characterCatalog.Count) % dm.characterCatalog.Count;
                     dm.UserData.selectedCharacterId = dm.characterCatalog[selectedCharIndex].id;
@@ -575,7 +586,11 @@ namespace SkippingStones.UI
             }
             if (DrawResponsiveButton(new Rect(580, 320, 80, 80), "▶", _glassBtnStyle))
             {
-                if (dm != null && dm.characterCatalog.Count > 0)
+                if (spawnedCharacterController != null)
+                {
+                    spawnedCharacterController.NextCharacter();
+                }
+                else if (dm != null && dm.characterCatalog.Count > 0)
                 {
                     selectedCharIndex = (selectedCharIndex + 1) % dm.characterCatalog.Count;
                     dm.UserData.selectedCharacterId = dm.characterCatalog[selectedCharIndex].id;

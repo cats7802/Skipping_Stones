@@ -119,11 +119,17 @@ public class SkippingStone : MonoBehaviour
     private void Awake()
     {
         rb = GetComponent<Rigidbody>();
-        if (rb == null) rb = gameObject.AddComponent<Rigidbody>();
-        rb.useGravity = false;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
+        if (rb == null)
+        {
+            Debug.LogWarning($"[SkippingStone] '{gameObject.name}' 프리팹에 Rigidbody 컴포넌트가 없습니다! 에디터 인스펙터에서 Rigidbody를 추가해주세요.");
+        }
+        else
+        {
+            rb.useGravity = false;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+        }
         startPosition = transform.position;
 
         SetupVisualModel();
@@ -225,7 +231,8 @@ public class SkippingStone : MonoBehaviour
             trail = GetComponent<TrailRenderer>();
             if (trail == null)
             {
-                trail = gameObject.AddComponent<TrailRenderer>();
+                Debug.LogWarning($"[SkippingStone] '{gameObject.name}'에 TrailRenderer 컴포넌트가 없습니다. 트레일 연출을 원하시면 프리팹에 TrailRenderer를 추가해주세요.");
+                return;
             }
         }
 
@@ -274,7 +281,7 @@ public class SkippingStone : MonoBehaviour
     {
         if (GetComponent<RhythmRingIndicator>() == null)
         {
-            gameObject.AddComponent<RhythmRingIndicator>();
+            Debug.LogWarning($"[SkippingStone] '{gameObject.name}'에 RhythmRingIndicator 컴포넌트가 없습니다. 리듬 링 판정 연출을 원하시면 프리팹에 RhythmRingIndicator를 추가해주세요.");
         }
     }
 

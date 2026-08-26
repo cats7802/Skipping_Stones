@@ -10,6 +10,7 @@ GameObject:
   m_Component:
   - component: {fileID: 7898654866681910710}
   - component: {fileID: 6377538782414447256}
+  - component: {fileID: 9079714862716778933}
   m_Layer: 0
   m_Name: Lobby
   m_TagString: Untagged
@@ -51,13 +52,33 @@ MonoBehaviour:
   - {fileID: 0}
   - {fileID: 0}
   - {fileID: 0}
+  unlockedStonePrefabs: []
+  rotationDuration: 0.45
   dialStepAngle: 30
   stageStepAngle: 120
-  stageRotationDuration: 0.55
-  dialRotationDuration: 0.2
   dragThresholdPixels: 35
-  inputEnabled: 1
-  unlockedStonePrefabs: []
+  currentStoneIndex: 0
+  currentSlotFacingIndex: 0
+  isRotating: 0
+--- !u!114 &9079714862716778933
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7372017084036044554}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 875d4e2eab715e2449ef682ed2d861a2, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Visuals.LobbyCharacterShowcaseController
+  stagingPosition: {fileID: 0}
+  characterPrefabs: []
+  transitionDuration: 1
+  entryOffsetDistance: 3.5
+  rotationSensitivity: 0.4
+  currentCharacterIndex: 0
+  isTransitioning: 0
 --- !u!1001 &1314814892213885610
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -133,7 +154,10 @@ PrefabInstance:
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
-    m_AddedComponents: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 8144394004440419581, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 1606266347101178688}
   m_SourcePrefab: {fileID: 100100000, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
 --- !u!4 &1564315122568019265 stripped
 Transform:
@@ -145,6 +169,32 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -6516126627314317563, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
   m_PrefabInstance: {fileID: 1314814892213885610}
   m_PrefabAsset: {fileID: 0}
+--- !u!1 &7149915343957481047 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 8144394004440419581, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
+  m_PrefabInstance: {fileID: 1314814892213885610}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &1606266347101178688
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7149915343957481047}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 0.6971864, y: 0.1600003, z: 0.6971863}
+  m_Center: {x: 0.00000008940696, y: 0.5599999, z: 0.0000009685755}
 --- !u!4 &8808148862420122259 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: 7495113019832311865, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
@@ -220,19 +270,19 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -439118283351685891, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.w
-      value: 0.3607369
+      value: 0.36073563
       objectReference: {fileID: 0}
     - target: {fileID: -439118283351685891, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.x
-      value: 0.04741648
+      value: 0.04741631
       objectReference: {fileID: 0}
     - target: {fileID: -439118283351685891, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.y
-      value: -0.9235177
+      value: -0.9235183
       objectReference: {fileID: 0}
     - target: {fileID: -439118283351685891, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.z
-      value: 0.1213903
+      value: 0.12139037
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_Name
@@ -257,6 +307,10 @@ PrefabInstance:
     - target: {fileID: 5216406115634959618, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_LocalRotation.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 6615795520680725040, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
+      propertyPath: m_Name
+      value: Character_Staging_Position
       objectReference: {fileID: 0}
     - target: {fileID: 7742780737561719692, guid: 31e190bf70ebf9d4f983cdbca80d983d, type: 3}
       propertyPath: m_Name

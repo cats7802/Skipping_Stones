@@ -13,10 +13,7 @@ public class WaterSurface : MonoBehaviour
         BoxCollider boxCol = GetComponent<BoxCollider>();
         if (boxCol == null)
         {
-            boxCol = gameObject.AddComponent<BoxCollider>();
-            boxCol.isTrigger = true;
-            boxCol.center = new Vector3(0f, -2.0f, 750f);
-            boxCol.size = new Vector3(200f, 4.0f, 1500f);
+            Debug.LogWarning($"[WaterSurface] '{gameObject.name}' 수면 오브젝트에 BoxCollider 컴포넌트가 없습니다! 에디터 인스펙터에서 BoxCollider(Trigger)를 추가해주세요.");
         }
         else
         {

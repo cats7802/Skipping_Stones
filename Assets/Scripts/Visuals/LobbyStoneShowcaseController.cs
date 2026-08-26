@@ -60,16 +60,39 @@ namespace SkippingStones.Visuals
         {
             AutoFindReferences();
 
+            ScanUnlockedStonesFromCatalog();
+
+            // 유저가 이전에 선택해둔 돌(selectedStoneId)이 있다면 해당 돌부터 쇼케이스 시작
+            int savedIndex = 0;
+            var dm = GameDataManager.Instance;
+            if (dm != null && dm.UserData != null && !string.IsNullOrEmpty(dm.UserData.selectedStoneId))
+            {
+                string targetId = dm.UserData.selectedStoneId;
+                for (int i = 0; i < unlockedStonePrefabs.Count; i++)
+                {
+                    if (unlockedStonePrefabs[i] != null && unlockedStonePrefabs[i].name.Equals(targetId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        savedIndex = i;
+                        break;
+                    }
+                }
+            }
+
             currentStep = 0;
-            currentStoneIndex = 0;
+            currentStoneIndex = savedIndex;
             currentSlotFacingIndex = 0;
 
             // 회전 코루틴과 동일하게 스탠드 및 다이얼의 초기 로컬 회전을 0도(수평)로 정렬
             if (stageTransform != null) stageTransform.localRotation = Quaternion.Euler(0f, 0f, 0f);
             if (dialTransform != null) dialTransform.localRotation = Quaternion.Euler(0f, 0f, 0f);
 
-            ScanUnlockedStonesFromCatalog();
             RefreshAllSlots();
+
+            // 선택된 돌 이벤트 동기화 호출
+            if (unlockedStonePrefabs.Count > 0 && currentStoneIndex < unlockedStonePrefabs.Count)
+            {
+                OnSelectedStoneChanged?.Invoke(currentStoneIndex, unlockedStonePrefabs[currentStoneIndex]);
+            }
         }
 
         /// <summary>
@@ -163,8 +186,31 @@ namespace SkippingStones.Visuals
 
             if (pointerDown)
             {
-                dragStartPos = currentPointerPos;
-                isDragging = true;
+                // Raycast로 다이얼이나 스탠드 본체를 터치했을 때만 돌 선택 드래그 활성화
+                Camera cam = Camera.main;
+                if (cam == null) cam = FindAnyObjectByType<Camera>();
+
+                bool hitDial = false;
+                if (cam != null)
+                {
+                    Ray ray = cam.ScreenPointToRay(currentPointerPos);
+                    if (Physics.Raycast(ray, out RaycastHit hit, 100f))
+                    {
+                        // 터치한 대상이 다이얼 또는 스탠드의 하위인지 확인
+                        if (hit.transform.IsChildOf(transform) || 
+                            (dialTransform != null && hit.transform.IsChildOf(dialTransform)) ||
+                            (stageTransform != null && hit.transform.IsChildOf(stageTransform)))
+                        {
+                            hitDial = true;
+                        }
+                    }
+                }
+
+                if (hitDial)
+                {
+                    dragStartPos = currentPointerPos;
+                    isDragging = true;
+                }
             }
             else if (pointerUp && isDragging)
             {

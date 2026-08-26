@@ -271,7 +271,46 @@ public class GameController : MonoBehaviour
         }
         if (stonePrefab == null) stonePrefab = defaultStonePrefab;
 
-        GameObject charPrefab = currentSessionData.characterPrefabOverride != null ? currentSessionData.characterPrefabOverride : defaultCharacterPrefab;
+        GameObject charPrefab = currentSessionData.characterPrefabOverride;
+        if (charPrefab == null && !string.IsNullOrEmpty(currentSessionData.characterId))
+        {
+            var dm = GameDataManager.Instance;
+            if (dm != null && dm.characterCatalog != null)
+            {
+                var charInfo = dm.characterCatalog.Find(c => c.id == currentSessionData.characterId || (c.prefabPath != null && c.prefabPath.Contains(currentSessionData.characterId)));
+                if (charInfo != null && !string.IsNullOrEmpty(charInfo.prefabPath))
+                {
+#if UNITY_EDITOR
+                    charPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(charInfo.prefabPath);
+#else
+                    string rPath = charInfo.prefabPath;
+                    if (rPath.StartsWith("Assets/prefab/")) rPath = rPath.Substring("Assets/prefab/".Length);
+                    if (rPath.EndsWith(".prefab")) rPath = rPath.Substring(0, rPath.Length - ".prefab".Length);
+                    charPrefab = Resources.Load<GameObject>(rPath);
+#endif
+                }
+            }
+
+            // 폴백: 에디터에서 Assets 전체 내 StoneThrowerCharacter 컴포넌트를 가진 프리팹 중 이름 매칭
+#if UNITY_EDITOR
+            if (charPrefab == null)
+            {
+                string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
+                foreach (string guid in guids)
+                {
+                    string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                    GameObject p = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    if (p != null && p.name.Equals(currentSessionData.characterId, System.StringComparison.OrdinalIgnoreCase) && p.GetComponentInChildren<StoneThrowerCharacter>(true) != null)
+                    {
+                        charPrefab = p;
+                        break;
+                    }
+                }
+            }
+#endif
+        }
+        if (charPrefab == null) charPrefab = defaultCharacterPrefab;
+
         GameObject mapPrefab = currentSessionData.mapPrefabOverride != null ? currentSessionData.mapPrefabOverride : defaultMapPrefab;
 
         StartGameSession(charPrefab, stonePrefab, mapPrefab, currentMode);
@@ -345,6 +384,16 @@ public class GameController : MonoBehaviour
 
     private void SetupCharacter(GameObject charPrefab)
     {
+        // 씬에 이미 캐릭터가 배치되어 있는데 다른 프리팹을 선택해서 들어온 경우 교체
+        if (character != null && charPrefab != null)
+        {
+            if (!character.gameObject.name.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase))
+            {
+                DestroyImmediate(character.gameObject);
+                character = null;
+            }
+        }
+
         if (character == null)
         {
             character = FindAnyObjectByType<StoneThrowerCharacter>();
@@ -752,9 +801,28 @@ public class GameController : MonoBehaviour
         GameObject newStoneObj = (prefabToSpawn != null) ? Instantiate(prefabToSpawn, spawnPos, spawnRot) : new GameObject("Stone");
         newStoneObj.name = "Stone";
 
-        stone = newStoneObj.GetComponent<SkippingStone>() ?? newStoneObj.AddComponent<SkippingStone>();
+        stone = newStoneObj.GetComponent<SkippingStone>();
+        if (stone == null)
+        {
+            Debug.LogError($"[GameController] 생성된 돌 '{newStoneObj.name}'에 SkippingStone 컴포넌트가 없습니다! 프리팹 설정을 확인해주세요.");
+            return;
+        }
         stone.OnSkipBounced += HandleSkipBounced;
         stone.OnStoneSunk += HandleStoneSunk;
+
+        // 투수 캐릭터와 돌 사이의 물리적 충돌 상호 무시 (투구 순간 몸체 콜라이더에 걸려 튀는 현상 원천 차단)
+        if (character != null)
+        {
+            var charCols = character.GetComponentsInChildren<Collider>();
+            var stoneCols = stone.GetComponentsInChildren<Collider>();
+            foreach (var cCol in charCols)
+            {
+                foreach (var sCol in stoneCols)
+                {
+                    Physics.IgnoreCollision(cCol, sCol, true);
+                }
+            }
+        }
 
         if (dualCamera != null)
         {

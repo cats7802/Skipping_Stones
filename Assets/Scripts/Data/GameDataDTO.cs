@@ -11,6 +11,7 @@ namespace SkippingStones.Data
         public string name;
         public string title;
         public string description;
+        public string prefabPath;           // 프리팹 경로
         public float powerBonus = 0f;      // 파워 보너스 (예: +0.05)
         public float angleAssist = 0f;      // 각도 보정 범위 (예: +3.0도)
         public float perfectTimingAssist = 0f; // 퍼펙트 타이밍 판정 폭 증가
