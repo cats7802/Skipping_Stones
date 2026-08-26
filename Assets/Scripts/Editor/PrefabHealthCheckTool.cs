@@ -7,9 +7,11 @@ using SkippingStones.Visuals;
 namespace SkippingStones.EditorTools
 {
     /// <summary>
-    /// [물수제비 프리팹 무결성 검증 툴]
-    /// - 캐릭터, 돌, 수면, 로비 등 필수 게임오브젝트의 컴포넌트 누락 여부를 원클릭 전수 검사
-    /// - 메뉴: Tools -> Skipping Stones -> 🔍 프리팹 무결성 검증 (Health Check)
+    /// [물수제비 프리팹 무결성 검증 & 원클릭 자동 수리 툴]
+    /// - 캐릭터, 돌, 수면, 로비 등 필수 게임오브젝트의 컴포넌트 누락 여부를 전수 검사
+    /// - PrefabUtility를 사용해 누락된 필수 컴포넌트를 프리팹 파일 원본에 정식으로 자동 부착 & 저장(Auto-Fix)
+    /// - 메뉴 1: Tools -> Skipping Stones -> 🔍 프리팹 무결성 검증 (Health Check)
+    /// - 메뉴 2: Tools -> Skipping Stones -> 🛠️ 누락 컴포넌트 원클릭 자동 수리 (Auto-Fix)
     /// </summary>
     public static class PrefabHealthCheckTool
     {
@@ -45,12 +47,47 @@ namespace SkippingStones.EditorTools
             else
             {
                 Debug.LogWarning($"⚠️ [검증 완료] 총 {totalChecked}개 프리팹 중 오류 {errorCount}개, 경고 {warningCount}개 발견! (위 콘솔 로그 확인)");
-                EditorUtility.DisplayDialog("프리팹 검증 경고", $"검사 결과 오류 {errorCount}개, 경고 {warningCount}개가 발견되었습니다.\n콘솔(Console) 창의 상세 안내를 확인해주세요!", "확인");
+                bool autoFixNow = EditorUtility.DisplayDialog("프리팹 검증 경고", 
+                    $"검사 결과 오류 {errorCount}개, 경고 {warningCount}개가 발견되었습니다.\n\n지금 누락된 컴포넌트들을 프리팹 파일에 '자동 수리(Auto-Fix)'하여 저장하시겠습니까?", 
+                    "🛠️ 지금 자동 수리", "직접 확인");
+                if (autoFixNow)
+                {
+                    RunAutoFix();
+                }
             }
             Debug.Log("=========================================================");
         }
 
-        #region 1. 캐릭터 프리팹 검증 (StoneThrowerCharacter)
+        [MenuItem("Tools/Skipping Stones/🛠️ 누락 컴포넌트 원클릭 자동 수리 (Auto-Fix)", priority = 2)]
+        public static void RunAutoFix()
+        {
+            Debug.Log("=========================================================");
+            Debug.Log("🔧 [물수제비 프리팹 원클릭 자동 수리(Auto-Fix) 시작] 🔧");
+            Debug.Log("=========================================================");
+
+            int fixedCount = 0;
+
+            // 1. 캐릭터 프리팹 자동 수리
+            FixCharacterPrefabs(ref fixedCount);
+
+            // 2. 돌 프리팹 자동 수리
+            FixStonePrefabs(ref fixedCount);
+
+            // 3. 로비 프리팹 자동 수리
+            FixLobbyPrefabs(ref fixedCount);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log($"🎉 [수리 완료] 총 {fixedCount}개 프리팹에 누락된 컴포넌트가 정식 부착 및 저장되었습니다!");
+            EditorUtility.DisplayDialog("자동 수리 완료", $"총 {fixedCount}개 프리팹의 필수 컴포넌트가 정식으로 추가 및 저장되었습니다!\n\n이제 검증(Health Check)을 실행해보세요.", "확인");
+            Debug.Log("=========================================================");
+
+            // 수리 후 즉시 재검증
+            RunFullHealthCheck();
+        }
+
+        #region 1. 캐릭터 프리팹 검증 & 수리
         private static void CheckCharacterPrefabs(ref int total, ref int errors, ref int warnings)
         {
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
@@ -66,16 +103,13 @@ namespace SkippingStones.EditorTools
                     total++;
                     List<string> issues = new List<string>();
 
-                    // 1-1. Animator 체크
                     var anim = prefab.GetComponentInChildren<Animator>(true);
                     if (anim == null) issues.Add("❌ [필수] Animator 컴포넌트 누락");
                     else if (anim.runtimeAnimatorController == null) issues.Add("⚠️ [권장] Animator에 Controller가 비어있음");
 
-                    // 1-2. 콜라이더 체크 (터치 감지용)
                     var col = prefab.GetComponentInChildren<Collider>(true);
                     if (col == null) issues.Add("⚠️ [권장] 터치 및 피직스 감지용 Collider(CapsuleCollider 등) 누락");
 
-                    // 1-3. 오른손 본 및 Dummy001 소켓 체크
                     if (thrower.rightHandBone == null) issues.Add("⚠️ [세팅] StoneThrowerCharacter의 rightHandBone(Bip001 R Hand) 연결 누락");
                     if (thrower.dummy01Socket == null) issues.Add("⚠️ [세팅] StoneThrowerCharacter의 dummy01Socket(Dummy001) 연결 누락");
 
@@ -83,9 +117,56 @@ namespace SkippingStones.EditorTools
                 }
             }
         }
+
+        private static void FixCharacterPrefabs(ref int fixedCount)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(path);
+                if (prefabRoot == null) continue;
+
+                bool modified = false;
+                var thrower = prefabRoot.GetComponentInChildren<StoneThrowerCharacter>(true);
+                if (thrower != null)
+                {
+                    // 1. 콜라이더 없으면 CapsuleCollider 정식 추가
+                    var col = prefabRoot.GetComponentInChildren<Collider>(true);
+                    if (col == null)
+                    {
+                        var cap = thrower.gameObject.AddComponent<CapsuleCollider>();
+                        cap.center = new Vector3(0f, 0.9f, 0f);
+                        cap.radius = 0.35f;
+                        cap.height = 1.8f;
+                        modified = true;
+                        Debug.Log($"🛠️ [{prefabRoot.name}] CapsuleCollider 정식 추가 완료!");
+                    }
+
+                    // 2. 오른손 본 & 더미 소켓 연결 자동 복구
+                    if (thrower.rightHandBone == null)
+                    {
+                        thrower.rightHandBone = FindDeepChild(prefabRoot.transform, "Bip001 R Hand");
+                        if (thrower.rightHandBone != null) modified = true;
+                    }
+                    if (thrower.dummy01Socket == null)
+                    {
+                        thrower.dummy01Socket = FindDeepChild(prefabRoot.transform, "Dummy001") ?? FindDeepChild(prefabRoot.transform, "Dummy01");
+                        if (thrower.dummy01Socket != null) modified = true;
+                    }
+
+                    if (modified)
+                    {
+                        PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
+                        fixedCount++;
+                    }
+                }
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
         #endregion
 
-        #region 2. 돌(스톤) 프리팹 검증 (SkippingStone)
+        #region 2. 돌(스톤) 프리팹 검증 & 수리
         private static void CheckStonePrefabs(ref int total, ref int errors, ref int warnings)
         {
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
@@ -101,7 +182,6 @@ namespace SkippingStones.EditorTools
                     total++;
                     List<string> issues = new List<string>();
 
-                    // 2-1. Rigidbody 체크
                     var rb = prefab.GetComponentInChildren<Rigidbody>(true);
                     if (rb == null)
                     {
@@ -112,15 +192,12 @@ namespace SkippingStones.EditorTools
                         if (rb.useGravity) issues.Add("⚠️ [설정] Rigidbody의 UseGravity가 켜져있습니다 (물수제비는 false 권장)");
                     }
 
-                    // 2-2. 콜라이더 체크
                     var col = prefab.GetComponentInChildren<Collider>(true);
                     if (col == null) issues.Add("❌ [필수] Collider(SphereCollider 등) 누락");
 
-                    // 2-3. TrailRenderer 체크
                     var trail = prefab.GetComponentInChildren<TrailRenderer>(true);
                     if (trail == null) issues.Add("⚠️ [권장] 궤적 연출용 TrailRenderer 누락");
 
-                    // 2-4. RhythmRingIndicator 체크
                     var ring = prefab.GetComponentInChildren<RhythmRingIndicator>(true);
                     if (ring == null) issues.Add("⚠️ [권장] 리듬 링 판정 표시용 RhythmRingIndicator 누락");
 
@@ -128,9 +205,84 @@ namespace SkippingStones.EditorTools
                 }
             }
         }
+
+        private static void FixStonePrefabs(ref int fixedCount)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(path);
+                if (prefabRoot == null) continue;
+
+                bool modified = false;
+                var stone = prefabRoot.GetComponentInChildren<SkippingStone>(true);
+                if (stone != null)
+                {
+                    // 1. Rigidbody 없으면 추가 및 세팅
+                    var rb = prefabRoot.GetComponentInChildren<Rigidbody>(true);
+                    if (rb == null)
+                    {
+                        rb = stone.gameObject.AddComponent<Rigidbody>();
+                        rb.useGravity = false;
+                        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+                        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+                        rb.interpolation = RigidbodyInterpolation.Interpolate;
+                        modified = true;
+                        Debug.Log($"🛠️ [{prefabRoot.name}] Rigidbody 정식 추가 완료!");
+                    }
+                    else if (rb.useGravity)
+                    {
+                        rb.useGravity = false;
+                        modified = true;
+                    }
+
+                    // 2. SphereCollider 없으면 추가
+                    var col = prefabRoot.GetComponentInChildren<Collider>(true);
+                    if (col == null)
+                    {
+                        var sc = stone.gameObject.AddComponent<SphereCollider>();
+                        sc.radius = 0.12f;
+                        modified = true;
+                        Debug.Log($"🛠️ [{prefabRoot.name}] SphereCollider 정식 추가 완료!");
+                    }
+
+                    // 3. TrailRenderer 없으면 추가
+                    var trail = prefabRoot.GetComponentInChildren<TrailRenderer>(true);
+                    if (trail == null)
+                    {
+                        trail = stone.gameObject.AddComponent<TrailRenderer>();
+                        trail.time = 0.38f;
+                        trail.startWidth = 0.045f;
+                        trail.endWidth = 0.002f;
+                        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+                        stone.trail = trail;
+                        modified = true;
+                        Debug.Log($"🛠️ [{prefabRoot.name}] TrailRenderer 정식 추가 완료!");
+                    }
+
+                    // 4. RhythmRingIndicator 없으면 추가
+                    var ring = prefabRoot.GetComponentInChildren<RhythmRingIndicator>(true);
+                    if (ring == null)
+                    {
+                        ring = stone.gameObject.AddComponent<RhythmRingIndicator>();
+                        ring.stone = stone;
+                        modified = true;
+                        Debug.Log($"🛠️ [{prefabRoot.name}] RhythmRingIndicator 정식 추가 완료!");
+                    }
+
+                    if (modified)
+                    {
+                        PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
+                        fixedCount++;
+                    }
+                }
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
         #endregion
 
-        #region 3. 수면/환경 프리팹 검증 (WaterSurface)
+        #region 3. 수면/환경 프리팹 검증
         private static void CheckWaterPrefabs(ref int total, ref int errors, ref int warnings)
         {
             string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
@@ -156,7 +308,7 @@ namespace SkippingStones.EditorTools
         }
         #endregion
 
-        #region 4. 로비 프리팹 검증 (Lobby.prefab)
+        #region 4. 로비 프리팹 검증 & 수리
         private static void CheckLobbyPrefabs(ref int total, ref int errors, ref int warnings)
         {
             string[] guids = AssetDatabase.FindAssets("Lobby t:Prefab", new[] { "Assets/prefab" });
@@ -188,6 +340,54 @@ namespace SkippingStones.EditorTools
                 if (stand == null) issues.Add("❌ [로비] 3개 접시 스탠드 'Stone_Stand' 오브젝트 누락");
 
                 ReportResult("🏛️ [로비]", prefab.name, path, issues, ref errors, ref warnings);
+            }
+        }
+
+        private static void FixLobbyPrefabs(ref int fixedCount)
+        {
+            string[] guids = AssetDatabase.FindAssets("Lobby t:Prefab", new[] { "Assets/prefab" });
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(path);
+                if (prefabRoot == null) continue;
+
+                bool modified = false;
+
+                // 1. LobbyStoneShowcaseController 없으면 추가
+                var stoneCtrl = prefabRoot.GetComponentInChildren<LobbyStoneShowcaseController>(true);
+                if (stoneCtrl == null)
+                {
+                    prefabRoot.AddComponent<LobbyStoneShowcaseController>();
+                    modified = true;
+                    Debug.Log($"🛠️ [{prefabRoot.name}] LobbyStoneShowcaseController 정식 추가 완료!");
+                }
+
+                // 2. LobbyCharacterShowcaseController 없으면 추가
+                var charCtrl = prefabRoot.GetComponentInChildren<LobbyCharacterShowcaseController>(true);
+                if (charCtrl == null)
+                {
+                    prefabRoot.AddComponent<LobbyCharacterShowcaseController>();
+                    modified = true;
+                    Debug.Log($"🛠️ [{prefabRoot.name}] LobbyCharacterShowcaseController 정식 추가 완료!");
+                }
+
+                // 3. 다이얼 콜라이더 없으면 추가
+                var dial = FindDeepChild(prefabRoot.transform, "StoneSelector");
+                if (dial != null && dial.GetComponent<Collider>() == null)
+                {
+                    var mc = dial.gameObject.AddComponent<MeshCollider>();
+                    mc.convex = true;
+                    modified = true;
+                    Debug.Log($"🛠️ [{prefabRoot.name}] StoneSelector 다이얼 MeshCollider 정식 추가 완료!");
+                }
+
+                if (modified)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
+                    fixedCount++;
+                }
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
         }
         #endregion
