@@ -14,6 +14,10 @@ namespace SkippingStones.Data
 
         public UserPersistentData UserData { get; private set; } = new UserPersistentData();
 
+        [Header("🛠️ 개발자 테스트 설정")]
+        [Tooltip("에디터 플레이 시 모든 캐릭터/돌/맵을 항상 ALL 해금 상태로 시작합니다.")]
+        [SerializeField] private bool devUnlockAllByDefault = true;
+
         [Header("마스터 카탈로그")]
         public List<CharacterInfoData> characterCatalog = new List<CharacterInfoData>();
         public List<MapInfoData> mapCatalog = new List<MapInfoData>();
@@ -48,6 +52,14 @@ namespace SkippingStones.Data
             }
         }
 
+        private void OnValidate()
+        {
+            if (Application.isPlaying && devUnlockAllByDefault)
+            {
+                DevUnlockAll();
+            }
+        }
+
         private void Update()
         {
             UpdateStaminaRegeneration();
@@ -63,6 +75,7 @@ namespace SkippingStones.Data
                     name = "민우",
                     title = "호숫가 소년",
                     description = "기본기가 탄탄하며 안정적인 투구 각도를 구사합니다.",
+                    prefabPath = "Assets/prefab/Character/Thrower_Minwoo.prefab",
                     powerBonus = 0f,
                     angleAssist = 2.0f,
                     perfectTimingAssist = 0.05f,
@@ -75,11 +88,12 @@ namespace SkippingStones.Data
                     name = "수아",
                     title = "투수 지망생",
                     description = "강력한 어깨로 초속과 파워를 극대화합니다.",
+                    prefabPath = "Assets/prefab/Character/Thrower_001.prefab",
                     powerBonus = 0.12f,
                     angleAssist = 0f,
                     perfectTimingAssist = 0.08f,
                     unlockGoldCost = 3000,
-                    isUnlocked = false
+                    isUnlocked = true // 테스트 편의를 위해 기본 해금
                 });
 
                 characterCatalog.Add(new CharacterInfoData
@@ -88,11 +102,12 @@ namespace SkippingStones.Data
                     name = "도사님",
                     title = "물수제비 은둔 고수",
                     description = "바람과 수면의 흐름을 읽어 모든 바운스에 보너스를 받습니다.",
+                    prefabPath = "Assets/prefab/Character/Thrower_Test.prefab",
                     powerBonus = 0.20f,
                     angleAssist = 5.0f,
                     perfectTimingAssist = 0.15f,
                     unlockGoldCost = 10000,
-                    isUnlocked = false
+                    isUnlocked = true // 테스트 편의를 위해 기본 해금
                 });
             }
 

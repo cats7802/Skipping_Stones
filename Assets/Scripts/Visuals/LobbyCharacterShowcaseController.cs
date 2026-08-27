@@ -115,88 +115,85 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// StoneThrowerCharacter 스크립트를 보유하고 해금(isUnlocked == true)된 캐릭터 프리팹만 스캔
+        /// GameDataManager의 characterCatalog에서 해금(isUnlocked == true)된 캐릭터 프리팹을 정식 로드
         /// </summary>
         public void ScanCharacterPrefabs()
         {
             characterPrefabs.Clear();
 
             var dm = GameDataManager.Instance;
-
-#if UNITY_EDITOR
-            string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
-            foreach (string guid in guids)
+            if (dm != null && dm.characterCatalog != null && dm.characterCatalog.Count > 0)
             {
-                string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
-                GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab != null && prefab.GetComponentInChildren<StoneThrowerCharacter>(true) != null)
+                foreach (var info in dm.characterCatalog)
                 {
-                    // 카탈로그 및 유저 세이브 해금 여부 엄격 체크
-                    bool isUnlocked = false;
-                    if (dm != null)
+                    // 해금 여부 체크 (UserData or Catalog isUnlocked)
+                    bool isUnlocked = info.isUnlocked;
+                    if (dm.UserData != null && dm.UserData.unlockedCharacterIds != null)
                     {
-                        // 1. 유저 세이브에 직접 등록되어 있는지 확인
-                        if (dm.UserData != null && dm.UserData.unlockedCharacterIds != null)
+                        if (dm.UserData.unlockedCharacterIds.Contains(info.id))
                         {
-                            isUnlocked = dm.UserData.unlockedCharacterIds.Exists(id => 
-                                prefab.name.Equals(id, StringComparison.OrdinalIgnoreCase) || 
-                                prefab.name.Contains(id) || id.Contains(prefab.name));
+                            isUnlocked = true;
                         }
+                    }
 
-                        // 2. 카탈로그 isUnlocked 확인
-                        if (!isUnlocked && dm.characterCatalog != null && dm.characterCatalog.Count > 0)
+                    if (!isUnlocked) continue;
+
+                    GameObject loadedPrefab = null;
+#if UNITY_EDITOR
+                    if (!string.IsNullOrEmpty(info.prefabPath))
+                    {
+                        loadedPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(info.prefabPath);
+                    }
+
+                    // 경로로 못 찾았을 경우 에셋 전체에서 검색 폴백
+                    if (loadedPrefab == null)
+                    {
+                        string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Character", "Assets" });
+                        foreach (string guid in guids)
                         {
-                            var info = dm.characterCatalog.Find(c => c.id.Equals(prefab.name, StringComparison.OrdinalIgnoreCase) || 
-                                                                     prefab.name.Contains(c.id) ||
-                                                                     (c.prefabPath != null && c.prefabPath.Contains(prefab.name)));
-                            if (info != null)
+                            string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                            var p = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                            if (p != null && p.GetComponentInChildren<StoneThrowerCharacter>(true) != null)
                             {
-                                isUnlocked = info.isUnlocked;
+                                if (p.name.Equals(info.id, StringComparison.OrdinalIgnoreCase) ||
+                                    (!string.IsNullOrEmpty(info.prefabPath) && info.prefabPath.EndsWith(p.name + ".prefab", StringComparison.OrdinalIgnoreCase)))
+                                {
+                                    loadedPrefab = p;
+                                    break;
+                                }
                             }
                         }
                     }
-                    else
-                    {
-                        // 데이터매니저 미기동 시 기본 캐릭터 1종만 허용
-                        isUnlocked = prefab.name.ToLowerInvariant().Contains("boy") || prefab.name.ToLowerInvariant().Contains("default") || prefab.name.ToLowerInvariant().Contains("minwoo");
-                    }
-
-                    if (isUnlocked && !characterPrefabs.Contains(prefab))
-                    {
-                        characterPrefabs.Add(prefab);
-                    }
-                }
-            }
 #else
-            var allPrefabs = Resources.LoadAll<GameObject>("");
-            foreach (var p in allPrefabs)
-            {
-                if (p != null && p.GetComponentInChildren<StoneThrowerCharacter>(true) != null)
-                {
-                    bool isUnlocked = false;
-                    if (dm != null)
+                    if (!string.IsNullOrEmpty(info.prefabPath))
                     {
-                        if (dm.UserData != null && dm.UserData.unlockedCharacterIds != null)
-                        {
-                            isUnlocked = dm.UserData.unlockedCharacterIds.Exists(id => 
-                                p.name.Equals(id, StringComparison.OrdinalIgnoreCase) || 
-                                p.name.Contains(id) || id.Contains(p.name));
-                        }
-                        if (!isUnlocked && dm.characterCatalog != null && dm.characterCatalog.Count > 0)
-                        {
-                            var info = dm.characterCatalog.Find(c => c.id.Equals(p.name, StringComparison.OrdinalIgnoreCase) || p.name.Contains(c.id));
-                            if (info != null) isUnlocked = info.isUnlocked;
-                        }
+                        string resourcePath = info.prefabPath.Replace("Assets/Resources/", "").Replace(".prefab", "");
+                        loadedPrefab = Resources.Load<GameObject>(resourcePath);
                     }
-                    else
+#endif
+                    if (loadedPrefab != null && !characterPrefabs.Contains(loadedPrefab))
                     {
-                        isUnlocked = p.name.ToLowerInvariant().Contains("boy") || p.name.ToLowerInvariant().Contains("default") || p.name.ToLowerInvariant().Contains("minwoo");
+                        characterPrefabs.Add(loadedPrefab);
                     }
-
-                    if (isUnlocked && !characterPrefabs.Contains(p)) characterPrefabs.Add(p);
                 }
             }
+
+            // 만약 아무것도 못 찾았을 경우 에셋 폴더 내 기본 캐릭터 폴백 등록
+            if (characterPrefabs.Count == 0)
+            {
+#if UNITY_EDITOR
+                string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Character" });
+                foreach (string guid in guids)
+                {
+                    string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                    var p = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    if (p != null && p.GetComponentInChildren<StoneThrowerCharacter>(true) != null)
+                    {
+                        if (!characterPrefabs.Contains(p)) characterPrefabs.Add(p);
+                    }
+                }
 #endif
+            }
         }
 
         private void Update()

@@ -158,26 +158,57 @@ public class TopDownReplayManager : MonoBehaviour
 
     private void CreateReplayStoneAvatar()
     {
-        if (replayStoneAvatar == null)
+        if (replayStoneAvatar != null)
         {
-            GameObject stonePrefab = Resources.Load<GameObject>("Stone");
+            if (Application.isPlaying) Destroy(replayStoneAvatar);
+            else DestroyImmediate(replayStoneAvatar);
+            replayStoneAvatar = null;
+        }
+
+        GameObject stonePrefab = null;
+
+        // 1. 현재 GameController 또는 GameDataManager의 선택된 돌 프리팹 취득
+        if (gameController != null && gameController.defaultStonePrefab != null)
+        {
+            stonePrefab = gameController.defaultStonePrefab;
+        }
+        else if (SkippingStones.Data.GameDataManager.Instance != null)
+        {
+            var dm = SkippingStones.Data.GameDataManager.Instance;
+            string selectedId = dm.UserData != null ? dm.UserData.selectedStoneId : "default";
+            var stoneInfo = dm.stoneCatalog.Find(s => s.id == selectedId || (s.prefabPath != null && s.prefabPath.Contains(selectedId)));
+            if (stoneInfo != null && !string.IsNullOrEmpty(stoneInfo.prefabPath))
+            {
 #if UNITY_EDITOR
-            if (stonePrefab == null)
-            {
-                stonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/prefab/Stone.prefab");
-            }
+                stonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(stoneInfo.prefabPath);
+#else
+                string rPath = stoneInfo.prefabPath.Replace("Assets/prefab/", "").Replace(".prefab", "");
+                stonePrefab = Resources.Load<GameObject>(rPath);
 #endif
-            if (stonePrefab != null)
-            {
-                replayStoneAvatar = Instantiate(stonePrefab, transform);
-                replayStoneAvatar.name = "TopDownReplay_StoneAvatar";
             }
-            else
-            {
-                replayStoneAvatar = GameObject.CreatePrimitive(PrimitiveType.Sphere);
-                replayStoneAvatar.name = "TopDownReplay_StoneAvatar";
-                replayStoneAvatar.transform.SetParent(transform);
-            }
+        }
+
+        if (stonePrefab == null)
+        {
+#if UNITY_EDITOR
+            stonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/Stone/Stone.prefab");
+#else
+            stonePrefab = Resources.Load<GameObject>("Stone/Stone");
+#endif
+        }
+
+        if (stonePrefab != null)
+        {
+            replayStoneAvatar = Instantiate(stonePrefab, transform);
+            replayStoneAvatar.name = "TopDownReplay_StoneAvatar";
+
+            // 불필요한 물리/인게임 스크립트 비활성화
+            var ss = replayStoneAvatar.GetComponent<SkippingStone>();
+            if (ss != null) Destroy(ss);
+            var rb = replayStoneAvatar.GetComponent<Rigidbody>();
+            if (rb != null) Destroy(rb);
+            var tr = replayStoneAvatar.GetComponent<TrailRenderer>();
+            if (tr != null) Destroy(tr);
 
             foreach (var col in replayStoneAvatar.GetComponentsInChildren<Collider>(true))
             {
@@ -185,16 +216,9 @@ public class TopDownReplayManager : MonoBehaviour
                 else DestroyImmediate(col);
             }
 
-            Material pebbleMat = (stone != null && stone.stoneCustomMaterial != null)
-                                 ? stone.stoneCustomMaterial
-                                 : Resources.Load<Material>("Stone_Pebble_Mat");
-            if (pebbleMat != null)
+            foreach (var rend in replayStoneAvatar.GetComponentsInChildren<Renderer>(true))
             {
-                foreach (var rend in replayStoneAvatar.GetComponentsInChildren<Renderer>(true))
-                {
-                    rend.material = pebbleMat;
-                    rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                }
+                rend.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
             }
 
             replayStoneAvatar.SetActive(false);
@@ -234,8 +258,9 @@ public class TopDownReplayManager : MonoBehaviour
 
         if (replayStoneAvatar != null && replayStoneAvatar.activeSelf)
         {
-            float avatarScale = Mathf.Clamp(orthoSize * 0.28f, 3.5f, 65f);
-            replayStoneAvatar.transform.localScale = new Vector3(avatarScale, avatarScale * 0.35f, avatarScale);
+            // 상공 80m 탑다운 뷰에서도 조약돌이 확실하게 눈에 띄도록 시인성 강화 배율 적용
+            float avatarScale = Mathf.Clamp(orthoSize * 0.18f, 2.5f, 25f);
+            replayStoneAvatar.transform.localScale = new Vector3(avatarScale, avatarScale, avatarScale);
         }
     }
 
@@ -731,11 +756,11 @@ public class TopDownReplayManager : MonoBehaviour
 
                     if (replayStoneAvatar != null)
                     {
-                        float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.28f, 3.5f, 65f);
+                        float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.18f, 2.5f, 25f);
                         float avatarCurrentScale = avatarBaseScale * (1f + heightFactor * 1.5f);
 
                         replayStoneAvatar.transform.position = new Vector3(currentLeadPos.x, (baseReplayLevel + 0.45f) + heightFactor * 6f, currentLeadPos.z);
-                        replayStoneAvatar.transform.localScale = new Vector3(avatarCurrentScale, avatarCurrentScale * 0.35f, avatarCurrentScale);
+                        replayStoneAvatar.transform.localScale = new Vector3(avatarCurrentScale, avatarCurrentScale, avatarCurrentScale);
 
                         Quaternion pitchRot = Quaternion.Euler(-pitchAngle, 0f, 0f);
                         replayStoneAvatar.transform.rotation = baseYawRot * pitchRot;
@@ -775,9 +800,9 @@ public class TopDownReplayManager : MonoBehaviour
 
                     if (replayStoneAvatar != null)
                     {
-                        float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.28f, 3.5f, 65f);
+                        float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.18f, 2.5f, 25f);
                         replayStoneAvatar.transform.position = new Vector3(currentLeadPos.x, baseReplayLevel + 0.45f, currentLeadPos.z);
-                        replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale * 0.35f, avatarBaseScale);
+                        replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale, avatarBaseScale);
                         replayStoneAvatar.transform.rotation = baseYawRot;
                     }
 
@@ -811,9 +836,9 @@ public class TopDownReplayManager : MonoBehaviour
         {
             float finalX = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.x : 0f;
             float finalZ = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.z : cachedFinalDist;
-            float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.28f, 3.5f, 65f);
+            float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.18f, 2.5f, 25f);
             replayStoneAvatar.transform.position = new Vector3(finalX, baseReplayLevel + 0.45f, finalZ);
-            replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale * 0.35f, avatarBaseScale);
+            replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale, avatarBaseScale);
             replayStoneAvatar.transform.rotation = Quaternion.identity;
             replayStoneAvatar.SetActive(true);
         }

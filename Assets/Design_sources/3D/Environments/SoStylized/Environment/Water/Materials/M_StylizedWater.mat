@@ -128,21 +128,21 @@ Material:
     - _Blend: 0
     - _BlendModePreserveSpecular: 1
     - _BumpScale: 1
-    - _Caustic_Distortion: 0.07
+    - _Caustic_Distortion: 0.02
     - _Caustic_Offset: 0.2
-    - _Caustic_Strength: 40
+    - _Caustic_Strength: 8
     - _Caustic_Visual_Offset: 0.2
     - _Caustics_Depth: 3.98
     - _Caustics_Scale: 8
-    - _Caustics_Speed: 1.28
+    - _Caustics_Speed: 0.8
     - _ClearCoatMask: 0
     - _ClearCoatSmoothness: 0
     - _Cull: 2
     - _Cutoff: 0.5
     - _DetailAlbedoMapScale: 1
     - _DetailNormalMapScale: 1
-    - _Detail_Normal_Distortion: 0.25
-    - _Detail_Normal_Strength: 0.2
+    - _Detail_Normal_Distortion: 0.08
+    - _Detail_Normal_Strength: 0.15
     - _DstBlend: 0
     - _DstBlendAlpha: 0
     - _EnvironmentReflections: 1
@@ -151,7 +151,7 @@ Material:
     - _Glossiness: 0
     - _GlossyReflections: 0
     - _Metallic: 0
-    - _Normal_Strength: 0.3
+    - _Normal_Strength: 0.2
     - _OcclusionStrength: 1
     - _Oversampling: 4
     - _Parallax: 0.005
@@ -200,7 +200,7 @@ Material:
     - _Color: {r: 1, g: 1, b: 1, a: 1}
     - _DeepWaterColor: {r: 0.050980385, g: 0.52222687, b: 0.6431373, a: 1}
     - _EmissionColor: {r: 0, g: 0, b: 0, a: 1}
-    - _ShallowWaterColor: {r: 0, g: 1, b: 0.7166667, a: 0.29803923}
+    - _ShallowWaterColor: {r: 0, g: 1, b: 0.7166667, a: 0.88}
     - _Shoreline_Foam_Color: {r: 0.85800004, g: 0.85800004, b: 0.85800004, a: 1}
     - _SpecColor: {r: 0.19999996, g: 0.19999996, b: 0.19999996, a: 1}
     - _Specular_Color: {r: 0.01886791, g: 0.01886791, b: 0.01886791, a: 1}
