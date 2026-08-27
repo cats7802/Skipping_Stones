@@ -61,9 +61,9 @@ public class RiverSpawner : MonoBehaviour
     public float defaultWaterHeight = 16.0f;
 
     /// <summary>
-    /// 수면 오브젝트(WaterSurface / Water_Surface)의 BoxCollider로부터 실시간 가로폭(minX, maxX)과 수면 높이(waterY)를 100% 신뢰성 있게 획득
+    /// 수면 오브젝트(WaterSurface / Water_Surface)의 BoxCollider로부터 실시간 가로폭(minX, maxX), 세로길이(minZ, maxZ)와 수면 높이(waterY)를 100% 신뢰성 있게 획득
     /// </summary>
-    public bool GetWaterColliderBounds(out float minX, out float maxX, out float waterY)
+    public bool GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float waterY)
     {
         BoxCollider bc = null;
         WaterSurface ws = FindAnyObjectByType<WaterSurface>();
@@ -74,7 +74,7 @@ public class RiverSpawner : MonoBehaviour
 
         if (bc == null)
         {
-            GameObject waterObj = GameObject.Find("WaterSurface") ?? GameObject.Find("Water_Surface");
+            GameObject waterObj = GameObject.Find("WaterSurface") ?? GameObject.Find("Water_Surface") ?? GameObject.Find("RS_Surface");
             if (waterObj != null)
             {
                 bc = waterObj.GetComponent<BoxCollider>();
@@ -86,6 +86,8 @@ public class RiverSpawner : MonoBehaviour
             Bounds b = bc.bounds;
             minX = b.min.x;
             maxX = b.max.x;
+            minZ = b.min.z;
+            maxZ = b.max.z;
             waterY = b.max.y;
             return true;
         }
@@ -93,8 +95,15 @@ public class RiverSpawner : MonoBehaviour
         // BoxCollider가 없을 경우 안전 폴백 (Transform / default)
         minX = -100f;
         maxX = 100f;
+        minZ = 0f;
+        maxZ = riverLength;
         waterY = defaultWaterHeight;
         return false;
+    }
+
+    public bool GetWaterColliderBounds(out float minX, out float maxX, out float waterY)
+    {
+        return GetWaterColliderBounds(out minX, out maxX, out _, out _, out waterY);
     }
 
     private float GetCurrentWaterLevel()
@@ -104,20 +113,19 @@ public class RiverSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 🏆 장거리 모드: 0m~4800m 전 구간에 걸쳐 수면 BoxCollider의 전체 가로폭 범위 내에 분산 시도 후,
-    /// 수직 레이캐스트(IsValidWaterPosition)를 통해 굽이치는 실제 물 위에만 안전하게 엔티티 스폰
+    /// 🏆 장거리 모드: 씬 내 실제 수면 BoxCollider의 1개 청크 범위 내에만 엔티티 스폰 (이후 구간은 청크 릴레이 시 동적 확장)
     /// </summary>
     private void GenerateLongDistanceRiver()
     {
         ClearExistingEntities();
 
+        GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float curWaterY);
+        float endZ = maxZ;
         startBankPos = Vector3.zero;
         spawnDirection = Vector3.forward;
 
-        GetWaterColliderBounds(out float minX, out float maxX, out float curWaterY);
-
-        // 1. 🚀 가속 부스트 패드 (수면 BoxCollider 전폭에 걸쳐 좌/중/우 3열 분산 후보 생성 -> 레이캐스트 검증)
-        for (float bDist = 45f; bDist < riverLength - 80f; bDist += Random.Range(35f, 65f))
+        // 1. 🚀 가속 부스트 패드
+        for (float bDist = minZ + 45f; bDist < endZ - 80f; bDist += Random.Range(35f, 65f))
         {
             float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
             float midX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
@@ -128,15 +136,15 @@ public class RiverSpawner : MonoBehaviour
             TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, bDist + Random.Range(-4f, 4f)));
         }
 
-        // 2. 🪨 강 장애물(바위) 수면 BoxCollider 전폭 분산 배치
-        for (float d = 50f; d < riverLength; d += Random.Range(20f, 38f))
+        // 2. 🪨 강 장애물(바위)
+        for (float d = minZ + 50f; d < endZ - 20f; d += Random.Range(20f, 38f))
         {
             float rockX = Random.Range(minX, maxX);
             TrySpawnObstacleRock(new Vector3(rockX, curWaterY, d + Random.Range(-5f, 5f)));
         }
 
-        // 3. 🐟 튀어오르는 물고기 수면 BoxCollider 전폭 분산 스폰
-        for (float fDist = 40f; fDist < riverLength - 60f; fDist += Random.Range(45f, 85f))
+        // 3. 🐟 튀어오르는 물고기
+        for (float fDist = minZ + 40f; fDist < endZ - 60f; fDist += Random.Range(45f, 85f))
         {
             float fX1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
             float fX2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
@@ -146,12 +154,13 @@ public class RiverSpawner : MonoBehaviour
             TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(12f, 24f)), fDist);
         }
 
-        // 4. 🚩 친구 거리 깃발 (0 ~ 4800m 랭킹 이정표)
-        string[] friends = { "라이언 (3위)", "어피치 (2위)", "프로도 (1위)", "콘 (국내 1위)", "무지 (마스터)", "네오 (그랜드마스터)", "튜브 (초월자)", "제이지 (레전드 4,500m)" };
-        float[] friendDists = { 120f, 310f, 580f, 920f, 1500f, 2300f, 3300f, 4500f };
+        // 4. 🚩 친구 거리 깃발 (수면 범위 내에 존재하는 깃발만 스폰)
+        string[] friends = { "라이언 (3위)", "어피치 (2위)", "프로도 (1위)", "콘 (국내 1위)", "무지 (마스터)", "네오 (그랜드마스터)", "튜브 (초월자)", "제이지 (레전드)" };
+        float[] friendDists = { 120f, 310f, 450f, 750f, 1200f, 1800f, 2500f, 3500f };
         for (int i = 0; i < friends.Length; i++)
         {
             float zPos = friendDists[i];
+            if (zPos < minZ + 50f || zPos > endZ - 50f) continue;
             float flagX = (i % 2 == 0) ? Random.Range(minX, Mathf.Lerp(minX, maxX, 0.4f)) : Random.Range(Mathf.Lerp(minX, maxX, 0.6f), maxX);
             Vector3 fPos = new Vector3(flagX, curWaterY, zPos);
             if (IsValidWaterPosition(fPos))
@@ -160,8 +169,8 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        // 5. 🪷 연잎 및 연꽃 군락 수면 BoxCollider 전폭 풍성 생성
-        CreateLilyPadsGrid(minX, maxX, 30f, riverLength, curWaterY);
+        // 5. 🪷 연잎 및 연꽃 군락
+        CreateLilyPadsGrid(minX, maxX, minZ + 20f, endZ - 20f, curWaterY);
         CleanupOldGroundObjects();
     }
 
@@ -172,13 +181,14 @@ public class RiverSpawner : MonoBehaviour
     {
         ClearExistingEntities();
 
-        float curWaterY = GetCurrentWaterLevel();
-        startBankPos = new Vector3(-20f, curWaterY, 700f);
+        GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float curWaterY);
+        float endZ = maxZ;
+        startBankPos = new Vector3((minX + maxX) * 0.5f, curWaterY, minZ);
         spawnDirection = Vector3.forward;
 
         // 1. 🎯 플로팅 타겟 과녁 (Floating Target Rings) 수면 전체 분산 배치
-        float[] targetLanes = { -18f, -7f, 4f, 15f, 23f };
-        for (float z = 50f; z < 1350f; z += 55f)
+        float[] targetLanes = { minX * 0.7f, minX * 0.3f, 0f, maxX * 0.3f, maxX * 0.7f };
+        for (float z = minZ + 50f; z < endZ - 50f; z += 55f)
         {
             for (int col = 0; col < targetLanes.Length; col++)
             {
@@ -192,25 +202,25 @@ public class RiverSpawner : MonoBehaviour
         }
 
         // 2. 🚀 가속 부스트 패드 수면 전역 배치
-        for (float z = 50f; z < 1350f; z += 60f)
+        for (float z = minZ + 50f; z < endZ - 60f; z += 60f)
         {
-            float x1 = Random.Range(-22f, -5f);
-            float x2 = Random.Range(5f, 22f);
+            float x1 = Random.Range(minX * 0.8f, minX * 0.2f);
+            float x2 = Random.Range(maxX * 0.2f, maxX * 0.8f);
             CreateBoostPad(new Vector3(x1, curWaterY + 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
             CreateBoostPad(new Vector3(x2, curWaterY + 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
         }
 
         // 3. 🐟 튀어오르는 물고기 (Jumping Fish) 수면 전역 배치
-        for (float z = 45f; z < 1350f; z += 45f)
+        for (float z = minZ + 45f; z < endZ - 50f; z += 45f)
         {
-            float xPos = Random.Range(-23f, 23f);
+            float xPos = Random.Range(minX * 0.85f, maxX * 0.85f);
             SpawnSingleFish(new Vector3(xPos, curWaterY, z + Random.Range(-10f, 10f)), z);
         }
 
         // 4. 🪨 장애물 바위 수면 전역 배치
-        for (float z = 60f; z < 1350f; z += 50f)
+        for (float z = minZ + 60f; z < endZ - 50f; z += 50f)
         {
-            float xPos = Random.Range(-24f, 24f);
+            float xPos = Random.Range(minX * 0.9f, maxX * 0.9f);
             CreateObstacleRock(new Vector3(xPos, curWaterY, z + Random.Range(-12f, 12f)));
         }
 
@@ -219,12 +229,14 @@ public class RiverSpawner : MonoBehaviour
         float[] friendZDistances = { 120f, 310f, 580f, 920f, 1200f };
         for (int i = 0; i < friends.Length; i++)
         {
-            float xSide = (i % 2 == 0) ? -18f : 18f;
-            CreateFriendFlag(new Vector3(xSide, curWaterY, friendZDistances[i]), friends[i], $"{i + 1}위", friendZDistances[i]);
+            float zPos = friendZDistances[i];
+            if (zPos < minZ + 40f || zPos > endZ - 40f) continue;
+            float xSide = (i % 2 == 0) ? minX * 0.6f : maxX * 0.6f;
+            CreateFriendFlag(new Vector3(xSide, curWaterY, zPos), friends[i], $"{i + 1}위", zPos);
         }
 
         // 6. 🪷 풍성한 연잎 및 연꽃 군락
-        CreateLilyPadsGrid(-26f, 26f, 30f, 1350f, curWaterY);
+        CreateLilyPadsGrid(minX, maxX, minZ + 20f, endZ - 20f, curWaterY);
         CleanupOldGroundObjects();
     }
 
@@ -436,11 +448,21 @@ public class RiverSpawner : MonoBehaviour
 
     /// <summary>
     /// BG_01 청크가 앞으로 릴레이될 때 호출됨.
-    /// 새로 생성된 chunkStartZ ~ chunkStartZ+1500m 구간의 기존 엔티티 제거 후 재배치.
+    /// 새로 생성된 chunkStartZ ~ chunkStartZ+chunkSize 구간의 기존 엔티티 제거 후 재배치.
     /// </summary>
     public void SpawnChunkEntities(float chunkStartZ)
     {
-        float chunkEndZ = chunkStartZ + 1500f;
+        float chunkSize = 500f;
+        if (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 50f)
+        {
+            chunkSize = LakeEnvironmentManager.Instance.autoChunkSize;
+        }
+        else if (GetWaterColliderBounds(out _, out _, out float wMinZ, out float wMaxZ, out _))
+        {
+            chunkSize = Mathf.Max(100f, wMaxZ - wMinZ);
+        }
+
+        float chunkEndZ = chunkStartZ + chunkSize;
         float curWaterY = GetCurrentWaterLevel();
 
         // 해당 구간의 기존 엔티티 제거

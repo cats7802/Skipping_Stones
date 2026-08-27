@@ -36,6 +36,13 @@ public class GameController : MonoBehaviour
     public GameMode currentMode = GameMode.LongDistance;
     public GameState currentState = GameState.ModeSelect;
 
+    [Header("🛠️ 개발자 테스트 설정")]
+    [Tooltip("체크 시 물수제비 탭 없이도 착수 시 자동으로 PERFECT 바운스되어 스트리밍 맵을 끝까지 날아갑니다.")]
+    public bool devGodMode = false;
+
+    [Tooltip("갓모드 비행 시 도달하고자 하는 최대 테스트 거리 (m). 이 거리에 도달하면 자동으로 바운스를 멈추고 자연스럽게 착수/피니시합니다. (0이면 무제한)")]
+    public float devGodModeTargetDistance = 1500f;
+
     [Header("2. 인게임 씬 참조 (인스펙터 명시 연결)")]
     [SerializeField] private StoneThrowerCharacter _character;
     public StoneThrowerCharacter character
@@ -249,8 +256,68 @@ public class GameController : MonoBehaviour
         currentSessionData = session ?? new MatchSessionData();
         currentMode = currentSessionData.gameMode;
 
-        GameObject charPrefab = currentSessionData.characterPrefabOverride != null ? currentSessionData.characterPrefabOverride : defaultCharacterPrefab;
-        GameObject stonePrefab = currentSessionData.stonePrefabOverride != null ? currentSessionData.stonePrefabOverride : defaultStonePrefab;
+        GameObject stonePrefab = currentSessionData.stonePrefabOverride;
+        if (stonePrefab == null && !string.IsNullOrEmpty(currentSessionData.stoneId))
+        {
+            var dm = GameDataManager.Instance;
+            if (dm != null && dm.stoneCatalog != null)
+            {
+                var info = dm.stoneCatalog.Find(s => s.id == currentSessionData.stoneId || (s.prefabPath != null && s.prefabPath.Contains(currentSessionData.stoneId)));
+                if (info != null && !string.IsNullOrEmpty(info.prefabPath))
+                {
+#if UNITY_EDITOR
+                    stonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(info.prefabPath);
+#else
+                    string rPath = info.prefabPath;
+                    if (rPath.StartsWith("Assets/prefab/")) rPath = rPath.Substring("Assets/prefab/".Length);
+                    if (rPath.EndsWith(".prefab")) rPath = rPath.Substring(0, rPath.Length - ".prefab".Length);
+                    stonePrefab = Resources.Load<GameObject>(rPath);
+#endif
+                }
+            }
+        }
+        if (stonePrefab == null) stonePrefab = defaultStonePrefab;
+
+        GameObject charPrefab = currentSessionData.characterPrefabOverride;
+        if (charPrefab == null && !string.IsNullOrEmpty(currentSessionData.characterId))
+        {
+            var dm = GameDataManager.Instance;
+            if (dm != null && dm.characterCatalog != null)
+            {
+                var charInfo = dm.characterCatalog.Find(c => c.id == currentSessionData.characterId || (c.prefabPath != null && c.prefabPath.Contains(currentSessionData.characterId)));
+                if (charInfo != null && !string.IsNullOrEmpty(charInfo.prefabPath))
+                {
+#if UNITY_EDITOR
+                    charPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(charInfo.prefabPath);
+#else
+                    string rPath = charInfo.prefabPath;
+                    if (rPath.StartsWith("Assets/prefab/")) rPath = rPath.Substring("Assets/prefab/".Length);
+                    if (rPath.EndsWith(".prefab")) rPath = rPath.Substring(0, rPath.Length - ".prefab".Length);
+                    charPrefab = Resources.Load<GameObject>(rPath);
+#endif
+                }
+            }
+
+            // 폴백: 에디터에서 Assets 전체 내 StoneThrowerCharacter 컴포넌트를 가진 프리팹 중 이름 매칭
+#if UNITY_EDITOR
+            if (charPrefab == null)
+            {
+                string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets" });
+                foreach (string guid in guids)
+                {
+                    string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
+                    GameObject p = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                    if (p != null && p.name.Equals(currentSessionData.characterId, System.StringComparison.OrdinalIgnoreCase) && p.GetComponentInChildren<StoneThrowerCharacter>(true) != null)
+                    {
+                        charPrefab = p;
+                        break;
+                    }
+                }
+            }
+#endif
+        }
+        if (charPrefab == null) charPrefab = defaultCharacterPrefab;
+
         GameObject mapPrefab = currentSessionData.mapPrefabOverride != null ? currentSessionData.mapPrefabOverride : defaultMapPrefab;
 
         StartGameSession(charPrefab, stonePrefab, mapPrefab, currentMode);
@@ -261,8 +328,8 @@ public class GameController : MonoBehaviour
         currentMode = mode;
         if (stonePrefab != null) defaultStonePrefab = stonePrefab;
 
-        SetupCharacter(charPrefab);
         SetupMapEnvironment(mapPrefab);
+        SetupCharacter(charPrefab);
         ResetToPositioning();
     }
 
@@ -304,6 +371,12 @@ public class GameController : MonoBehaviour
         }
 
         RiverSpawner spawner = FindAnyObjectByType<RiverSpawner>();
+        if (spawner == null)
+        {
+            GameObject spawnerObj = new GameObject("[Auto_RiverSpawner]");
+            spawner = spawnerObj.AddComponent<RiverSpawner>();
+        }
+
         if (spawner != null)
         {
             if (character != null)
@@ -318,6 +391,16 @@ public class GameController : MonoBehaviour
 
     private void SetupCharacter(GameObject charPrefab)
     {
+        // 씬에 이미 캐릭터가 배치되어 있는데 다른 프리팹을 선택해서 들어온 경우 교체
+        if (character != null && charPrefab != null)
+        {
+            if (!character.gameObject.name.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase))
+            {
+                DestroyImmediate(character.gameObject);
+                character = null;
+            }
+        }
+
         if (character == null)
         {
             character = FindAnyObjectByType<StoneThrowerCharacter>();
@@ -354,16 +437,19 @@ public class GameController : MonoBehaviour
         if (character == null) return;
         ResolveSceneReferences();
 
-        if (currentMode == GameMode.TargetAccuracy && _playerPositionRoot != null && _playerPositionRoot.childCount > 0)
+        if (currentMode == GameMode.TargetAccuracy)
         {
-            int safeIdx = Mathf.Clamp(targetPlatformIndex, 0, _playerPositionRoot.childCount - 1);
-            Transform targetSpawn = _playerPositionRoot.GetChild(safeIdx);
+            character.RefreshPlayerPositionGuide();
+            int total = character.GetTotalWaypointsCount();
+            int safeIdx = (total > 1) ? Mathf.Clamp(targetPlatformIndex, 0, total - 1) : 0;
+            character.SetWaypointIndex(safeIdx);
 
-            character.basePosition = targetSpawn.position;
-            character.currentPosition = targetSpawn.position;
-            character.baseRotation = targetSpawn.rotation;
-            character.transform.position = targetSpawn.position;
-            character.transform.rotation = targetSpawn.rotation;
+            Vector3 spawnPos = character.GetWaypointWorldPos(safeIdx);
+            character.basePosition = spawnPos;
+            character.currentPosition = spawnPos;
+            character.baseRotation = Quaternion.Euler(0f, 90f, 0f);
+            character.transform.position = spawnPos;
+            character.transform.rotation = character.baseRotation;
             return;
         }
 
@@ -722,9 +808,28 @@ public class GameController : MonoBehaviour
         GameObject newStoneObj = (prefabToSpawn != null) ? Instantiate(prefabToSpawn, spawnPos, spawnRot) : new GameObject("Stone");
         newStoneObj.name = "Stone";
 
-        stone = newStoneObj.GetComponent<SkippingStone>() ?? newStoneObj.AddComponent<SkippingStone>();
+        stone = newStoneObj.GetComponent<SkippingStone>();
+        if (stone == null)
+        {
+            Debug.LogError($"[GameController] 생성된 돌 '{newStoneObj.name}'에 SkippingStone 컴포넌트가 없습니다! 프리팹 설정을 확인해주세요.");
+            return;
+        }
         stone.OnSkipBounced += HandleSkipBounced;
         stone.OnStoneSunk += HandleStoneSunk;
+
+        // 투수 캐릭터와 돌 사이의 물리적 충돌 상호 무시 (투구 순간 몸체 콜라이더에 걸려 튀는 현상 원천 차단)
+        if (character != null)
+        {
+            var charCols = character.GetComponentsInChildren<Collider>();
+            var stoneCols = stone.GetComponentsInChildren<Collider>();
+            foreach (var cCol in charCols)
+            {
+                foreach (var sCol in stoneCols)
+                {
+                    Physics.IgnoreCollision(cCol, sCol, true);
+                }
+            }
+        }
 
         if (dualCamera != null)
         {
@@ -736,6 +841,8 @@ public class GameController : MonoBehaviour
             topDownReplay.stone = stone;
         }
 
+        stone.isGodMode = devGodMode;
+        stone.godModeTargetDistance = devGodModeTargetDistance;
         stone.Launch(direction, finalPowerMultiplier);
     }
 
@@ -847,7 +954,11 @@ public class GameController : MonoBehaviour
         {
             if (timingGrade == "💦 TOO EARLY")
             {
-                lastTimingText = "💦 너무 이름 (Too Early!)";
+                lastTimingText = "💦 너무 이름! (착수 직전 1회 재도전 가능)";
+            }
+            else if (timingGrade.Contains("기회 소모"))
+            {
+                lastTimingText = "❌ 너무 이름 (막누름 기회 소모!)";
             }
             else if (timingGrade == "ALREADY TAPPED")
             {
@@ -856,7 +967,7 @@ public class GameController : MonoBehaviour
             }
             else
             {
-                // 상공 비행 중 (Option B: 무시)
+                // 상공 비행 중 (무시)
                 return;
             }
         }

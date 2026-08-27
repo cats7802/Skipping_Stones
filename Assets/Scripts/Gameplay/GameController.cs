@@ -36,6 +36,13 @@ public class GameController : MonoBehaviour
     public GameMode currentMode = GameMode.LongDistance;
     public GameState currentState = GameState.ModeSelect;
 
+    [Header("🛠️ 개발자 테스트 설정")]
+    [Tooltip("체크 시 물수제비 탭 없이도 착수 시 자동으로 PERFECT 바운스되어 스트리밍 맵을 끝까지 날아갑니다.")]
+    public bool devGodMode = false;
+
+    [Tooltip("갓모드 비행 시 도달하고자 하는 최대 테스트 거리 (m). 이 거리에 도달하면 자동으로 바운스를 멈추고 자연스럽게 착수/피니시합니다. (0이면 무제한)")]
+    public float devGodModeTargetDistance = 1500f;
+
     [Header("2. 인게임 씬 참조 (인스펙터 명시 연결)")]
     [SerializeField] private StoneThrowerCharacter _character;
     public StoneThrowerCharacter character
@@ -834,6 +841,8 @@ public class GameController : MonoBehaviour
             topDownReplay.stone = stone;
         }
 
+        stone.isGodMode = devGodMode;
+        stone.godModeTargetDistance = devGodModeTargetDistance;
         stone.Launch(direction, finalPowerMultiplier);
     }
 
@@ -945,7 +954,11 @@ public class GameController : MonoBehaviour
         {
             if (timingGrade == "💦 TOO EARLY")
             {
-                lastTimingText = "💦 너무 이름 (Too Early!)";
+                lastTimingText = "💦 너무 이름! (착수 직전 1회 재도전 가능)";
+            }
+            else if (timingGrade.Contains("기회 소모"))
+            {
+                lastTimingText = "❌ 너무 이름 (막누름 기회 소모!)";
             }
             else if (timingGrade == "ALREADY TAPPED")
             {
@@ -954,7 +967,7 @@ public class GameController : MonoBehaviour
             }
             else
             {
-                // 상공 비행 중 (Option B: 무시)
+                // 상공 비행 중 (무시)
                 return;
             }
         }

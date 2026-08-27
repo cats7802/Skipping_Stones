@@ -84,12 +84,14 @@ public class SkippingStone : MonoBehaviour
     public bool isCrashed = false;
     public bool isSkimming = false;
     public bool isGodMode = false;
+    public float godModeTargetDistance = 0f; // 0이면 무제한, 지정 거리(m) 도달 시 자연스럽게 멈춤
     public int skipCount = 0;
     public float totalDistance = 0f;
     public float skimDistance = 0f;
     public bool isInTimingWindow = false;
 
     private bool hasTappedInCurrentBounce = false;
+    private int earlyRetryCount = 0; // 하강 1회당 TOO EARLY 실수 만회 허용 횟수 (최대 1회)
     private Vector3 skimStartPos;
     private float skimDuration = 0f;
     private float maxSkimDuration = 0f;
@@ -337,6 +339,7 @@ public class SkippingStone : MonoBehaviour
         totalDistance = 0f;
         skimDistance = 0f;
         hasTappedInCurrentBounce = false;
+        earlyRetryCount = 0;
         isInTimingWindow = false;
 
         if (rb != null)
@@ -378,6 +381,7 @@ public class SkippingStone : MonoBehaviour
         skipCount = 0;
         skimDistance = 0f;
         hasTappedInCurrentBounce = false;
+        earlyRetryCount = 0;
         isInTimingWindow = false;
         waterSubmergeTimer = 0f;
         currentPitchAngle = 0f;
@@ -507,8 +511,11 @@ public class SkippingStone : MonoBehaviour
         float distToWater = transform.position.y - waterLevel;
         float dynWindowHeight = Mathf.Lerp(timingWindowHeight, 1.4f, Mathf.Clamp01(skipCount / 30f));
 
+        // 🌟 [핵심] 실제 돌 발밑에 WaterSurface가 존재하는지 검증 (허공 튕김 원천 차단)
+        bool hasWaterBelow = CheckWaterUnderneath();
+
         // 수면 위 dynWindowHeight 이내로 접근하고 하강 중일 때 타이밍 윈도우 활성화
-        if (distToWater <= dynWindowHeight && distToWater >= -0.1f && rb.linearVelocity.y < 0.5f)
+        if (hasWaterBelow && distToWater <= dynWindowHeight && distToWater >= -0.1f && rb.linearVelocity.y < 0.5f)
         {
             isInTimingWindow = true;
         }
@@ -521,14 +528,41 @@ public class SkippingStone : MonoBehaviour
         if (rb.linearVelocity.y > 0.5f)
         {
             hasTappedInCurrentBounce = false;
+            earlyRetryCount = 0;
             waterSubmergeTimer = 0f;
         }
 
-        if (isGodMode) return;
+        // 🌟 갓모드 / 오토 바운스: 실제 물 위에서만 완벽한 퍼펙트 바운스 발동
+        if (isGodMode && hasWaterBelow && distToWater <= 0.15f && rb.linearVelocity.y <= 0f)
+        {
+            // 목표 테스트 거리에 도달한 경우 바운스를 멈추고 스키밍 피니시 / 착수
+            if (godModeTargetDistance > 0f && totalDistance >= godModeTargetDistance)
+            {
+                if (skipCount >= minSkimSkips && !isSkimming)
+                {
+                    StartSkimmingFinish();
+                }
+                else
+                {
+                    Sink($"테스트 목표 거리 ({godModeTargetDistance:F0}m) 도달 완료");
+                }
+                return;
+            }
 
-        // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했을 때)
+            TryRhythmBounce(0f, out _);
+            return;
+        }
+
+        // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했거나 발밑이 허공일 때)
         if (distToWater <= -0.04f && rb.linearVelocity.y <= 0f)
         {
+            if (!hasWaterBelow)
+            {
+                // 배경 미로딩으로 인한 허공 추락 즉시 침몰 처리
+                Sink("허공 추락 (수면 없음)");
+                return;
+            }
+
             if (waterSubmergeTimer <= 0f)
             {
                 waterSubmergeTimer = Time.time;
@@ -577,6 +611,13 @@ public class SkippingStone : MonoBehaviour
             return false;
         }
 
+        // 🌟 실제 돌 발밑에 물이 없으면 바운스 불가 (추락 유도)
+        if (!CheckWaterUnderneath())
+        {
+            timingGrade = "NO WATER";
+            return false;
+        }
+
         // 2. 이미 이번 하강에서 탭을 소모한 경우 연타 차단
         if (hasTappedInCurrentBounce)
         {
@@ -619,8 +660,20 @@ public class SkippingStone : MonoBehaviour
         }
         else
         {
-            // 타이밍 윈도우 내이지만 착수까지 너무 많이 남음 (Too Early) -> 탭 기회 소모 및 바운스 실패
-            timingGrade = "💦 TOO EARLY";
+            // 타이밍 윈도우 내이지만 착수까지 너무 많이 남음 (Too Early)
+            earlyRetryCount++;
+            if (earlyRetryCount <= 1)
+            {
+                // 1회차 Too Early 실수: 착수 타이밍에 맞춰 다시 제대로 누를 수 있도록 구제 (1회 재도전 기회 부여)
+                hasTappedInCurrentBounce = false;
+                timingGrade = "💦 TOO EARLY";
+            }
+            else
+            {
+                // 2회차 이상 막누름: 탭 기회 영구 소모 (연타 차단 및 침몰 유도)
+                hasTappedInCurrentBounce = true;
+                timingGrade = "💦 TOO EARLY (기회 소모!)";
+            }
             return false;
         }
 
@@ -987,5 +1040,37 @@ public class SkippingStone : MonoBehaviour
             rb.angularVelocity = Vector3.zero;
             rb.isKinematic = true;
         }
+    }
+
+    /// <summary>
+    /// 🌟 돌의 현재 X, Z 좌표 발밑에 실제 WaterSurface 콜라이더가 존재하는지 검증 (허공 튕김 원천 차단)
+    /// </summary>
+    public bool CheckWaterUnderneath()
+    {
+        // 1. 씬 내 모든 활성화된 WaterSurface 콜라이더의 X, Z 범위 검사
+        var allWaters = FindObjectsByType<WaterSurface>(FindObjectsInactive.Exclude);
+        if (allWaters != null && allWaters.Length > 0)
+        {
+            Vector3 pos = transform.position;
+            foreach (var ws in allWaters)
+            {
+                if (ws == null || !ws.gameObject.activeInHierarchy) continue;
+                Collider col = ws.GetComponent<Collider>();
+                if (col != null)
+                {
+                    Bounds b = col.bounds;
+                    // 돌의 X, Z 좌표가 실제 수면 콜라이더 바운드 영역 안에 들어있는지 정밀 확인
+                    if (pos.x >= b.min.x && pos.x <= b.max.x && pos.z >= b.min.z && pos.z <= b.max.z)
+                    {
+                        return true;
+                    }
+                }
+            }
+            // 씬에 수면이 존재하는데 돌이 수면 바깥(허공/강변 밖)으로 나간 경우
+            return false;
+        }
+
+        // 수면 컴포넌트가 하나도 없는 특수 상황 폴백 (기본 수면 높이 기준)
+        return true;
     }
 }

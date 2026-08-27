@@ -17,7 +17,7 @@ public class TopDownReplayManager : MonoBehaviour
     public bool isReplayActive = false;
     public bool isDrawing = false;
     public bool isReplayFinished = false;
-    public const float PAGE_DISTANCE = 1500f;
+    public float GetPageDistance() => (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 50f) ? LakeEnvironmentManager.Instance.autoChunkSize : 500f;
     public int totalPages = 1;
     public int currentPage = 1;
 
@@ -304,7 +304,8 @@ public class TopDownReplayManager : MonoBehaviour
 
         CalculateSmartBounds();
 
-        totalPages = Mathf.Max(1, Mathf.CeilToInt(finalDist / PAGE_DISTANCE));
+        float pageDist = GetPageDistance();
+        totalPages = Mathf.Max(1, Mathf.CeilToInt(finalDist / pageDist));
         currentPage = 1;
         isReplayActive = true;
         isReplayFinished = false;
@@ -383,7 +384,7 @@ public class TopDownReplayManager : MonoBehaviour
         SetPageCameraView(currentPage, true);
     }
 
-    public void SetPageCameraView(int page, bool smooth)
+    public void SetPageCameraView(int page, bool smooth = true)
     {
         DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null)
                                   ? gameController.dualCamera
@@ -393,8 +394,9 @@ public class TopDownReplayManager : MonoBehaviour
         UpdateBaseReplayLevel();
         Vector3 targetCenter;
         float targetOrtho;
+        float pageDist = GetPageDistance();
 
-        if (cachedFinalDist <= PAGE_DISTANCE)
+        if (cachedFinalDist <= pageDist)
         {
             float spanZ = Mathf.Max(35f, boundMaxZ - boundMinZ);
             float spanX = Mathf.Max(25f, boundMaxX - boundMinX);
@@ -404,10 +406,10 @@ public class TopDownReplayManager : MonoBehaviour
         }
         else
         {
-            float pageStartZ = (page - 1) * PAGE_DISTANCE;
-            float pageEndZ = Mathf.Min(cachedFinalDist, page * PAGE_DISTANCE);
+            float pageStartZ = (page - 1) * pageDist;
+            float pageEndZ = Mathf.Min(cachedFinalDist, page * pageDist);
             float pageCenterZ = (pageStartZ + pageEndZ) * 0.5f;
-            float pageSpanZ = Mathf.Max(PAGE_DISTANCE, pageEndZ - pageStartZ);
+            float pageSpanZ = Mathf.Max(pageDist, pageEndZ - pageStartZ);
 
             float pageMinX = float.MaxValue, pageMaxX = float.MinValue;
             foreach (var r in currentHistory)
@@ -479,17 +481,18 @@ public class TopDownReplayManager : MonoBehaviour
 
     private float CalculateCameraZForLeadPosition(float leadZ)
     {
-        if (cachedFinalDist <= PAGE_DISTANCE)
+        float pageDist = GetPageDistance();
+        if (cachedFinalDist <= pageDist)
         {
             return (boundMinZ + boundMaxZ) * 0.5f;
         }
 
-        if (leadZ <= 800f)
+        if (leadZ <= pageDist * 0.55f)
         {
-            return 750f;
+            return pageDist * 0.5f;
         }
 
-        return Mathf.Clamp(leadZ - 50f, 750f, cachedFinalDist);
+        return Mathf.Clamp(leadZ - 50f, pageDist * 0.5f, cachedFinalDist);
     }
 
     private void HandleFreeNavigation()
@@ -651,7 +654,8 @@ public class TopDownReplayManager : MonoBehaviour
 
     private void SyncTerrainByZ(float centerZ)
     {
-        int camPage = Mathf.Clamp(Mathf.FloorToInt(centerZ / PAGE_DISTANCE) + 1, 1, totalPages);
+        float pageDist = GetPageDistance();
+        int camPage = Mathf.Clamp(Mathf.FloorToInt(centerZ / pageDist) + 1, 1, totalPages);
         if (camPage != lastLoadedTerrainPage)
         {
             lastLoadedTerrainPage = camPage;

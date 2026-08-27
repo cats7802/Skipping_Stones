@@ -50,10 +50,13 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: 919132149155446097, guid: 159d44e95d750d340bfd9212603392c1, type: 3}
       propertyPath: m_Name
-      value: SM_PineFallen2_SnowCover
+      value: P_PineFallen2_SnowCover
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedComponents:
+    - {fileID: 4742473837712756890, guid: 159d44e95d750d340bfd9212603392c1, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: 7557780061292666916, guid: 159d44e95d750d340bfd9212603392c1, type: 3}
+    - {fileID: -3096777796493110445, guid: 159d44e95d750d340bfd9212603392c1, type: 3}
     m_AddedGameObjects: []
     m_AddedComponents: []
   m_SourcePrefab: {fileID: 100100000, guid: 159d44e95d750d340bfd9212603392c1, type: 3}

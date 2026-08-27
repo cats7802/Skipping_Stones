@@ -69,9 +69,22 @@ namespace SkippingStones.Visuals
             if (dm != null && dm.UserData != null && !string.IsNullOrEmpty(dm.UserData.selectedStoneId))
             {
                 string targetId = dm.UserData.selectedStoneId;
+                
+                // 1. 카탈로그 ID 또는 프리팹 이름으로 일치 검사
                 for (int i = 0; i < unlockedStonePrefabs.Count; i++)
                 {
-                    if (unlockedStonePrefabs[i] != null && unlockedStonePrefabs[i].name.Equals(targetId, StringComparison.OrdinalIgnoreCase))
+                    if (unlockedStonePrefabs[i] == null) continue;
+                    string pName = unlockedStonePrefabs[i].name;
+
+                    if (pName.Equals(targetId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        savedIndex = i;
+                        break;
+                    }
+
+                    // 카탈로그 ID와 프리팹 이름 상호 매핑 (예: crimson_flint <-> Stone_red)
+                    var catalogItem = dm.stoneCatalog?.Find(s => s.id.Equals(targetId, StringComparison.OrdinalIgnoreCase));
+                    if (catalogItem != null && !string.IsNullOrEmpty(catalogItem.prefabPath) && catalogItem.prefabPath.Contains(pName))
                     {
                         savedIndex = i;
                         break;
@@ -322,8 +335,9 @@ namespace SkippingStones.Visuals
             {
                 int diff = (i - currentSlotFacingIndex + 3) % 3;
                 int offset = 0;
-                if (diff == 2) offset = 1;       // +120도 회전 시 정면으로 올 슬롯 (다음 돌)
-                else if (diff == 1) offset = -1; // -120도 회전 시 정면으로 올 슬롯 (이전 돌)
+                if (diff == 0) offset = 0;       // 현재 정면 슬롯
+                else if (diff == 1) offset = 1;  // 다음 슬롯 (우측 뒤)
+                else if (diff == 2) offset = -1; // 이전 슬롯 (좌측 뒤)
 
                 int stoneIdx = (currentStoneIndex + offset + total) % total;
                 SpawnStoneAtSlot(i, stoneIdx);
@@ -337,12 +351,12 @@ namespace SkippingStones.Visuals
 
             for (int i = 0; i < 3; i++)
             {
-                if (i == currentSlotFacingIndex) continue; // 정면 슬롯은 회전해왔으므로 건드리지 않음
+                if (i == currentSlotFacingIndex) continue; // 정면 슬롯은 이미 회전해왔으므로 건드리지 않음
 
                 int diff = (i - currentSlotFacingIndex + 3) % 3;
                 int offset = 0;
-                if (diff == 2) offset = 1;       // 다음 돌 슬롯
-                else if (diff == 1) offset = -1; // 이전 돌 슬롯
+                if (diff == 1) offset = 1;       // 다음 슬롯
+                else if (diff == 2) offset = -1; // 이전 슬롯
 
                 int targetStoneIdx = (currentStoneIndex + offset + total) % total;
                 SpawnStoneAtSlot(i, targetStoneIdx);

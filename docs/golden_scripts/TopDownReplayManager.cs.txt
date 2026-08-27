@@ -17,7 +17,7 @@ public class TopDownReplayManager : MonoBehaviour
     public bool isReplayActive = false;
     public bool isDrawing = false;
     public bool isReplayFinished = false;
-    public const float PAGE_DISTANCE = 1500f;
+    public float GetPageDistance() => (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 50f) ? LakeEnvironmentManager.Instance.autoChunkSize : 500f;
     public int totalPages = 1;
     public int currentPage = 1;
 
@@ -304,7 +304,8 @@ public class TopDownReplayManager : MonoBehaviour
 
         CalculateSmartBounds();
 
-        totalPages = Mathf.Max(1, Mathf.CeilToInt(finalDist / PAGE_DISTANCE));
+        float pageDist = GetPageDistance();
+        totalPages = Mathf.Max(1, Mathf.CeilToInt(finalDist / pageDist));
         currentPage = 1;
         isReplayActive = true;
         isReplayFinished = false;
@@ -383,7 +384,7 @@ public class TopDownReplayManager : MonoBehaviour
         SetPageCameraView(currentPage, true);
     }
 
-    public void SetPageCameraView(int page, bool smooth)
+    public void SetPageCameraView(int page, bool smooth = true)
     {
         DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null)
                                   ? gameController.dualCamera
@@ -393,8 +394,9 @@ public class TopDownReplayManager : MonoBehaviour
         UpdateBaseReplayLevel();
         Vector3 targetCenter;
         float targetOrtho;
+        float pageDist = GetPageDistance();
 
-        if (cachedFinalDist <= PAGE_DISTANCE)
+        if (cachedFinalDist <= pageDist)
         {
             float spanZ = Mathf.Max(35f, boundMaxZ - boundMinZ);
             float spanX = Mathf.Max(25f, boundMaxX - boundMinX);
@@ -404,10 +406,10 @@ public class TopDownReplayManager : MonoBehaviour
         }
         else
         {
-            float pageStartZ = (page - 1) * PAGE_DISTANCE;
-            float pageEndZ = Mathf.Min(cachedFinalDist, page * PAGE_DISTANCE);
+            float pageStartZ = (page - 1) * pageDist;
+            float pageEndZ = Mathf.Min(cachedFinalDist, page * pageDist);
             float pageCenterZ = (pageStartZ + pageEndZ) * 0.5f;
-            float pageSpanZ = Mathf.Max(PAGE_DISTANCE, pageEndZ - pageStartZ);
+            float pageSpanZ = Mathf.Max(pageDist, pageEndZ - pageStartZ);
 
             float pageMinX = float.MaxValue, pageMaxX = float.MinValue;
             foreach (var r in currentHistory)
@@ -479,17 +481,18 @@ public class TopDownReplayManager : MonoBehaviour
 
     private float CalculateCameraZForLeadPosition(float leadZ)
     {
-        if (cachedFinalDist <= PAGE_DISTANCE)
+        float pageDist = GetPageDistance();
+        if (cachedFinalDist <= pageDist)
         {
             return (boundMinZ + boundMaxZ) * 0.5f;
         }
 
-        if (leadZ <= 800f)
+        if (leadZ <= pageDist * 0.55f)
         {
-            return 750f;
+            return pageDist * 0.5f;
         }
 
-        return Mathf.Clamp(leadZ - 50f, 750f, cachedFinalDist);
+        return Mathf.Clamp(leadZ - 50f, pageDist * 0.5f, cachedFinalDist);
     }
 
     private void HandleFreeNavigation()
@@ -651,7 +654,8 @@ public class TopDownReplayManager : MonoBehaviour
 
     private void SyncTerrainByZ(float centerZ)
     {
-        int camPage = Mathf.Clamp(Mathf.FloorToInt(centerZ / PAGE_DISTANCE) + 1, 1, totalPages);
+        float pageDist = GetPageDistance();
+        int camPage = Mathf.Clamp(Mathf.FloorToInt(centerZ / pageDist) + 1, 1, totalPages);
         if (camPage != lastLoadedTerrainPage)
         {
             lastLoadedTerrainPage = camPage;
@@ -796,8 +800,6 @@ public class TopDownReplayManager : MonoBehaviour
                     float rawT = Mathf.Clamp01(segElapsed / timePerSegment);
                     Vector3 currentLeadPos = Vector3.Lerp(startP, endP, rawT);
 
-                    skimLine.SetPosition(1, currentLeadPos);
-
                     if (replayStoneAvatar != null)
                     {
                         float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.18f, 2.5f, 25f);
@@ -805,6 +807,8 @@ public class TopDownReplayManager : MonoBehaviour
                         replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale, avatarBaseScale);
                         replayStoneAvatar.transform.rotation = baseYawRot;
                     }
+
+                    skimLine.SetPosition(1, currentLeadPos);
 
                     if (dualCam != null)
                     {
@@ -823,199 +827,75 @@ public class TopDownReplayManager : MonoBehaviour
             SpawnBounceMarker(currentHistory[i + 1], i + 1);
         }
 
-        if (dualCam != null)
-        {
-            float finalX = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.x : 0f;
-            currentCamCenter.x = Mathf.Clamp(finalX, boundMinX, boundMaxX);
-            currentCamCenter.z = CalculateCameraZForLeadPosition(cachedFinalDist);
-            dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
-            SyncTerrainByZ(currentCamCenter.z);
-        }
-
-        if (replayStoneAvatar != null)
-        {
-            float finalX = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.x : 0f;
-            float finalZ = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.z : cachedFinalDist;
-            float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.18f, 2.5f, 25f);
-            replayStoneAvatar.transform.position = new Vector3(finalX, baseReplayLevel + 0.45f, finalZ);
-            replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale, avatarBaseScale);
-            replayStoneAvatar.transform.rotation = Quaternion.identity;
-            replayStoneAvatar.SetActive(true);
-        }
-
         isDrawing = false;
         isReplayFinished = true;
+        if (replayStoneAvatar != null) replayStoneAvatar.SetActive(false);
     }
 
     private void SpawnBounceMarker(SkippingStone.BounceRecord record, int index)
     {
-        GameObject marker = new GameObject($"ReplayMarker_{index}_{record.grade}");
+        GameObject marker = new GameObject($"Marker_{index}_{record.grade}");
         marker.transform.SetParent(transform);
-        Vector3 markerPos = new Vector3(record.position.x, baseReplayLevel + 0.12f, record.position.z);
+
+        float drawY = baseReplayLevel + 0.20f;
+        Vector3 markerPos = new Vector3(record.position.x, drawY, record.position.z);
         marker.transform.position = markerPos;
 
         LineRenderer lr = marker.AddComponent<LineRenderer>();
-        Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
-        Material mat = new Material(unlitShader);
+        Shader unlitShader = Shader.Find("Universal Render Pipeline/Unlit")
+                             ?? Shader.Find("Sprites/Default")
+                             ?? Shader.Find("Unlit/Color");
+        Material mat = (unlitShader != null) ? new Material(unlitShader) : new Material(Shader.Find("Standard"));
 
-        Color mColor = bounceMarkerColor;
+        Color markerColor = bounceMarkerColor;
+        float radius = 1.4f;
 
-        float baseRadius = 15f;
-        float ringWidth = Mathf.Clamp(currentOrthoSize * 0.007f, 0.15f, 3.2f);
+        if (record.grade == "START") { markerColor = startMarkerColor; radius = 1.8f; }
+        else if (record.grade == "FINISH" || record.grade == "SUNK") { markerColor = finishMarkerColor; radius = 2.2f; }
+        else if (record.grade == "SKIM_START") { markerColor = skimStartMarkerColor; radius = 1.6f; }
+        else if (record.grade.Contains("PERFECT")) { markerColor = perfectMarkerColor; radius = 1.6f; }
+        else if (record.grade.Contains("BOOST")) { markerColor = boostMarkerColor; radius = 1.7f; }
 
-        if (index == 0)
-        {
-            mColor = startMarkerColor;
-            baseRadius = 18f;
-        }
-        else if (record.grade == "SKIM_START")
-        {
-            mColor = skimStartMarkerColor;
-            baseRadius = 17f;
-        }
-        else if (record.grade == "FINISH" || index == currentHistory.Count - 1)
-        {
-            mColor = finishMarkerColor;
-            baseRadius = 22f;
-        }
-        else if (record.grade.Contains("BOOST"))
-        {
-            mColor = boostMarkerColor;
-            baseRadius = 19f;
-        }
-        else if (record.grade.Contains("PERFECT"))
-        {
-            mColor = perfectMarkerColor;
-            baseRadius = 16f;
-        }
-
-        mat.color = mColor;
+        mat.color = markerColor;
         lr.material = mat;
-        lr.startWidth = ringWidth;
-        lr.endWidth = ringWidth;
         lr.useWorldSpace = false;
-        lr.positionCount = 36;
+        lr.loop = true;
         lr.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
         lr.receiveShadows = false;
 
-        float angleStep = 360f / 36f;
-        for (int a = 0; a < 36; a++)
+        float ringW = Mathf.Clamp(currentOrthoSize * 0.0056f, 0.12f, 2.6f);
+        lr.startWidth = ringW;
+        lr.endWidth = ringW;
+
+        int segments = 28;
+        lr.positionCount = segments;
+        for (int s = 0; s < segments; s++)
         {
-            float rad = Mathf.Deg2Rad * (a * angleStep);
-            lr.SetPosition(a, new Vector3(Mathf.Cos(rad) * baseRadius, 0f, Mathf.Sin(rad) * baseRadius));
+            float rad = s * (Mathf.PI * 2f / segments);
+            lr.SetPosition(s, new Vector3(Mathf.Cos(rad) * radius, 0f, Mathf.Sin(rad) * radius));
         }
 
         float markerScale = Mathf.Clamp(currentOrthoSize / 390f, 0.15f, 2.5f);
         marker.transform.localScale = new Vector3(markerScale, 1f, markerScale);
 
         markerObjects.Add(marker);
-
-        if (gameObject.activeInHierarchy)
-        {
-            StartCoroutine(MarkerPopRoutine(marker, markerScale, 0.15f));
-        }
-    }
-
-    private IEnumerator MarkerPopRoutine(GameObject marker, float targetScale, float duration)
-    {
-        if (marker == null) yield break;
-        float elapsed = 0f;
-
-        while (elapsed < duration)
-        {
-            if (marker == null) yield break;
-            elapsed += Time.deltaTime;
-            float t = Mathf.SmoothStep(0f, 1f, elapsed / duration);
-            float currentS = Mathf.Lerp(targetScale * 0.2f, targetScale, t);
-            marker.transform.localScale = new Vector3(currentS, 1f, currentS);
-            yield return null;
-        }
-
-        if (marker != null)
-        {
-            marker.transform.localScale = new Vector3(targetScale, 1f, targetScale);
-        }
     }
 
     public void ClearVisualMarkers()
     {
         foreach (var m in markerObjects)
         {
-            if (m != null) Destroy(m);
+            if (m != null)
+            {
+                if (Application.isPlaying) Destroy(m);
+                else DestroyImmediate(m);
+            }
         }
         markerObjects.Clear();
-
-        if (trajectoryLine != null)
-        {
-            trajectoryLine.positionCount = 0;
-            trajectoryLine.enabled = false;
-        }
-
-        if (skimLine != null)
-        {
-            skimLine.positionCount = 0;
-            skimLine.enabled = false;
-        }
-
-        if (replayStoneAvatar != null)
-        {
-            replayStoneAvatar.SetActive(false);
-        }
     }
 
-    public void ReplayAgain()
+    private void OnDestroy()
     {
-        if (gameController != null) gameController.requireTouchRelease = false;
-        if (drawCoroutine != null) StopCoroutine(drawCoroutine);
-        if (slideCoroutine != null) StopCoroutine(slideCoroutine);
-
-        isReplayFinished = false;
-        isDrawing = true;
-
-        SetPageCameraView(1, false);
-        StartDrawingAnimation();
-    }
-
-    public void FinishReplayAndShowResult()
-    {
-        if (drawCoroutine != null) StopCoroutine(drawCoroutine);
-        if (slideCoroutine != null) StopCoroutine(slideCoroutine);
-
-        isReplayActive = false;
-        isDrawing = false;
-        isReplayFinished = false;
-
-        ClearVisualMarkers();
-
-        if (stone == null) stone = FindAnyObjectByType<SkippingStone>();
-        if (stone != null && stone.trail != null)
-        {
-            stone.trail.enabled = true;
-            stone.trail.Clear();
-        }
-
-        DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null)
-                                  ? gameController.dualCamera
-                                  : FindAnyObjectByType<DualCameraSetup>();
-        if (dualCam != null)
-        {
-            dualCam.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
-        }
-
-        if (gameController != null)
-        {
-            if (isFromFlightTest)
-            {
-                gameController.ReturnToModeSelect();
-                if (EnvironmentTestHelper.Instance != null)
-                {
-                    EnvironmentTestHelper.Instance.showTestUI = true;
-                }
-            }
-            else
-            {
-                gameController.ShowFinalResultDirect(cachedFinalDist);
-            }
-        }
+        if (Instance == this) Instance = null;
     }
 }

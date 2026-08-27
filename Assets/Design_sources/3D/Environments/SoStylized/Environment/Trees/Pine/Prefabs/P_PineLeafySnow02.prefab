@@ -52,8 +52,11 @@ PrefabInstance:
       propertyPath: m_Name
       value: P_PineLeafySnow02
       objectReference: {fileID: 0}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedComponents:
+    - {fileID: 4742473837712756890, guid: 68b1b1e76ba2f3048b840d92b9e2bd61, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: -8134703967545002335, guid: 68b1b1e76ba2f3048b840d92b9e2bd61, type: 3}
+    - {fileID: 6231944114457060001, guid: 68b1b1e76ba2f3048b840d92b9e2bd61, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 68b1b1e76ba2f3048b840d92b9e2bd61, type: 3}
       insertIndex: -1
@@ -62,9 +65,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: -4179632477848322406, guid: 68b1b1e76ba2f3048b840d92b9e2bd61, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1804584591109827297}
-    - targetCorrespondingSourceObject: {fileID: -4179632477848322406, guid: 68b1b1e76ba2f3048b840d92b9e2bd61, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2996268367738871855}
   m_SourcePrefab: {fileID: 100100000, guid: 68b1b1e76ba2f3048b840d92b9e2bd61, type: 3}
 --- !u!1 &3298268067303304230 stripped
 GameObject:
@@ -94,18 +94,6 @@ CapsuleCollider:
   m_Height: 3.62
   m_Direction: 1
   m_Center: {x: 0.03, y: 0.78, z: 0.01}
---- !u!114 &2996268367738871855
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 3298268067303304230}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f018dd554ae2ca44b8dbe657f21f5964, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &8048357287069742423 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 68b1b1e76ba2f3048b840d92b9e2bd61, type: 3}

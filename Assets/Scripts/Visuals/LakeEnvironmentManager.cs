@@ -284,27 +284,42 @@ public class LakeEnvironmentManager : MonoBehaviour
     #region BG 순차 인스턴스화 및 자동 크기 감지 무한 스트리밍
 
     /// <summary>
-    /// 배경 프리팹 내부의 렌더러/콜라이더를 순회하여 Z축 길이를 자동 측정
+    /// 씬 내 WaterSurface의 BoxCollider 크기(size.z * scale.z)로부터 실제 1개 청크 길이를 100% 정밀 동적 획득
     /// </summary>
     private void AutoDetectChunkSize()
     {
         if (baseBGChunk0 == null) return;
 
+        // 1. WaterSurface BoxCollider로부터 실제 수면 메쉬 길이 최우선 획득
+        WaterSurface ws = baseBGChunk0.GetComponentInChildren<WaterSurface>();
+        if (ws != null)
+        {
+            BoxCollider bc = ws.GetComponent<BoxCollider>();
+            if (bc != null && bc.size.z > 10f)
+            {
+                autoChunkSize = bc.size.z * ws.transform.lossyScale.z;
+                return;
+            }
+        }
+
+        // 2. 전체 메쉬 렌더러 바운드 합산
         Renderer[] renderers = baseBGChunk0.GetComponentsInChildren<Renderer>();
         if (renderers.Length > 0)
         {
             Bounds combined = renderers[0].bounds;
             foreach (var r in renderers)
             {
-                // 파티클/트레일 등 비정상적으로 큰 바운드는 제외
                 if (r is ParticleSystemRenderer || r is TrailRenderer) continue;
                 combined.Encapsulate(r.bounds);
             }
-            if (combined.size.z > 50f)
+            if (combined.size.z > 10f)
             {
                 autoChunkSize = combined.size.z;
+                return;
             }
         }
+
+        autoChunkSize = 500f;
     }
 
     public void SetupBGChunks()
@@ -430,10 +445,10 @@ public class LakeEnvironmentManager : MonoBehaviour
         SetupBGChunks();
 
         float trackZ = GetTrackingZ();
-        if (autoChunkSize <= 0f) autoChunkSize = 1500f;
+        if (autoChunkSize <= 0f) autoChunkSize = 500f;
 
-        // 현재 위치 기준으로 다음 청크 인덱스 계산 (청크의 55% 지점 통과 시 다음 청크 사전 로드)
-        int requiredChunkIndex = Mathf.FloorToInt((trackZ + (autoChunkSize * 0.45f)) / autoChunkSize);
+        // 🌟 현재 청크의 30% 지점만 지나도 다음 청크를 조용히 미리 생성하여 허공 도달 원천 방지
+        int requiredChunkIndex = Mathf.FloorToInt((trackZ + (autoChunkSize * 0.70f)) / autoChunkSize);
 
         for (int i = 1; i <= requiredChunkIndex; i++)
         {

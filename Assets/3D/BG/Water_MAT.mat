@@ -28,6 +28,7 @@ Material:
   - _RIPPLESOURCE_TEXTURE
   - _SECONDFOAMSOURCE_TEXTURE
   - _WATER_FOAM
+  - _WATER_FRESNEL
   - _WATER_RIPPLES
   - _WATER_SECOND_COLOR
   - _WATER_SECOND_FOAM
@@ -59,7 +60,7 @@ Material:
     - _CombineFoam: 0
     - _DepthThreshold: 0.87
     - _EnableFoam: 1
-    - _EnableFresnel: 0
+    - _EnableFresnel: 1
     - _EnableRipples: 1
     - _EnableSecondColor: 1
     - _EnableSecondFoam: 1
@@ -67,20 +68,20 @@ Material:
     - _FoamIntensity: 0.59
     - _FoamScale: 0.001
     - _FoamSpeed: -2
-    - _FresnelPower: 0.01
+    - _FresnelPower: 0.32
     - _RippleScale: 0.15
     - _RippleSharpness: 10
     - _RippleSource: 1
     - _RippleSpeed: 0.05
     - _RippleStrength: 0.35
-    - _SecondColorHeight: 0.3
+    - _SecondColorHeight: -4.8
     - _SecondColorSpread: 1.8
-    - _SecondFoamDepthThreshold: 0.42
+    - _SecondFoamDepthThreshold: 0.24
     - _SecondFoamEdgeSoftness: 0.018
-    - _SecondFoamIntensity: 0.75
+    - _SecondFoamIntensity: 2.61
     - _SecondFoamLineCount: 4
     - _SecondFoamLineThickness: 0.17
-    - _SecondFoamScale: 0.4
+    - _SecondFoamScale: 0.29
     - _SecondFoamSource: 1
     - _SecondFoamSpeed: 0.25
     - _TransparencyMultiplier: 0.59

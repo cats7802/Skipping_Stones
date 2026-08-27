@@ -12,7 +12,7 @@ public class RiverValleyObjectSpawnerEditor : Editor
         RiverValleyObjectSpawner spawner = (RiverValleyObjectSpawner)target;
 
         EditorGUILayout.Space(5);
-        EditorGUILayout.HelpBox("🌲 지형 생성기(`RiverValleyTerrainGenerator`)와 연동하여 나무, 바위, 덤불, 야생화를 지형 조건(높이, 경사도, 물길 거리, 군락 노이즈)에 맞춰 자동으로 자연스럽게 배치합니다.", MessageType.Info);
+        EditorGUILayout.HelpBox("🌲 Unity Terrain 및 일반 Mesh Collider 지형 모두 지원합니다. 지형 조건(높이, 경사도, 물길 거리, 군락 노이즈)과 이격 거리(중복 겹침 방지)에 맞춰 나무, 바위, 덤불, 야생화를 자동으로 자연스럽게 배치합니다.", MessageType.Info);
         EditorGUILayout.Space(8);
 
         // 상단 프리셋 및 실행 버튼 바

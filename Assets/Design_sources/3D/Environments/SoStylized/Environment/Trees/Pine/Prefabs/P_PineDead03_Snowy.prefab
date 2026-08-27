@@ -49,15 +49,15 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -5696939869734248633, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: be31a489e6865b14ab2c20a720bfdf66, type: 2}
     - target: {fileID: -3719394519155933276, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 10c496bd1ff1a5e45bc3faf5d8b7456f, type: 2}
     - target: {fileID: -3719394519155933276, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: b34390fd459270d498e149e5d537a0ce, type: 2}
     - target: {fileID: 919132149155446097, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
@@ -65,15 +65,18 @@ PrefabInstance:
       value: P_PineDead03_Snowy
       objectReference: {fileID: 0}
     - target: {fileID: 1608681414957097875, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 0358f1c26be50f744961603796686cf6, type: 2}
     - target: {fileID: 1608681414957097875, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: c67956a6444d9b5469451c8046ceda07, type: 2}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedComponents:
+    - {fileID: 4742473837712756890, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: -1845717188592775875, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
+    - {fileID: -2623170412872753948, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
       insertIndex: -1
@@ -82,9 +85,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 372354196748267555, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
       insertIndex: -1
       addedObject: {fileID: 4788210350580559758}
-    - targetCorrespondingSourceObject: {fileID: 372354196748267555, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 3057886877724605524}
   m_SourcePrefab: {fileID: 100100000, guid: 64755de1955685f43bd81fa538340cdc, type: 3}
 --- !u!1 &7284612912809397270 stripped
 GameObject:
@@ -114,18 +114,6 @@ CapsuleCollider:
   m_Height: 3.62
   m_Direction: 1
   m_Center: {x: 0.05, y: 0.78, z: -0.02}
---- !u!114 &3057886877724605524
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 7284612912809397270}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f018dd554ae2ca44b8dbe657f21f5964, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &7473797865082018782 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 64755de1955685f43bd81fa538340cdc, type: 3}

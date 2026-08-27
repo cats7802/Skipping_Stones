@@ -64,11 +64,37 @@ public class RiverValleyObjectSpawner : MonoBehaviour
         public float yOffset = 0f;
     }
 
+    public enum TerrainTargetMode
+    {
+        AutoDetect,     // Terrain 우선, 없으면 MeshCollider 자동 탐색
+        UnityTerrain,   // Unity Terrain 컴포넌트 사용
+        MeshCollider    // 일반 Mesh / MeshCollider 오브젝트 사용
+    }
+
     [Header("1. 대상 지형 및 연동 (Target Terrain)")]
-    [Tooltip("배치 대상 Terrain (비어있을 시 부모/자식/씬에서 자동 탐색)")]
+    [Tooltip("지형 타겟 모드 (Unity Terrain 또는 일반 Mesh Collider)")]
+    public TerrainTargetMode targetMode = TerrainTargetMode.AutoDetect;
+
+    [Tooltip("배치 대상 Terrain (Unity Terrain 모드 시 사용)")]
     public Terrain targetTerrain;
 
-    [Tooltip("물길 중심점 계산을 위한 지형 생성기 (비어있을 시 자동 탐색)")]
+    [Tooltip("배치 대상 Mesh GameObject / Collider (MeshCollider 모드 시 사용. 비어있을 시 자동 탐색)")]
+    public GameObject targetMeshObject;
+
+    [Tooltip("메쉬 Raycast 감지용 레이어 마스크 (기본: Everything)")]
+    public LayerMask meshRaycastMask = ~0;
+
+    [Header("1-1. 수면(Water) 감지 및 물 위 스폰 방지")]
+    [Tooltip("수면 콜라이더 자동 배제 (Water, RS_Surface, River_Surface 등의 콜라이더를 바닥 지형에서 제외)")]
+    public bool excludeWaterColliders = true;
+
+    [Tooltip("수면 오브젝트 (비어있을 시 씬/부모의 WaterSurface 또는 Water 태그 자동 탐색)")]
+    public GameObject targetWaterObject;
+
+    [Tooltip("수면 위 안전 여유 높이 (이 높이 이하의 수면 근접/수중 지점에는 스폰 차단)")]
+    public float waterHeightOffset = 0.3f;
+
+    [Tooltip("물길 중심점 계산을 위한 지형 생성기 (선택 사항, 비어있을 시 자동 탐색)")]
     public RiverValleyTerrainGenerator terrainGenerator;
 
     [Header("2. 랜덤 시드 (Random Seed)")]
@@ -272,25 +298,167 @@ public class RiverValleyObjectSpawner : MonoBehaviour
         }
     }
 
+    private struct TerrainSampleResult
+    {
+        public bool valid;
+        public Vector3 position;
+        public Vector3 normal;
+        public float slope;
+    }
+
     [ContextMenu("오브젝트 자동 배치 (Spawn Props)")]
     public void SpawnAllProps()
     {
         ClearAllProps();
 
-        if (targetTerrain == null) targetTerrain = GetComponentInChildren<Terrain>();
-        if (targetTerrain == null) targetTerrain = Terrain.activeTerrain;
-        if (targetTerrain == null)
+        // 1. 타겟 모드 판별 및 영역(Bounds) 설정
+        bool useMesh = false;
+        Bounds spawnBounds = new Bounds();
+        Collider[] targetColliders = null;
+
+        if (targetMode == TerrainTargetMode.UnityTerrain)
         {
-            Debug.LogError("[RiverValleyObjectSpawner] 대상 Terrain을 찾을 수 없습니다!");
-            return;
+            useMesh = false;
+        }
+        else if (targetMode == TerrainTargetMode.MeshCollider)
+        {
+            useMesh = true;
+        }
+        else // AutoDetect
+        {
+            if (targetTerrain != null)
+            {
+                useMesh = false;
+            }
+            else if (targetMeshObject != null)
+            {
+                useMesh = true;
+            }
+            else
+            {
+                // 컴포넌트 자동 탐색
+                Terrain foundTerrain = GetComponentInChildren<Terrain>();
+                if (foundTerrain == null) foundTerrain = GetComponentInParent<Terrain>();
+                if (foundTerrain == null) foundTerrain = Terrain.activeTerrain;
+
+                if (foundTerrain != null)
+                {
+                    targetTerrain = foundTerrain;
+                    useMesh = false;
+                }
+                else
+                {
+                    useMesh = true;
+                }
+            }
+        }
+
+        TerrainData tData = null;
+        Vector3 terrainPos = Vector3.zero;
+        Vector3 terrainSize = Vector3.zero;
+
+        if (!useMesh)
+        {
+            if (targetTerrain == null) targetTerrain = GetComponentInChildren<Terrain>();
+            if (targetTerrain == null) targetTerrain = GetComponentInParent<Terrain>();
+            if (targetTerrain == null) targetTerrain = Terrain.activeTerrain;
+
+            if (targetTerrain == null)
+            {
+                Debug.LogWarning("[RiverValleyObjectSpawner] Unity Terrain을 찾지 못해 Mesh 모드로 자동 전환을 시도합니다.");
+                useMesh = true;
+            }
+            else
+            {
+                tData = targetTerrain.terrainData;
+                terrainSize = tData.size;
+                terrainPos = targetTerrain.transform.position;
+                spawnBounds = new Bounds(terrainPos + terrainSize * 0.5f, terrainSize);
+            }
+        }
+
+        float detectedWaterHeight = float.MinValue;
+        bool hasWaterDetected = false;
+
+        // 수면 오브젝트 및 높이 자동 탐색
+        if (targetWaterObject != null)
+        {
+            detectedWaterHeight = targetWaterObject.transform.position.y;
+            hasWaterDetected = true;
+            var wCol = targetWaterObject.GetComponent<Collider>();
+            if (wCol != null) detectedWaterHeight = Mathf.Max(detectedWaterHeight, wCol.bounds.max.y);
+        }
+        else
+        {
+            var ws = GetComponentInChildren<WaterSurface>();
+            if (ws == null) ws = GetComponentInParent<WaterSurface>();
+            if (ws == null) ws = FindAnyObjectByType<WaterSurface>();
+            if (ws != null)
+            {
+                detectedWaterHeight = ws.transform.position.y;
+                hasWaterDetected = true;
+                var wCol = ws.GetComponent<Collider>();
+                if (wCol != null) detectedWaterHeight = Mathf.Max(detectedWaterHeight, wCol.bounds.max.y);
+            }
+            else if (terrainGenerator != null)
+            {
+                detectedWaterHeight = terrainGenerator.waterHeight;
+                hasWaterDetected = true;
+            }
+        }
+
+        if (useMesh)
+        {
+            GameObject meshRoot = targetMeshObject != null ? targetMeshObject : gameObject;
+            var allCols = meshRoot.GetComponentsInChildren<Collider>();
+
+            if (allCols == null || allCols.Length == 0)
+            {
+                Debug.LogError("[RiverValleyObjectSpawner] 메쉬 지형에 Collider가 없습니다! 대상 오브젝트에 MeshCollider 또는 Collider 컴포넌트를 추가해주세요.");
+                return;
+            }
+
+            // 지형 바닥 콜라이더만 선별 (수면 콜라이더 제외)
+            var validGroundCols = new List<Collider>();
+            foreach (var col in allCols)
+            {
+                if (excludeWaterColliders)
+                {
+                    string cName = col.gameObject.name.ToUpperInvariant();
+                    if (cName.Contains("WATER") || cName.Contains("SURFACE") || cName.Contains("RS_") || cName.Contains("RIVER_START"))
+                    {
+                        // 수면 오브젝트의 높이를 아직 못 구했다면 여기서 자동 획득
+                        if (!hasWaterDetected)
+                        {
+                            detectedWaterHeight = col.bounds.max.y;
+                            hasWaterDetected = true;
+                        }
+                        continue; // 바닥 지형 대상에서 제외
+                    }
+                }
+                validGroundCols.Add(col);
+            }
+
+            if (validGroundCols.Count == 0)
+            {
+                validGroundCols.AddRange(allCols); // 필터링 후 아무것도 없으면 전체 사용
+            }
+
+            targetColliders = validGroundCols.ToArray();
+
+            // 순수 지형 Collider들의 Bounds만 정확하게 병합 (섹션 실제 크기 한정)
+            spawnBounds = targetColliders[0].bounds;
+            for (int i = 1; i < targetColliders.Length; i++)
+            {
+                spawnBounds.Encapsulate(targetColliders[i].bounds);
+            }
+
+            terrainPos = spawnBounds.min;
+            terrainSize = spawnBounds.size;
         }
 
         if (terrainGenerator == null) terrainGenerator = GetComponent<RiverValleyTerrainGenerator>();
         if (terrainGenerator == null) terrainGenerator = GetComponentInParent<RiverValleyTerrainGenerator>();
-
-        TerrainData tData = targetTerrain.terrainData;
-        Vector3 terrainSize = tData.size;
-        Vector3 terrainPos = targetTerrain.transform.position;
 
         // 부모 그룹 오브젝트 생성
         Transform rootTrans = transform.Find(propsRootName);
@@ -347,24 +515,39 @@ public class RiverValleyObjectSpawner : MonoBehaviour
 
                 if (preventCrossCategoryOverlap && globalMinSpacing > 0.01f && globalGrid.IsTooClose(pos2D, globalMinSpacing))
                 {
-                    continue; // 다른 카테고리(예: 소나무 위에 바위) 간 겹침 방지
+                    continue; // 다른 카테고리 간 겹침 방지
                 }
 
                 // 2. 군락 노이즈 필터 (Clustering Noise)
                 float clusterNoise = SamplePeriodicNoise(worldX, worldZ, terrainSize.x, terrainSize.z, rule.clusterFrequency, rule.clusterFrequency, ruleSeed);
                 if (clusterNoise < rule.densityThreshold) continue;
 
-                // 3. 높이 및 경사도 검사
-                float normX = Mathf.Clamp01((worldX - terrainPos.x) / terrainSize.x);
-                float normZ = Mathf.Clamp01((worldZ - terrainPos.z) / terrainSize.z);
+                // 3. 지형 샘플링 (높이, 경사도, 노멀)
+                TerrainSampleResult sample;
+                if (!useMesh)
+                {
+                    sample = SampleUnityTerrain(tData, terrainPos, terrainSize, worldX, worldZ);
+                }
+                else
+                {
+                    sample = SampleMeshTerrain(worldX, worldZ, spawnBounds, targetColliders);
+                }
 
-                float worldY = terrainPos.y + tData.GetInterpolatedHeight(normX, normZ);
-                float slope = tData.GetSteepness(normX, normZ);
+                if (!sample.valid) continue;
+
+                float worldY = sample.position.y;
+                float slope = sample.slope;
 
                 if (worldY < rule.minHeight || worldY > rule.maxHeight) continue;
                 if (slope < rule.minSlope || slope > rule.maxSlope) continue;
 
-                // 4. 강 중심점 거리 검사 (물속 및 강 중심 배제)
+                // 4. 수면(Water) 높이 체크 (물속 및 수면 근접 스폰 원천 차단)
+                if (hasWaterDetected && worldY <= (detectedWaterHeight + waterHeightOffset))
+                {
+                    continue; // 수면보다 낮거나 너무 가까운 위치 제외
+                }
+
+                // 5. 강 중심점 거리 검사 (물속 및 강 중심 배제)
                 if (terrainGenerator != null)
                 {
                     float riverCenterX = terrainGenerator.GetRiverCenterX(worldZ);
@@ -372,7 +555,7 @@ public class RiverValleyObjectSpawner : MonoBehaviour
                     if (distFromRiver < rule.minDistanceFromRiver) continue;
                 }
 
-                // 5. 프리팹 무작위 선택
+                // 6. 프리팹 무작위 선택
                 var validPrefabs = new List<GameObject>();
                 foreach (var p in rule.prefabs) if (p != null) validPrefabs.Add(p);
                 if (validPrefabs.Count == 0) continue;
@@ -380,7 +563,7 @@ public class RiverValleyObjectSpawner : MonoBehaviour
                 GameObject chosenPrefab = validPrefabs[prng.Next(validPrefabs.Count)];
 
                 // 6. 회전 및 지형 법선 정렬
-                Vector3 normal = tData.GetInterpolatedNormal(normX, normZ);
+                Vector3 normal = sample.normal;
                 float randomYaw = (float)prng.NextDouble() * 360f;
                 Quaternion baseRot = Quaternion.Euler(0f, randomYaw, 0f);
                 Quaternion normalRot = Quaternion.FromToRotation(Vector3.up, normal) * baseRot;
@@ -416,7 +599,73 @@ public class RiverValleyObjectSpawner : MonoBehaviour
         }
 
         EditorUtility.SetDirty(gameObject);
-        Debug.Log($"[RiverValleyObjectSpawner] ✅ 총 {totalSpawned}개의 프랍 및 식생 오브젝트가 지형에 성공적으로 배치되었습니다! (시드: {seed})");
+        string modeStr = useMesh ? "메쉬 지형 (Mesh)" : "Terrain 지형";
+        Debug.Log($"[RiverValleyObjectSpawner] ✅ [{modeStr}] 총 {totalSpawned}개의 프랍 및 식생 오브젝트가 성공적으로 배치되었습니다! (시드: {seed})");
+    }
+
+    private TerrainSampleResult SampleUnityTerrain(TerrainData tData, Vector3 terrainPos, Vector3 terrainSize, float worldX, float worldZ)
+    {
+        TerrainSampleResult result = new TerrainSampleResult();
+        float normX = Mathf.Clamp01((worldX - terrainPos.x) / terrainSize.x);
+        float normZ = Mathf.Clamp01((worldZ - terrainPos.z) / terrainSize.z);
+
+        result.position = new Vector3(worldX, terrainPos.y + tData.GetInterpolatedHeight(normX, normZ), worldZ);
+        result.slope = tData.GetSteepness(normX, normZ);
+        result.normal = tData.GetInterpolatedNormal(normX, normZ);
+        result.valid = true;
+        return result;
+    }
+
+    private TerrainSampleResult SampleMeshTerrain(float worldX, float worldZ, Bounds bounds, Collider[] targetColliders)
+    {
+        TerrainSampleResult result = new TerrainSampleResult();
+        float rayStartY = bounds.max.y + 10f;
+        float rayDistance = bounds.size.y + 20f;
+        Ray ray = new Ray(new Vector3(worldX, rayStartY, worldZ), Vector3.down);
+
+        RaycastHit[] hits = Physics.RaycastAll(ray, rayDistance, meshRaycastMask);
+        if (hits == null || hits.Length == 0)
+        {
+            result.valid = false;
+            return result;
+        }
+
+        // targetColliders 중 가장 높은 충돌 지점 선택
+        RaycastHit bestHit = default;
+        float highestY = float.MinValue;
+        bool found = false;
+
+        foreach (var hit in hits)
+        {
+            bool isTarget = false;
+            for (int i = 0; i < targetColliders.Length; i++)
+            {
+                if (hit.collider == targetColliders[i])
+                {
+                    isTarget = true;
+                    break;
+                }
+            }
+
+            if (isTarget && hit.point.y > highestY)
+            {
+                highestY = hit.point.y;
+                bestHit = hit;
+                found = true;
+            }
+        }
+
+        if (!found)
+        {
+            result.valid = false;
+            return result;
+        }
+
+        result.position = bestHit.point;
+        result.normal = bestHit.normal;
+        result.slope = Vector3.Angle(bestHit.normal, Vector3.up);
+        result.valid = true;
+        return result;
     }
 
     [ContextMenu("모든 프랍 지우기 (Clear All Props)")]

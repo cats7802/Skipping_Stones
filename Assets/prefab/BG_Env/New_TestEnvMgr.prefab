@@ -12,7 +12,7 @@ GameObject:
   - component: {fileID: 1157768220864155641}
   - component: {fileID: 6034964308888221376}
   m_Layer: 0
-  m_Name: TestEnvMgr
+  m_Name: New_TestEnvMgr
   m_TagString: Untagged
   m_Icon: {fileID: 0}
   m_NavMeshLayer: 0
@@ -45,16 +45,16 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: b69cbf3ead6faf04c9152de2a3f1d381, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::LakeEnvironmentManager
-  mapTitle: "\uD0DC\uD638(TestLake)"
+  mapTitle: Test_River
   mapThumbnail: {fileID: 21300000, guid: bc21e943a371ed24e9a5c1427c010cf1, type: 3}
   startMapPrefab: {fileID: 0}
   loopSlots:
-  - baseMapPrefab: {fileID: 6726142715302024581, guid: b6b0c5db5108ad544a6babc10cb5616f, type: 3}
+  - baseMapPrefab: {fileID: 402401199427695740, guid: 6bc7a8350648e5044934050e6a21cf87, type: 3}
     useVariations: 0
     variationPrefabs: []
   endingMapPrefab: {fileID: 0}
   targetClearDistance: 0
-  autoChunkSize: 1500
+  autoChunkSize: 500
 --- !u!114 &6034964308888221376
 MonoBehaviour:
   m_ObjectHideFlags: 0

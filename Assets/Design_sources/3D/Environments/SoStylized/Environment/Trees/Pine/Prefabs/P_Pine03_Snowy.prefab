@@ -142,15 +142,15 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -5345131175812358144, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: be31a489e6865b14ab2c20a720bfdf66, type: 2}
     - target: {fileID: -3117538738643320147, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 0358f1c26be50f744961603796686cf6, type: 2}
     - target: {fileID: -3117538738643320147, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: c67956a6444d9b5469451c8046ceda07, type: 2}
     - target: {fileID: 919132149155446097, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
@@ -158,15 +158,18 @@ PrefabInstance:
       value: P_Pine03_Snowy
       objectReference: {fileID: 0}
     - target: {fileID: 7168040696617249274, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 10c496bd1ff1a5e45bc3faf5d8b7456f, type: 2}
     - target: {fileID: 7168040696617249274, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: b34390fd459270d498e149e5d537a0ce, type: 2}
-    m_RemovedComponents: []
-    m_RemovedGameObjects: []
+    m_RemovedComponents:
+    - {fileID: 4742473837712756890, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
+    m_RemovedGameObjects:
+    - {fileID: -5459845422135087194, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
+    - {fileID: 3334810287469217985, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
     m_AddedGameObjects:
     - targetCorrespondingSourceObject: {fileID: -8679921383154817045, guid: c89fe0b7d0afc2f49a83d7ba44e14a80, type: 3}
       insertIndex: -1
