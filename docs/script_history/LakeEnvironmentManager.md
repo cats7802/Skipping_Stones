@@ -1,4 +1,4 @@
-﻿# 📜 Script History: LakeEnvironmentManager.cs
+# 📜 Script History: LakeEnvironmentManager.cs
 
 ## 🎯 1. 역할 및 책임 (Core Responsibility)
 - 씬 전역 지형/수면/산맥 무한 스트리밍 오케스트레이션.
@@ -13,9 +13,9 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-25] 모듈러 시퀀스(SM, N-Slots 변주, EM) 스트리밍 구조 완성
-- **수정 목적**: 시작 맵(SM), 가변 N개 슬롯 변주 루프, 엔딩 맵(EM)을 지원하면서도 빈 설정 시 기존 단일 BG_01과 완벽 동일 동작 보장.
+### [2026-08-28] 메쉬 지형(MeshCollider) 및 가변 슬롯 맵 청크 실측 동기화
+- **수정 목적**: 메쉬 지형 전환에 맞추어 `MeshCollider`, `Terrain`, `WaterSurface`를 전수 감지하여 500m/1500m 등 가변 지형 길이를 100% 동적 실측.
 - **핵심 구조**:
-  - ChunkSlot 구조체 및 loopSlots 자유 리스트 도입.
-  - GetMapPrefabForChunk(chunkIndex, targetZ) 다형성 결정 로직 탑재.
-  - 레거시 mapPrefabs, cycleMode, aseBGChunk0 100% 하위 호환 유지.
+  - `AutoDetectChunkSize()`에서 `MeshCollider` 결합 바운드 최우선 측정.
+  - 레거시 하드코딩된 프리팹 이름 검색을 슬롯 프리팹 동적 인스턴스화로 단일화.
+  - 빌드 및 컴파일 0 Warnings, 0 Errors 완료.

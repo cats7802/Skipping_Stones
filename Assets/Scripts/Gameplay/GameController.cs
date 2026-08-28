@@ -1045,6 +1045,8 @@ public class GameController : MonoBehaviour
         }
 
         currentState = GameState.Result;
+        bannerNotificationText = string.Empty;
+        lastTimingText = string.Empty;
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
         CalculateFinalScores(dist);

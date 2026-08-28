@@ -134,8 +134,8 @@ namespace SkippingStones.Visuals
             if (stageTransform == null) stageTransform = FindDeepChild(transform, "Stone_Stand");
 
             if (stageSlots[0] == null) stageSlots[0] = FindDeepChild(transform, "Stone_Stage_01"); // 정면 (0°)
-            if (stageSlots[1] == null) stageSlots[1] = FindDeepChild(transform, "Stone_Stage_03"); // 우측 뒤 (120°)
-            if (stageSlots[2] == null) stageSlots[2] = FindDeepChild(transform, "Stone_Stage_02"); // 좌측 뒤 (240°)
+            if (stageSlots[1] == null) stageSlots[1] = FindDeepChild(transform, "Stone_Stage_02"); // 다음 슬롯 (좌측 뒤, 240°/-120°, 시계 회전 시 정면 진입)
+            if (stageSlots[2] == null) stageSlots[2] = FindDeepChild(transform, "Stone_Stage_03"); // 이전 슬롯 (우측 뒤, 120°, 반시계 회전 시 정면 진입)
         }
 
         /// <summary>
@@ -251,9 +251,10 @@ namespace SkippingStones.Visuals
 
                 if (Mathf.Abs(dragDelta.x) >= dragThresholdPixels)
                 {
-                    // 오른쪽 드래그(+) -> 이전 돌, 왼쪽 드래그(-) -> 다음 돌
-                    if (dragDelta.x > 0) RotateShowcase(-1);
-                    else RotateShowcase(1);
+                    // 왼쪽 드래그(-) -> 시계방향 회전 (+1, 등록 순서 정방향 다음 돌)
+                    // 오른쪽 드래그(+) -> 반시계방향 회전 (-1, 등록 순서 역방향 이전 돌)
+                    if (dragDelta.x < 0) RotateShowcase(1);
+                    else RotateShowcase(-1);
                 }
             }
         }
@@ -280,8 +281,8 @@ namespace SkippingStones.Visuals
             int total = unlockedStonePrefabs.Count;
             currentStoneIndex = (currentStoneIndex + direction + total) % total;
 
-            // 스탠드가 direction 만큼 회전하면 정면 마주보는 물리 슬롯 인덱스 갱신
-            currentSlotFacingIndex = (currentSlotFacingIndex - direction + 3) % 3;
+            // 스탠드가 direction 만큼 시계 회전(+120도)하면 좌측 뒤(-120도, Slot 1) 슬롯이 정면으로 진입
+            currentSlotFacingIndex = (currentSlotFacingIndex + direction + 3) % 3;
 
             float startDialY = currentStep * dialStepAngle;
             float startStageY = currentStep * stageStepAngle;

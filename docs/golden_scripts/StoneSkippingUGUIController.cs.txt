@@ -443,8 +443,9 @@ public class StoneSkippingUGUIController : MonoBehaviour
         var state = gameController.currentState;
         bool showDevMenu = (EnvironmentTestHelper.Instance != null && EnvironmentTestHelper.Instance.showTestUI);
 
+        // 🌟 상단바: 모드 선택 화면에서만 표시하고, 실제 투구/비행/리플레이/결과 등 플레이 중에는 시야 확보를 위해 완전 숨김
         if (topBarObj != null)
-            topBarObj.SetActive(state != GameController.GameState.Replay && state != GameController.GameState.Result);
+            topBarObj.SetActive(state == GameController.GameState.ModeSelect && !showDevMenu);
         if (modeSelectObj != null)
             modeSelectObj.SetActive(state == GameController.GameState.ModeSelect && !showDevMenu); // 비행테스트 창이 열려 있으면 모드선택창 비활성화
         if (positioningObj != null)
@@ -473,8 +474,8 @@ public class StoneSkippingUGUIController : MonoBehaviour
             devTestMenuObj.SetActive(showDev);
         }
 
-        // 상단 알림 배너
-        bool showBanner = !string.IsNullOrEmpty(gameController.bannerNotificationText);
+        // 상단 알림 배너: 비행 중(Flying)에만 표시하고 결과/리플레이/대기 시에는 즉시 완전 숨김
+        bool showBanner = !string.IsNullOrEmpty(gameController.bannerNotificationText) && (state == GameController.GameState.Flying);
         if (notificationBannerObj != null && notificationBannerObj.activeSelf != showBanner)
         {
             notificationBannerObj.SetActive(showBanner);
@@ -599,6 +600,38 @@ public class StoneSkippingUGUIController : MonoBehaviour
                 // 탑바 높이 + 간격(예: 15f) 만큼 내려서 배치
                 float spacing = 15f;
                 devRt.anchoredPosition = new Vector2(devRt.anchoredPosition.x, -(topBarHeight + spacing));
+            }
+        }
+
+        // 3. 🌟 비행 HUD (거리/바운스 정보) 배경 제거 및 수면선 아래로 하향 배치
+        if (flightHudObj != null)
+        {
+            var hudImg = flightHudObj.GetComponent<Image>();
+            if (hudImg != null) hudImg.enabled = false; // 답답한 배경 박스 제거
+
+            RectTransform hudRt = flightHudObj.GetComponent<RectTransform>();
+            if (hudRt != null)
+            {
+                hudRt.anchorMin = new Vector2(0.5f, 1f);
+                hudRt.anchorMax = new Vector2(0.5f, 1f);
+                hudRt.pivot = new Vector2(0.5f, 1f);
+                hudRt.anchoredPosition = new Vector2(0f, -170f); // 수면선 밑으로 적절히 하향
+            }
+        }
+
+        // 4. 🌟 추월 알림 배너 배경 제거 및 거리 HUD 하단 배치
+        if (notificationBannerObj != null)
+        {
+            var bannerImg = notificationBannerObj.GetComponent<Image>();
+            if (bannerImg != null) bannerImg.enabled = false; // 노란색 배경 박스 제거
+
+            RectTransform bannerRt = notificationBannerObj.GetComponent<RectTransform>();
+            if (bannerRt != null)
+            {
+                bannerRt.anchorMin = new Vector2(0.5f, 1f);
+                bannerRt.anchorMax = new Vector2(0.5f, 1f);
+                bannerRt.pivot = new Vector2(0.5f, 1f);
+                bannerRt.anchoredPosition = new Vector2(0f, -240f); // 거리 텍스트 바로 밑
             }
         }
     }

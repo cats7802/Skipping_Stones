@@ -224,7 +224,6 @@ public class LakeEnvironmentManager : MonoBehaviour
 
         if (!hasPlatform)
         {
-            // 하위 깊은 자식까지 전수 검색
             var allTransforms = prefab.GetComponentsInChildren<Transform>(true);
             foreach (var t in allTransforms)
             {
@@ -284,13 +283,47 @@ public class LakeEnvironmentManager : MonoBehaviour
     #region BG 순차 인스턴스화 및 자동 크기 감지 무한 스트리밍
 
     /// <summary>
-    /// 씬 내 WaterSurface의 BoxCollider 크기(size.z * scale.z)로부터 실제 1개 청크 길이를 100% 정밀 동적 획득
+    /// 실제 활성화된 맵 청크의 지형(MeshCollider, Terrain, WaterSurface, Renderer)으로부터 실제 1개 청크 길이를 100% 동적 실측
     /// </summary>
     private void AutoDetectChunkSize()
     {
         if (baseBGChunk0 == null) return;
 
-        // 1. WaterSurface BoxCollider로부터 실제 수면 메쉬 길이 최우선 획득
+        // 1. 활성화된 청크 내 MeshCollider 결합 바운드 최우선 실측 (메쉬 지형)
+        MeshCollider[] meshCols = baseBGChunk0.GetComponentsInChildren<MeshCollider>();
+        if (meshCols != null && meshCols.Length > 0)
+        {
+            Bounds combinedMesh = meshCols[0].bounds;
+            bool foundGroundMesh = false;
+            foreach (var mc in meshCols)
+            {
+                if (mc == null || !mc.enabled || mc.gameObject.name.Contains("Water")) continue;
+                if (!foundGroundMesh)
+                {
+                    combinedMesh = mc.bounds;
+                    foundGroundMesh = true;
+                }
+                else
+                {
+                    combinedMesh.Encapsulate(mc.bounds);
+                }
+            }
+            if (foundGroundMesh && combinedMesh.size.z > 10f)
+            {
+                autoChunkSize = combinedMesh.size.z;
+                return;
+            }
+        }
+
+        // 2. Terrain 컴포넌트가 존재할 경우 terrainData 크기 실측
+        Terrain terrain = baseBGChunk0.GetComponentInChildren<Terrain>();
+        if (terrain != null && terrain.terrainData != null && terrain.terrainData.size.z > 10f)
+        {
+            autoChunkSize = terrain.terrainData.size.z * terrain.transform.lossyScale.z;
+            return;
+        }
+
+        // 3. WaterSurface BoxCollider로부터 수면 메쉬 길이 실측
         WaterSurface ws = baseBGChunk0.GetComponentInChildren<WaterSurface>();
         if (ws != null)
         {
@@ -302,9 +335,9 @@ public class LakeEnvironmentManager : MonoBehaviour
             }
         }
 
-        // 2. 전체 메쉬 렌더러 바운드 합산
+        // 4. 전체 메쉬 렌더러 바운드 합산
         Renderer[] renderers = baseBGChunk0.GetComponentsInChildren<Renderer>();
-        if (renderers.Length > 0)
+        if (renderers != null && renderers.Length > 0)
         {
             Bounds combined = renderers[0].bounds;
             foreach (var r in renderers)
@@ -326,22 +359,7 @@ public class LakeEnvironmentManager : MonoBehaviour
     {
         InitializeFirstChunk(); // 🌟 첫 번째 청크 자동 인식
 
-        if (baseBGChunk0 == null)
-        {
-            baseBGChunk0 = GameObject.Find("BG_01");
-            if (baseBGChunk0 == null)
-            {
-                var g = GameObject.Find("Ground");
-                if (g != null)
-                {
-                    baseBGChunk0 = (g.transform.parent != null && g.transform.parent.name.Contains("BG_01"))
-                                   ? g.transform.parent.gameObject
-                                   : g;
-                }
-            }
-        }
-
-        // 🌟 씬에 미리 배치된 BG_01이 없다면, 슬롯 설정 프리팹(0m 기준)을 직접 인스턴스화하여 0번 청크로 생성
+        // 🌟 씬에 미리 배치된 청크가 없다면, 슬롯 설정 프리팹(0m 기준)을 직접 인스턴스화하여 0번 청크로 생성
         if (baseBGChunk0 == null)
         {
             GameObject prefab0 = GetMapPrefabForChunk(0, 0f);

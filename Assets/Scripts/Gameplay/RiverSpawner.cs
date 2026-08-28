@@ -113,64 +113,69 @@ public class RiverSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 🏆 장거리 모드: 씬 내 실제 수면 BoxCollider의 1개 청크 범위 내에만 엔티티 스폰 (이후 구간은 청크 릴레이 시 동적 확장)
+    /// 🏆 장거리 모드: 활성화된 1개 청크(지형 실측 길이)의 범위 내에만 엔티티 스폰 (이후 구간은 청크 릴레이 시 동적 확장)
     /// </summary>
     private void GenerateLongDistanceRiver()
     {
         ClearExistingEntities();
 
         GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float curWaterY);
-        float endZ = maxZ;
+        float activeChunkSize = (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 10f) 
+            ? LakeEnvironmentManager.Instance.autoChunkSize 
+            : Mathf.Max(100f, maxZ - minZ);
+
+        float startZ = minZ;
+        float endZ = startZ + activeChunkSize;
         startBankPos = Vector3.zero;
         spawnDirection = Vector3.forward;
 
-        // 1. 🚀 가속 부스트 패드
-        for (float bDist = minZ + 45f; bDist < endZ - 80f; bDist += Random.Range(35f, 65f))
+        // 1. 🚀 가속 부스트 패드 (청크 내 지형 범위 100% 엄격 준수)
+        for (float bDist = startZ + 40f; bDist < endZ - 40f; bDist += Random.Range(35f, 65f))
         {
             float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
             float midX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
             float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
 
-            TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, bDist + Random.Range(-4f, 4f)));
-            TrySpawnBoostPad(new Vector3(midX, curWaterY + 0.05f, bDist + Random.Range(-4f, 4f)));
-            TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, bDist + Random.Range(-4f, 4f)));
+            TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
+            TrySpawnBoostPad(new Vector3(midX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
+            TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
         }
 
         // 2. 🪨 강 장애물(바위)
-        for (float d = minZ + 50f; d < endZ - 20f; d += Random.Range(20f, 38f))
+        for (float d = startZ + 45f; d < endZ - 30f; d += Random.Range(25f, 42f))
         {
             float rockX = Random.Range(minX, maxX);
-            TrySpawnObstacleRock(new Vector3(rockX, curWaterY, d + Random.Range(-5f, 5f)));
+            TrySpawnObstacleRock(new Vector3(rockX, curWaterY, d + Random.Range(-4f, 4f)), startZ, endZ);
         }
 
         // 3. 🐟 튀어오르는 물고기
-        for (float fDist = minZ + 40f; fDist < endZ - 60f; fDist += Random.Range(45f, 85f))
+        for (float fDist = startZ + 40f; fDist < endZ - 40f; fDist += Random.Range(45f, 85f))
         {
             float fX1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
             float fX2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
             float fX3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-            TrySpawnFish(new Vector3(fX1, curWaterY, fDist), fDist);
-            TrySpawnFish(new Vector3(fX2, curWaterY, fDist + Random.Range(6f, 16f)), fDist);
-            TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(12f, 24f)), fDist);
+            TrySpawnFish(new Vector3(fX1, curWaterY, fDist), fDist, startZ, endZ);
+            TrySpawnFish(new Vector3(fX2, curWaterY, fDist + Random.Range(6f, 16f)), fDist, startZ, endZ);
+            TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(12f, 24f)), fDist, startZ, endZ);
         }
 
-        // 4. 🚩 친구 거리 깃발 (수면 범위 내에 존재하는 깃발만 스폰)
+        // 4. 🚩 친구 거리 깃발 (현재 청크 지형 범위 내에 존재하는 깃발만 스폰)
         string[] friends = { "라이언 (3위)", "어피치 (2위)", "프로도 (1위)", "콘 (국내 1위)", "무지 (마스터)", "네오 (그랜드마스터)", "튜브 (초월자)", "제이지 (레전드)" };
         float[] friendDists = { 120f, 310f, 450f, 750f, 1200f, 1800f, 2500f, 3500f };
         for (int i = 0; i < friends.Length; i++)
         {
             float zPos = friendDists[i];
-            if (zPos < minZ + 50f || zPos > endZ - 50f) continue;
+            if (zPos < startZ + 30f || zPos > endZ - 30f) continue;
             float flagX = (i % 2 == 0) ? Random.Range(minX, Mathf.Lerp(minX, maxX, 0.4f)) : Random.Range(Mathf.Lerp(minX, maxX, 0.6f), maxX);
             Vector3 fPos = new Vector3(flagX, curWaterY, zPos);
-            if (IsValidWaterPosition(fPos))
+            if (IsValidWaterPosition(fPos, startZ, endZ))
             {
                 CreateFriendFlag(fPos, friends[i], $"{i + 1}위", zPos);
             }
         }
 
-        // 5. 🪷 연잎 및 연꽃 군락
-        CreateLilyPadsGrid(minX, maxX, minZ + 20f, endZ - 20f, curWaterY);
+        // 5. 🪷 연잎 및 연꽃 군락 (청크 지형 경계 엄격 준수)
+        CreateLilyPadsGrid(minX, maxX, startZ + 20f, endZ - 20f, curWaterY);
         CleanupOldGroundObjects();
     }
 
@@ -447,20 +452,14 @@ public class RiverSpawner : MonoBehaviour
     // ─────────────────────────────────────────────────────────────────────
 
     /// <summary>
-    /// BG_01 청크가 앞으로 릴레이될 때 호출됨.
-    /// 새로 생성된 chunkStartZ ~ chunkStartZ+chunkSize 구간의 기존 엔티티 제거 후 재배치.
+    /// 🌟 새 맵 청크가 생성(스트리밍)될 때 호출됨.
+    /// 새로 생성된 chunkStartZ ~ chunkStartZ+chunkSize 구간에만 정확히 엔티티 스폰.
     /// </summary>
     public void SpawnChunkEntities(float chunkStartZ)
     {
-        float chunkSize = 500f;
-        if (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 50f)
-        {
-            chunkSize = LakeEnvironmentManager.Instance.autoChunkSize;
-        }
-        else if (GetWaterColliderBounds(out _, out _, out float wMinZ, out float wMaxZ, out _))
-        {
-            chunkSize = Mathf.Max(100f, wMaxZ - wMinZ);
-        }
+        float chunkSize = (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 10f)
+            ? LakeEnvironmentManager.Instance.autoChunkSize
+            : 500f;
 
         float chunkEndZ = chunkStartZ + chunkSize;
         float curWaterY = GetCurrentWaterLevel();
@@ -480,72 +479,128 @@ public class RiverSpawner : MonoBehaviour
         // Water_Surface BoxCollider로부터 실제 수면 가로폭 및 높이 동적 획득
         GetWaterColliderBounds(out float minX, out float maxX, out curWaterY);
 
-
-        // 1. 🚀 가속 부스트 패드 (Water_Surface BoxCollider 전체 폭에 걸쳐 좌/중/우 균등 분산)
-        for (float z = chunkStartZ + 40f; z < chunkEndZ - 50f; z += Random.Range(35f, 65f))
+        // 1. 🚀 가속 부스트 패드 (새로 생성된 청크 지형 경계 내부 엄격 준수)
+        for (float z = chunkStartZ + 35f; z < chunkEndZ - 35f; z += Random.Range(35f, 65f))
         {
             float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
             float centerX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
             float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
 
-            TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, z + Random.Range(-4f, 4f)));
-            TrySpawnBoostPad(new Vector3(centerX, curWaterY + 0.05f, z + Random.Range(-4f, 4f)));
-            TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, z + Random.Range(-4f, 4f)));
+            TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
+            TrySpawnBoostPad(new Vector3(centerX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
+            TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
         }
 
-        // 2. 🪨 장애물 바위 Water_Surface 전폭 균등 분산 배치
-        for (float z = chunkStartZ + 50f; z < chunkEndZ; z += Random.Range(20f, 38f))
+        // 2. 🪨 장애물 바위
+        for (float z = chunkStartZ + 40f; z < chunkEndZ - 30f; z += Random.Range(25f, 42f))
         {
             float x = Random.Range(minX, maxX);
-            TrySpawnObstacleRock(new Vector3(x, curWaterY, z + Random.Range(-5f, 5f)));
+            TrySpawnObstacleRock(new Vector3(x, curWaterY, z + Random.Range(-4f, 4f)), chunkStartZ, chunkEndZ);
         }
 
-        // 3. 🐟 물고기 Water_Surface 전폭 스폰 (좌/중/우)
-        for (float z = chunkStartZ + 40f; z < chunkEndZ - 60f; z += Random.Range(45f, 85f))
+        // 3. 🐟 물고기
+        for (float z = chunkStartZ + 35f; z < chunkEndZ - 35f; z += Random.Range(45f, 85f))
         {
             float x1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
             float x2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
             float x3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-            TrySpawnFish(new Vector3(x1, curWaterY, z), z);
-            TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(6f, 16f)), z);
-            TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(12f, 24f)), z);
+            TrySpawnFish(new Vector3(x1, curWaterY, z), z, chunkStartZ, chunkEndZ);
+            TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(6f, 16f)), z, chunkStartZ, chunkEndZ);
+            TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(12f, 24f)), z, chunkStartZ, chunkEndZ);
         }
 
-        // 4. 🪷 연잎 군락 Water_Surface 전폭 풍성 생성
+        // 4. 🪷 연잎 군락 (새 청크 지형 경계 내부 엄격 준수)
         CreateLilyPadsGrid(minX, maxX, chunkStartZ + 20f, chunkEndZ - 20f, curWaterY);
     }
 
 
     /// <summary>
-    /// 상공에서 수직 레이캐스트: 지형(Ground)이 수면보다 높이 솟아 있으면 False (땅속 스폰 100% 방지)
+    /// 상공에서 수직 레이캐스트: MeshCollider 및 TerrainCollider를 모두 완벽 검사
+    /// 1) 지형(MeshCollider/TerrainCollider)이 수면 위로 솟아 있는 육지인 경우 -> False
+    /// 2) 수심이 너무 얕아(수면과 지형 사이 < 0.35m) 바닥에 파묻히는 경우 -> False
+    /// 3) 바닥에 지형/수면이 없는 허공인 경우 -> False
+    /// 4) 충분한 수심(waterDepth >= 0.35m)이 확보된 유효한 수면 영역인 경우만 -> True
     /// </summary>
-    private bool IsValidWaterPosition(Vector3 pos)
+    private bool IsValidWaterPosition(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
-        float curWater = GetCurrentWaterLevel();
-        float rayStart = Mathf.Max(pos.y + 30f, curWater + 50f);
-        Vector3 rayOrigin = new Vector3(pos.x, rayStart, pos.z);
-        if (Physics.Raycast(rayOrigin, Vector3.down, out RaycastHit hit, 80f, groundLayerMask))
+        // 1. 청크 Z 범위 경계 초과 방지
+        if (chunkEndZ < float.MaxValue)
         {
-            if (hit.point.y > curWater + 0.35f) return false;
+            if (pos.z < chunkStartZ + 15f || pos.z > chunkEndZ - 15f) return false;
         }
+
+        float curWater = GetCurrentWaterLevel();
+        
+        // 2. 초고도 상공(Y = curWater + 250m)에서 아래로 수직 레이캐스트
+        float rayStart = Mathf.Max(pos.y + 250f, curWater + 250f);
+        Vector3 rayOrigin = new Vector3(pos.x, rayStart, pos.z);
+
+        // RaycastAll로 수면과 바닥 지형(MeshCollider, TerrainCollider 등)을 모두 수집
+        RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 400f, ~0, QueryTriggerInteraction.Collide);
+        if (hits == null || hits.Length == 0)
+        {
+            // 허공 (아무런 콜라이더도 없음)
+            return false;
+        }
+
+        bool hasWaterSurface = false;
+        float groundY = float.MinValue;
+        bool hasGround = false;
+
+        foreach (var hit in hits)
+        {
+            if (hit.collider == null) continue;
+
+            // 수면 콜라이더인지 확인
+            if (hit.collider.GetComponent<WaterSurface>() != null || hit.collider.name.Contains("Water"))
+            {
+                hasWaterSurface = true;
+                curWater = hit.point.y; // 실제 레이에 닿은 수면 높이로 보정
+            }
+            else
+            {
+                // 지형(MeshCollider, TerrainCollider, 기타 바닥 콜라이더)
+                if (hit.point.y > groundY)
+                {
+                    groundY = hit.point.y;
+                    hasGround = true;
+                }
+            }
+        }
+
+        // 수면 콜라이더 또는 지형이 전혀 없는 허공 영역
+        if (!hasWaterSurface && !hasGround) return false;
+
+        // 지형이 수면보다 높이 솟아 있는 육지/언덕인 경우 스폰 차단
+        if (hasGround && groundY >= curWater - 0.15f)
+        {
+            return false;
+        }
+
+        // 수심(waterDepth)이 너무 얕아 흙바닥에 박히는 경우 스폰 차단
+        if (hasGround && (curWater - groundY) < 0.35f)
+        {
+            return false;
+        }
+
         return true;
     }
 
-    private void TrySpawnBoostPad(Vector3 pos)
+    private void TrySpawnBoostPad(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
-        if (!IsValidWaterPosition(pos)) return;
+        if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
         CreateBoostPad(pos, Quaternion.identity);
     }
 
-    private void TrySpawnObstacleRock(Vector3 pos)
+    private void TrySpawnObstacleRock(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
-        if (!IsValidWaterPosition(pos)) return;
+        if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
         CreateObstacleRock(pos);
     }
 
-    private void TrySpawnFish(Vector3 pos, float dist)
+    private void TrySpawnFish(Vector3 pos, float dist, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
-        if (!IsValidWaterPosition(pos)) return;
+        if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
         SpawnSingleFish(pos, dist);
     }
 

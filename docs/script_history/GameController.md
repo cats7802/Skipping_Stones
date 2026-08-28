@@ -13,10 +13,8 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-25] 투척 발판(`Platform`) & 타깃 위치(`Player_Position`) 프리팹 통합 탐색 표준화
-- **수정 목적**: 배경 프리팹 내부 포함 구조 전환에 맞추어 `Platform` 및 `Player_Position`의 루트/자식 다중 Fallback 탐색 및 복제 청크 정리 지원.
-- **핵심 구조**:
-  - `FindPlatformInScene()`: `Lakeside_Platform`, `Platform`, `Lakeside_WoodenPier`, `Pier` 다중 탐색 지원.
-  - `FindPlayerPositionRootInScene()`: `Player_Position`, `PlayerPosition` 탐색 지원.
-  - 프로퍼티 `currentLaunchPlatform` 정식 도입 및 `currentLaunchPier` 하위 호환 유지.
-  - Unity 6 `FindObjectsByType` CS0618 경고 100% 제거.
+### [2026-08-28] 결과창 진입 시 잔여 알림 배너 텍스트 즉시 초기화
+- **수정 목적**: 게임 종료 및 결과창 진입 시 비행 중 발생했던 알림 텍스트(`bannerNotificationText`, `lastTimingText`)가 화면에 남아있던 현상 완전 제거.
+- **핵심 구조**: `ShowFinalResultDirect()` 진입 즉시 `bannerNotificationText = string.Empty` 및 `lastTimingText = string.Empty` 처리.
+- **컴파일 검증**: 0 Warnings, 0 Errors.
+

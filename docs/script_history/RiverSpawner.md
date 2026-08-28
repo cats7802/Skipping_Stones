@@ -12,4 +12,6 @@
 ## 3. 변경 이력 (Changelog)
 - **2026-08-28**: 
   - `GetWaterColliderBounds`에 `minZ`, `maxZ` 반환 추가.
-  - 고정 길이(`4800f`/`1350f`) 대신 실제 수면/지형의 `minZ` ~ `maxZ` 길이를 감지하여 그 범위 안에서만 물 위 엔티티가 스폰되도록 수정.
+  - 고정 길이 대신 슬롯 맵 청크(500m 등 가변 지형)의 `autoChunkSize`를 실측하여 해당 1개 청크 지형 경계(`startZ + 20m ~ endZ - 20m`) 내에서만 엔티티 스폰.
+  - `IsValidWaterPosition`을 전면 개편: 초고도 `RaycastAll`로 메쉬 지형(`MeshCollider`), 터레인 지형(`TerrainCollider`), 수면 콜라이더를 전수 감지하고 안전 수심(`waterDepth >= 0.35m`)을 확보하여 땅속 파묻힘 및 허공 스폰 100% 원천 차단.
+
