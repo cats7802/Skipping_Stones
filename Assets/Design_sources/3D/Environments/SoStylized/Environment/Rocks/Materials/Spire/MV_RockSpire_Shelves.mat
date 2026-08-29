@@ -72,11 +72,13 @@ Material:
     - _Grass_Blend_Sharpness: 1.5
     - _Grass_Brightness: 1
     - _MaskTopLayer: 1
+    - _QueueControl: 0
     - _Rock_Normal_Flatten: 0.2
     - _Rock_Scale: 50
     - _Side_Project_Only: 0
     - _Smoothness_Texture_1: 0
     - _TopGrass: 1
+    - _TopSand: 0
     - _TopSnow: 0
     - _UseSmoothedNormalMap: 1
     m_Colors:
