@@ -164,6 +164,11 @@ public class GameController : MonoBehaviour
     private void Start()
     {
         currentState = GameState.ModeSelect;
+        // 🌟 에디터 직접 실행 시에도 맵이 비어있지 않도록 기본 환경 매니저 안전 로드
+        if (LakeEnvironmentManager.Instance == null && defaultMapPrefab != null)
+        {
+            SetupMapEnvironment(defaultMapPrefab);
+        }
     }
 
     private void ResolveSceneReferences()

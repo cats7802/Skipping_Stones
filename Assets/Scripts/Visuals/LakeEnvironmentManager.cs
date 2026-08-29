@@ -74,11 +74,6 @@ public class LakeEnvironmentManager : MonoBehaviour
 
     private void Awake()
     {
-        if (_instance != null && _instance != this)
-        {
-            if (Application.isPlaying) Destroy(_instance.gameObject);
-            else DestroyImmediate(_instance.gameObject);
-        }
         _instance = this;
     }
 
