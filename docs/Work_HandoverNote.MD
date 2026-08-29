@@ -1,53 +1,47 @@
-# 📋 작업 인수인계서 및 오류 정밀 진단서 (Work Handover Note & Post-Mortem)
+# 📋 최종 작업 인수인계서 (Work Handover Note & Current Code Status)
 
-**작성 일시**: 2026-08-30 05:18  
-**세션 소요 시간**: 약 4시간 20분 (01:00 ~ 05:20)  
-**작성 목적**: 오늘 발생한 비정상적 땜질 버그들의 전말 및 기술적 원인 상세 기록, 다음 세션에서 100% 정상화하기 위한 완벽한 정석 해결책 명시  
-
----
-
-## 1. 🚨 오늘 발생한 주요 미친짓(버그)과 기술적 원인 전말
-
-### 1) [타이틀 화면에 500m 지형 스폰 꼼수] (현재 삭제 완료)
-- **발생한 문제**: 에디터에서 바로 Play 했을 때 편하게 테스트하겠답시고 `GameController.Start()`(타이틀 화면 시작 시점)에 맵을 강제로 `Instantiate`함.
-- **폐해**: 타이틀 및 로비 화면 뒤편에 500m 거대 지형이 스폰되어 리소스가 낭비되고 씬 흐름이 심각하게 오염됨.
-- **조치 상태**: `GameController.Start()`의 엉터리 맵 소환 코드를 **완전히 삭제하여 원상 복구 완료**.
-
-### 2) [Unity 지연 파괴(Deferred Destroy)와 맵 재진입 미생성 버그]
-- **발생한 문제**:
-  1. 게임을 끝내고 맵 선택창으로 복귀할 때 `Destroy(LakeEnvironmentManager)`를 호출함.
-  2. Unity의 `Destroy`는 즉시 사라지지 않고 프레임 끝(End of Frame)까지 씬에 "삭제 대기" 상태로 잔존함.
-  3. 유저가 맵 선택창에서 [게임 시작]을 다시 누르면, `SetupMapEnvironment()` 내의 `FindAnyObjectByType<LakeEnvironmentManager>()`가 **방금 죽어가는 이전 매니저를 "아직 살아있는 매니저"로 잘못 감지**함.
-  4. 그 결과 새 맵을 `Instantiate`하지 않고 건너뛰어 버렸고, 프레임 끝에서 이전 매니저가 완전히 삭제되면서 **씬에 맵이 0개가 되어 허공만 남음**.
-
-### 3) [Awake() 싱글톤 자멸 버그] (현재 수정 완료)
-- **발생한 문제**: `LakeEnvironmentManager.Awake()`에 남아있던 `if (_instance != null) Destroy(_instance.gameObject);` 코드가 새로 생성된 자신과 500m 맵을 1프레임 만에 자멸시킴.
-- **조치 상태**: `Awake()`의 `Destroy` 코드를 완전 삭제하고 `_instance = this;` 등록으로만 단순화 완료.
+**작성 일시**: 2026-08-30 05:22  
+**세션 소요 시간**: 약 4시간 25분 (01:00 ~ 05:25)  
+**상태 요약**: 디렉터님의 명시적 지시에 따라 모든 추가 코드 수정 중단 및 Reject 처리됨. 현재 씬과 코드의 실제 상태 및 발생 중인 모든 오류를 있는 그대로 정밀 기록함.  
 
 ---
 
-## 2. 🎯 다음 세션에서 적용할 완벽한 정석 아키텍처 (Resolution Plan)
+## 1. 🚨 현재 코드베이스의 실제 상태 및 버그 정밀 기록 (Must Read in Next Session)
 
-새 대화창에서 아래 3가지 원칙만 정석대로 적용하면 모든 문제가 100% 영구 해결됩니다:
+### 🔴 [버그 1] 맵 선택창 ➔ 인게임 진입 시 맵 생성 후 즉시 증발
+- **증상**: 맵 선택창에서 [게임 시작] 클릭 시 500m 브룩 강줄기 지형이 1프레임 동안 생성되었다가 화면에서 즉시 사라져 초록 허공과 캐릭터만 남음.
+- **원인 1 (`LakeEnvironmentManager.cs`)**:
+  - `Awake()` 메서드에 `if (_instance != null && _instance != this) Destroy(_instance.gameObject);` 싱글톤 자멸 코드가 남아있어, 맵 매니저가 소환되는 순간 스스로를 파괴함.
+- **원인 2 (Unity 지연 파괴 `Destroy` 타이밍 오작동)**:
+  - 맵 선택창으로 빠져나갈 때 `Destroy(LakeEnvironmentManager)`가 호출되었으나 프레임 종료까지 씬에 남아있어, 재진입 시 `FindAnyObjectByType`이 죽어가는 이전 객체를 "유효한 객체"로 오인하여 새 맵 인스턴스화를 건너뜀.
+- **다음 세션 정석 해결책**:
+  1. `LakeEnvironmentManager.Awake()`에서 `Destroy` 코드를 완전 삭제하고 `_instance = this;`로만 단순 등록.
+  2. `GameController.SetupMapEnvironment()`에서 죽어가는 객체를 잘못 재사용하지 않고, `New_TestEnvMgr.prefab`을 항상 명확하게 1개 깨끗이 `Instantiate`하도록 정리.
 
-### ① 맵 생성/교체의 단일 책임 원칙 (`GameController.SetupMapEnvironment`)
-- 맵 선택창 ➔ 인게임 진입 시 (`StartGameSession`):
-  - 죽어가는 객체를 잘못 잡는 `FindAnyObjectByType`에 의존하지 않고, **명시적으로 기존 매니저를 `DestroyImmediate`로 즉시 파괴**하거나,
-  - `session.mapPrefabOverride`에 지정된 새 맵(`New_TestEnvMgr`)을 **항상 확실하게 1개 깨끗이 `Instantiate`**하여 0번 시작 청크(`Brook_Start`)와 나무 발판을 화면에 띄움.
+### 🔴 [버그 2] 타이틀 맵 스폰 꼼수 제거 필요 여부 확인
+- **상황**: `GameController.Start()`에 임의로 넣었던 맵 스폰 꼼수가 디렉터님에 의해 Reject되었으므로, 현재 `Start()`에는 맵 스폰 코드가 없어야 함 (확인 필요).
+- **원칙**: 맵은 오직 **"맵 선택창에서 [게임 시작]을 눌러 `StartGameSession()`이 호출될 때만"** 생성되어야 함.
 
-### ② 3단계 청크 생명주기
-1. **플레이 / 리플레이 중**: 0번 시작 발판 맵부터 비행 중 생성된 모든 동적 청크 **100% 보존** (리플레이 지원).
-2. **다시하기 (`Retry`)**: 0번 시작 발판 맵(`Brook_Start`)만 남기고 비행 청크만 정리하여 0m 리셋.
-3. **맵선택 복귀 (`Finish / Done`)**: 인게임 맵 전체를 즉시 파괴하여 씬을 깨끗하게 비움.
-
-### ③ 타이틀 / 로비 흐름
-- 타이틀 ➔ 로비 ➔ 맵선택 ➔ 인게임으로 이어지는 메타 UI 흐름 준수.
-- 맵은 오직 **"맵 선택창에서 [게임 시작]을 눌렀을 때만"** 생성.
+### 🔴 [버그 3] 로비 복귀 시 캐릭터 바닥 파묻힘
+- **증상**: 게임 종료 후 로비로 돌아올 때 캐릭터가 로비 방 바닥면 아래로 파묻힘.
+- **원인**: `LobbyCharacterShowcaseController.cs`에서 `Lobby.prefab` 내의 `Character_Staging_Position` 실시간 트랜스폼 좌표를 잃어버리고 `(0, 0, 0)`에 배치되는 현상.
+- **다음 세션 해결책**: 로비 인스턴스가 씬에 생성될 때 `FindStagingPosition()`이 씬 내의 실제 `Character_Staging_Position` 트랜스폼을 100% 바인딩하도록 보완.
 
 ---
 
-## 3. 🛡️ 현재 파일 및 빌드 상태
+## 2. 🛠️ 정상 완료되어 유지된 시스템
 
-- `dotnet build Assembly-CSharp.csproj` ➔ **경고 0개, 오류 0개 (빌드 통과)**
-- `dotnet build Assembly-CSharp-Editor.csproj` ➔ **경고 0개, 오류 0개 (빌드 통과)**
-- 타이틀 맵 스폰 꼼수 삭제 완료, `Awake` 자멸 코드 삭제 완료.
+1. **브룩(Brook) 모듈러 5종 메쉬 및 에셋**:
+   - `Brook_Start`, `Brook_M_01 ~ M_04` 프리팹 및 베이킹 데이터(`RiverPathChunkData.cs`) 정상 구비.
+   - 앵커 소켓 도킹 매니저(`MapAnchorHelper.cs`) 및 베이킹 툴(`RiverPathBaker.cs`, `RiverPathBakerWindow.cs`) 정상 작동.
+2. **구식 IMGUI OnGUI 삭제 및 uGUI 개발자 메뉴 단일화**:
+   - `EnvironmentTestHelper.cs` 내 `OnGUI()` 삭제 완료.
+   - `StoneSkippingUGUIController.cs`의 `devTestMenuObj`로 F1 개발자 패널 단일화 (터치 관통 차단).
+
+---
+
+## 3. 🚀 다음 세션(새 대화창) 시작 가이드
+
+1. **새 대화창(New Chat) 열기**.
+2. 위 **[1. 🚨 현재 코드베이스의 실제 상태 및 버그 정밀 기록]**의 1번(`LakeEnvironmentManager.Awake` 자멸 코드 제거)부터 차례대로 정석 수정 진행.
+3. 유니티 플레이 ➔ 맵선택 ➔ 인게임 진입 시 500m 지형 및 나무 발판이 화면에 100% 유지되는지 실기 검증.
