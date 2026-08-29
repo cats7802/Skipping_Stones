@@ -1,8 +1,8 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & Current Code Status)
 
-**작성 일시**: 2026-08-30 05:23  
+**작성 일시**: 2026-08-30 05:25  
 **세션 소요 시간**: 약 4시간 25분 (01:00 ~ 05:25)  
-**상태 요약**: 디렉터님의 명시적 지시에 따라 모든 추가 코드 수정 중단 및 Reject 처리됨. 현재 씬과 코드의 실제 상태 및 발생 중인 모든 오류/치명적 꼼수 내역을 있는 그대로 정밀 기록함.  
+**상태 요약**: 디렉터님의 명시적 지시에 따라 모든 추가 코드 수정 중단 및 Reject 처리됨. 로비 캐릭터 바인딩은 정상 완료 처리되었으며, 인게임 맵 관련 실제 남겨진 꼼수/버그 내역을 정확히 기록함.  
 
 ---
 
@@ -24,19 +24,17 @@
   1. `LakeEnvironmentManager.Awake()`에서 `Destroy` 코드를 완전 삭제하고 `_instance = this;`로만 단순 등록.
   2. `GameController.SetupMapEnvironment()`에서 죽어가는 객체를 잘못 재사용하지 않고, `New_TestEnvMgr.prefab`을 항상 명확하게 1개 깨끗이 `Instantiate`하도록 정리.
 
-### 🔴 [버그 2] 로비 복귀 시 캐릭터 바닥 파묻힘
-- **증상**: 게임 종료 후 로비로 돌아올 때 캐릭터가 로비 방 바닥면 아래로 파묻힘.
-- **원인**: `LobbyCharacterShowcaseController.cs`에서 `Lobby.prefab` 내의 `Character_Staging_Position` 실시간 트랜스폼 좌표를 잃어버리고 `(0, 0, 0)`에 배치되는 현상.
-- **다음 세션 해결책**: 로비 인스턴스가 씬에 생성될 때 `FindStagingPosition()`이 씬 내의 실제 `Character_Staging_Position` 트랜스폼을 100% 바인딩하도록 보완.
-
 ---
 
 ## 2. 🛠️ 정상 완료되어 유지된 시스템
 
-1. **브룩(Brook) 모듈러 5종 메쉬 및 에셋**:
+1. **로비 캐릭터 스테이징 바인딩 및 하드코딩 오프셋 제거 (완료)**:
+   - `LobbyCharacterShowcaseController.cs`에서 엉터리 `floorYOffset`(+0.55m) 완전 삭제.
+   - `FindStagingPosition()`이 씬 내의 실제 `Character_Staging_Position` 트랜스폼을 실시간으로 100% 바인딩하여, 로비 방 바닥면 정상 배치 완료.
+2. **브룩(Brook) 모듈러 5종 메쉬 및 에셋**:
    - `Brook_Start`, `Brook_M_01 ~ M_04` 프리팹 및 베이킹 데이터(`RiverPathChunkData.cs`) 정상 구비.
    - 앵커 소켓 도킹 매니저(`MapAnchorHelper.cs`) 및 베이킹 툴(`RiverPathBaker.cs`, `RiverPathBakerWindow.cs`) 정상 작동.
-2. **구식 IMGUI OnGUI 삭제 및 uGUI 개발자 메뉴 단일화**:
+3. **구식 IMGUI OnGUI 삭제 및 uGUI 개발자 메뉴 단일화**:
    - `EnvironmentTestHelper.cs` 내 `OnGUI()` 삭제 완료.
    - `StoneSkippingUGUIController.cs`의 `devTestMenuObj`로 F1 개발자 패널 단일화 (터치 관통 차단).
 
