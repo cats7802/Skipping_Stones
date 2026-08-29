@@ -1,4 +1,5 @@
 using UnityEngine;
+using SkippingStones.Terrain;
 
 
 
@@ -18,6 +19,7 @@ public class LakeEnvironmentManager : MonoBehaviour
             }
             return _instance;
         }
+        set => _instance = value;
     }
 
     [System.Serializable]
@@ -47,18 +49,35 @@ public class LakeEnvironmentManager : MonoBehaviour
     [Tooltip("루프 슬롯 목록")]
     public System.Collections.Generic.List<ChunkSlot> loopSlots = new System.Collections.Generic.List<ChunkSlot>();
 
-    [Tooltip("엔딩 맵 프리팹 (EM, 비어있거나 목표 거리 미지정 시 무한 루프)")]
+    public enum EndingTriggerMode
+    {
+        ByLoopCount, // 루프 횟수 기준 (예: 1회 루프 완주 후 엔딩 맵)
+        ByDistance,  // 목표 거리(m) 도달 기준
+        Infinite     // 엔딩 없이 무한 루프
+    }
+
+    [Header("2. 루프 횟수 및 엔딩 완주 규칙")]
+    [Tooltip("엔딩 맵 진입 판정 모드 (ByLoopCount: 지정 횟수 완주 후 엔딩, ByDistance: 목표 거리 도달 시 엔딩, Infinite: 무한 루프)")]
+    public EndingTriggerMode endingTriggerMode = EndingTriggerMode.ByLoopCount;
+
+    [Tooltip("중간 슬롯(1~N번) 시퀀스를 몇 회 반복할 것인가? (1이면 1바퀴 돌고 엔딩 맵 스폰, 0 이하 시 무한 반복)")]
+    public int loopRepeatCount = 1;
+
+    [Tooltip("엔딩 맵 프리팹 (지정된 루프 횟수 완주 시 스폰)")]
     public GameObject endingMapPrefab;
 
     [Tooltip("엔딩 맵 진입 목표 거리 (0 이하 시 무한 루프)")]
     public float targetClearDistance = 0f;
 
+    [Tooltip("엔딩 맵 스폰 이후 더 이상 다음 청크를 스폰하지 않고 코스를 완주(종료)할 것인가?")]
+    public bool stopSpawningOnEnding = true;
+
     private void Awake()
     {
         if (_instance != null && _instance != this)
         {
-            Destroy(gameObject);
-            return;
+            if (Application.isPlaying) Destroy(_instance.gameObject);
+            else DestroyImmediate(_instance.gameObject);
         }
         _instance = this;
     }
@@ -140,45 +159,55 @@ public class LakeEnvironmentManager : MonoBehaviour
     public GameObject GetMapPrefabForChunk(int chunkIndex, float targetZ = 0f)
     {
         // 0번 시작 청크인 경우: StartMap이 있으면 최우선 반환
-        if (chunkIndex == 0 && startMapPrefab != null)
+        if (chunkIndex == 0)
         {
-            ValidatePrefabPlatform(startMapPrefab, "StartMapPrefab (SM)");
-            return startMapPrefab;
+            if (startMapPrefab != null)
+            {
+                ValidatePrefabPlatform(startMapPrefab, "StartMapPrefab (SM)");
+                return startMapPrefab;
+            }
+            if (loopSlots != null && loopSlots.Count > 0 && loopSlots[0].baseMapPrefab != null)
+            {
+                ValidatePrefabPlatform(loopSlots[0].baseMapPrefab, "LoopSlot [1] BaseMap");
+                return loopSlots[0].baseMapPrefab;
+            }
+            return baseBGChunk0;
         }
 
-        // 엔딩 목표 거리 도달 및 엔딩 맵 지정 시: EM 반환
-        if (targetClearDistance > 0f && targetZ >= targetClearDistance && endingMapPrefab != null)
-        {
-            return endingMapPrefab;
-        }
-
-        // 슬롯이 설정되어 있는 경우
+        // 루프 슬롯이 설정되어 있는 경우
         if (loopSlots != null && loopSlots.Count > 0)
         {
-            int slotIdx = (chunkIndex == 0) ? 0 : (chunkIndex - 1) % loopSlots.Count;
+            // 1) 횟수 기준 엔딩 판정 (ByLoopCount)
+            if (endingTriggerMode == EndingTriggerMode.ByLoopCount && loopRepeatCount > 0 && endingMapPrefab != null)
+            {
+                int totalLoopChunks = loopRepeatCount * loopSlots.Count;
+                if (chunkIndex == totalLoopChunks + 1)
+                {
+                    return endingMapPrefab; // 엔딩 맵 스폰
+                }
+                if (chunkIndex > totalLoopChunks + 1)
+                {
+                    if (stopSpawningOnEnding) return null; // 완주 완료 - 스폰 정지
+                    return endingMapPrefab;
+                }
+            }
+            // 2) 거리 기준 엔딩 판정 (ByDistance)
+            else if (endingTriggerMode == EndingTriggerMode.ByDistance && targetClearDistance > 0f && targetZ >= targetClearDistance && endingMapPrefab != null)
+            {
+                return endingMapPrefab;
+            }
+
+            int slotIdx = (chunkIndex - 1) % loopSlots.Count;
             var slot = loopSlots[slotIdx];
-            if (slot == null)
+            if (slot == null || slot.baseMapPrefab == null)
             {
-                Debug.LogError($"[LakeEnvironmentManager] ❌ 루프 슬롯 [{slotIdx + 1}] 데이터가 비어있습니다! (인스펙터 확인 필요)");
+                Debug.LogError($"[LakeEnvironmentManager] ❌ 루프 슬롯 [{slotIdx + 1}] BaseMap이 등록되지 않았습니다! (인스펙터 확인 필요)");
                 return baseBGChunk0;
-            }
-
-            if (slot.baseMapPrefab == null)
-            {
-                Debug.LogError($"[LakeEnvironmentManager] ❌ 루프 슬롯 [{slotIdx + 1}]의 BaseMapPrefab이 등록되지 않았습니다! (인스펙터 확인 필요)");
-                return baseBGChunk0;
-            }
-
-            // 0번 시작 위치로 사용될 베이스 맵인 경우 발판 존재 여부 엄격 검증
-            if (chunkIndex == 0)
-            {
-                ValidatePrefabPlatform(slot.baseMapPrefab, $"LoopSlot [{slotIdx + 1}] BaseMap");
             }
 
             // 변주 체크박스가 켜져 있고 유효한 변주 프리팹이 등록되어 있는 경우
             if (slot.useVariations && slot.variationPrefabs != null && slot.variationPrefabs.Length > 0)
             {
-                // BaseMap을 포함한 변주 후보 풀 구성
                 System.Collections.Generic.List<GameObject> candidates = new System.Collections.Generic.List<GameObject>();
                 if (slot.baseMapPrefab != null) candidates.Add(slot.baseMapPrefab);
                 foreach (var v in slot.variationPrefabs)
@@ -196,6 +225,12 @@ public class LakeEnvironmentManager : MonoBehaviour
             return slot.baseMapPrefab;
         }
 
+        // 엔딩 목표 거리 도달 및 엔딩 맵 지정 시: EM 반환 (슬롯 없는 경우)
+        if (targetClearDistance > 0f && targetZ >= targetClearDistance && endingMapPrefab != null)
+        {
+            return endingMapPrefab;
+        }
+
         // 슬롯이 아예 비어있는데 씬에 BG_01도 없는 경우 콘솔 에러 출력
         if (baseBGChunk0 == null)
         {
@@ -206,11 +241,66 @@ public class LakeEnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
+    /// 🌟 시작 맵 프리팹 내부에 투척 발판(Platform)이 존재하는지 검증하고, 없을 시 자동 생성/도킹
+    /// </summary>
+    public void EnsureLaunchPier(GameObject chunk0, Transform anchorS)
+    {
+        if (chunk0 == null) return;
+
+        // 1. chunk0 내부 모든 자식에서 pier 또는 platform 키워드 검사
+        var allTransforms = chunk0.GetComponentsInChildren<Transform>(true);
+        foreach (var t in allTransforms)
+        {
+            if (t == null) continue;
+            string lName = t.name.ToLower();
+            if (lName.Contains("pier") || lName.Contains("platform"))
+            {
+                return; // 맵 내부에 이미 발판(WoodenPier_Platform 등)이 있으므로 중복 스폰하지 않음!
+            }
+        }
+
+        // 2. 씬 전체에 이미 발판이 존재하는지 확인
+        var allObjs = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var obj in allObjs)
+        {
+            if (obj == null) continue;
+            string lName = obj.name.ToLower();
+            if (lName.Contains("camera") || lName.Contains("canvas") || lName.Contains("ui") || lName.Contains("guide")) continue;
+            if (lName.Contains("pier") || lName.Contains("platform"))
+            {
+                return;
+            }
+        }
+
+        // 🌟 시작 맵에 발판이 없다면 Lakeside_WoodenPier 자동 스폰 및 도킹
+        GameObject pierPrefab = Resources.Load<GameObject>("Lakeside_WoodenPier");
+#if UNITY_EDITOR
+        if (pierPrefab == null)
+        {
+            pierPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/Lakeside_WoodenPier.prefab");
+        }
+#endif
+        if (pierPrefab != null)
+        {
+            Vector3 spawnPos = (anchorS != null) ? anchorS.position : chunk0.transform.position;
+            Quaternion spawnRot = (anchorS != null) ? anchorS.rotation : Quaternion.identity;
+
+            WaterSurface ws = chunk0.GetComponentInChildren<WaterSurface>();
+            float waterY = (ws != null && ws.GetComponent<BoxCollider>() != null) ? ws.GetComponent<BoxCollider>().bounds.max.y : spawnPos.y;
+            spawnPos.y = waterY;
+
+            GameObject pierObj = Instantiate(pierPrefab, spawnPos, spawnRot, chunk0.transform);
+            pierObj.name = "Lakeside_WoodenPier";
+        }
+    }
+
+    /// <summary>
     /// 🌟 시작 맵 프리팹 내부에 투척 발판(Platform)이 존재하는지 엄격 검증
     /// </summary>
     private void ValidatePrefabPlatform(GameObject prefab, string slotDescription)
     {
         if (prefab == null) return;
+        // 발판 누락 시 EnsureLaunchPier가 런타임에 자동 도킹하므로 Warning 수준으로 로깅
         string[] platformNames = { "Lakeside_Platform", "Platform", "Lakeside_WoodenPier", "Pier" };
         bool hasPlatform = false;
         foreach (var pName in platformNames)
@@ -241,7 +331,7 @@ public class LakeEnvironmentManager : MonoBehaviour
 
         if (!hasPlatform)
         {
-            Debug.LogError($"[LakeEnvironmentManager] ❌ 시작 지점으로 사용될 [{slotDescription}] 프리팹('{prefab.name}') 내부에 발판(Platform/Lakeside_Platform) 오브젝트가 없습니다! 캐릭터가 스폰될 수 없습니다.");
+            Debug.Log($"[LakeEnvironmentManager] ℹ️ [{slotDescription}] 프리팹('{prefab.name}')에 고정 발판이 없어 런타임에 Lakeside_WoodenPier가 자동 도킹됩니다.");
         }
     }
 
@@ -280,80 +370,7 @@ public class LakeEnvironmentManager : MonoBehaviour
         }
     }
 
-    #region BG 순차 인스턴스화 및 자동 크기 감지 무한 스트리밍
-
-    /// <summary>
-    /// 실제 활성화된 맵 청크의 지형(MeshCollider, Terrain, WaterSurface, Renderer)으로부터 실제 1개 청크 길이를 100% 동적 실측
-    /// </summary>
-    private void AutoDetectChunkSize()
-    {
-        if (baseBGChunk0 == null) return;
-
-        // 1. 활성화된 청크 내 MeshCollider 결합 바운드 최우선 실측 (메쉬 지형)
-        MeshCollider[] meshCols = baseBGChunk0.GetComponentsInChildren<MeshCollider>();
-        if (meshCols != null && meshCols.Length > 0)
-        {
-            Bounds combinedMesh = meshCols[0].bounds;
-            bool foundGroundMesh = false;
-            foreach (var mc in meshCols)
-            {
-                if (mc == null || !mc.enabled || mc.gameObject.name.Contains("Water")) continue;
-                if (!foundGroundMesh)
-                {
-                    combinedMesh = mc.bounds;
-                    foundGroundMesh = true;
-                }
-                else
-                {
-                    combinedMesh.Encapsulate(mc.bounds);
-                }
-            }
-            if (foundGroundMesh && combinedMesh.size.z > 10f)
-            {
-                autoChunkSize = combinedMesh.size.z;
-                return;
-            }
-        }
-
-        // 2. Terrain 컴포넌트가 존재할 경우 terrainData 크기 실측
-        Terrain terrain = baseBGChunk0.GetComponentInChildren<Terrain>();
-        if (terrain != null && terrain.terrainData != null && terrain.terrainData.size.z > 10f)
-        {
-            autoChunkSize = terrain.terrainData.size.z * terrain.transform.lossyScale.z;
-            return;
-        }
-
-        // 3. WaterSurface BoxCollider로부터 수면 메쉬 길이 실측
-        WaterSurface ws = baseBGChunk0.GetComponentInChildren<WaterSurface>();
-        if (ws != null)
-        {
-            BoxCollider bc = ws.GetComponent<BoxCollider>();
-            if (bc != null && bc.size.z > 10f)
-            {
-                autoChunkSize = bc.size.z * ws.transform.lossyScale.z;
-                return;
-            }
-        }
-
-        // 4. 전체 메쉬 렌더러 바운드 합산
-        Renderer[] renderers = baseBGChunk0.GetComponentsInChildren<Renderer>();
-        if (renderers != null && renderers.Length > 0)
-        {
-            Bounds combined = renderers[0].bounds;
-            foreach (var r in renderers)
-            {
-                if (r is ParticleSystemRenderer || r is TrailRenderer) continue;
-                combined.Encapsulate(r.bounds);
-            }
-            if (combined.size.z > 10f)
-            {
-                autoChunkSize = combined.size.z;
-                return;
-            }
-        }
-
-        autoChunkSize = 500f;
-    }
+    #region BG 순차 인스턴스화 및 앵커 기반 무한 스트리밍
 
     public void SetupBGChunks()
     {
@@ -373,7 +390,19 @@ public class LakeEnvironmentManager : MonoBehaviour
 
         if (baseBGChunk0 == null && (loopSlots == null || loopSlots.Count == 0)) return;
 
-        AutoDetectChunkSize();
+        // 0번 청크 등록 및 발판 자동 도킹
+        if (baseBGChunk0 != null)
+        {
+            MapAnchorHelper.GetOrCreateAnchors(baseBGChunk0, out Transform anchorS, out _);
+
+            if (!dynamicChunks.Contains(baseBGChunk0))
+            {
+                dynamicChunks.Add(baseBGChunk0);
+            }
+
+            EnsureLaunchPier(baseBGChunk0, anchorS);
+        }
+
         spawnedChunkIndices.Add(0);
     }
 
@@ -388,21 +417,72 @@ public class LakeEnvironmentManager : MonoBehaviour
         SetupBGChunks();
         if (baseBGChunk0 == null) return null;
 
-        float targetZ = chunkIndex * autoChunkSize;
-        GameObject sourcePrefab = GetMapPrefabForChunk(chunkIndex, targetZ) ?? baseBGChunk0;
+        // 이전 청크들의 순차 스폰 보장 (이전 청크의 End Anchor 획득 목적)
+        if (chunkIndex > 1)
+        {
+            for (int i = 1; i < chunkIndex; i++)
+            {
+                if (!spawnedChunkIndices.Contains(i))
+                {
+                    EnsureChunkSpawned(i);
+                }
+            }
+        }
+
+        // 이전 청크 (chunkIndex - 1) 및 해당 청크의 End Anchor 획득
+        GameObject prevChunk = (chunkIndex == 1)
+            ? baseBGChunk0
+            : dynamicChunks.Find(c => c != null && c.name.Contains($"Section_{chunkIndex - 1}"));
+        if (prevChunk == null) prevChunk = baseBGChunk0;
+
+        MapAnchorHelper.GetOrCreateAnchors(prevChunk, out _, out Transform prevAnchorE);
+        float prevEndZ = prevAnchorE != null ? prevAnchorE.position.z : (chunkIndex - 1) * autoChunkSize;
+
+        GameObject sourcePrefab = GetMapPrefabForChunk(chunkIndex, prevEndZ);
+        if (sourcePrefab == null)
+        {
+            if (stopSpawningOnEnding)
+            {
+                Debug.Log($"[LakeEnvironmentManager] 🏁 엔딩 맵({chunkIndex - 1}번 청크)에 도달하여 코스가 완주되었습니다. 추가 청크 생성을 정지합니다.");
+                return null;
+            }
+            sourcePrefab = baseBGChunk0;
+        }
         if (sourcePrefab == null) return null;
 
         Transform parentTransform = (baseBGChunk0 != null && baseBGChunk0.transform.parent != null) ? baseBGChunk0.transform.parent : transform;
         GameObject newChunk = Instantiate(sourcePrefab, parentTransform);
-        newChunk.name = $"{sourcePrefab.name}_Section_{chunkIndex}_{targetZ:F0}m";
 
-        Vector3 basePos = (baseBGChunk0 != null) ? baseBGChunk0.transform.localPosition : Vector3.zero;
-        Quaternion baseRot = (baseBGChunk0 != null) ? baseBGChunk0.transform.localRotation : Quaternion.identity;
-        Vector3 baseScale = (baseBGChunk0 != null) ? baseBGChunk0.transform.localScale : Vector3.one;
+        // 새 청크의 Start & End 앵커 획득
+        MapAnchorHelper.GetOrCreateAnchors(newChunk, out Transform currAnchorS, out Transform currAnchorE);
 
-        newChunk.transform.localPosition = basePos + new Vector3(0f, 0f, targetZ);
-        newChunk.transform.localRotation = baseRot;
-        newChunk.transform.localScale = baseScale;
+        if (prevAnchorE != null && currAnchorS != null)
+        {
+            // 🌟 정밀 소켓 도킹 (Socket Snapping): 이전 청크 Anchor_E와 현재 청크 Anchor_S 완벽 일치
+            Quaternion localRotS = Quaternion.Inverse(newChunk.transform.rotation) * currAnchorS.rotation;
+            Vector3 localPosS = newChunk.transform.InverseTransformPoint(currAnchorS.position);
+
+            Quaternion targetRot = prevAnchorE.rotation * Quaternion.Inverse(localRotS);
+            Vector3 targetPos = prevAnchorE.position - (targetRot * localPosS);
+
+            newChunk.transform.rotation = targetRot;
+            newChunk.transform.position = targetPos;
+        }
+        else
+        {
+            // 앵커 도킹 불가 시 기존 Z축 오프셋 폴백
+            float targetZ = chunkIndex * autoChunkSize;
+            Vector3 basePos = (baseBGChunk0 != null) ? baseBGChunk0.transform.localPosition : Vector3.zero;
+            Quaternion baseRot = (baseBGChunk0 != null) ? baseBGChunk0.transform.localRotation : Quaternion.identity;
+            Vector3 baseScale = (baseBGChunk0 != null) ? baseBGChunk0.transform.localScale : Vector3.one;
+
+            newChunk.transform.localPosition = basePos + new Vector3(0f, 0f, targetZ);
+            newChunk.transform.localRotation = baseRot;
+            newChunk.transform.localScale = baseScale;
+        }
+
+        float spawnZ = currAnchorS != null ? currAnchorS.position.z : newChunk.transform.position.z;
+        newChunk.name = $"{sourcePrefab.name}_Section_{chunkIndex}_{spawnZ:F0}m";
 
         // 🌟 복제 청크 내 발판 및 타깃 위치 그룹(PP) 자동 제거
         string[] cleanNames = { "Lakeside_Platform", "Platform", "Lakeside_WoodenPier", "Pier", "Player_Position", "PlayerPosition", "Player_Positions" };
@@ -426,18 +506,24 @@ public class LakeEnvironmentManager : MonoBehaviour
         dynamicChunks.Add(newChunk);
         spawnedChunkIndices.Add(chunkIndex);
 
-        OnChunkRelayed?.Invoke(targetZ);
+        OnChunkRelayed?.Invoke(spawnZ);
 
         return newChunk;
     }
 
     public void ClearDynamicChunks()
     {
-        foreach (var chunk in dynamicChunks)
+        for (int i = dynamicChunks.Count - 1; i >= 0; i--)
         {
-            if (chunk != null) Destroy(chunk);
+            var chunk = dynamicChunks[i];
+            if (chunk != null && chunk != baseBGChunk0)
+            {
+                if (Application.isPlaying) Destroy(chunk);
+                else DestroyImmediate(chunk);
+            }
         }
         dynamicChunks.Clear();
+        if (baseBGChunk0 != null) dynamicChunks.Add(baseBGChunk0);
         spawnedChunkIndices.Clear();
         spawnedChunkIndices.Add(0);
     }
@@ -455,7 +541,7 @@ public class LakeEnvironmentManager : MonoBehaviour
     public void SetupTerrainChunks() => SetupBGChunks();
 
     /// <summary>
-    /// 🌟 청크 크기(autoChunkSize)에 비례하여 다음 청크를 사전에 무한 자동 스폰
+    /// 🌟 소켓 앵커 끝단 위치에 비례하여 다음 청크를 사전에 무한 자동 스폰
     /// </summary>
     public void UpdateBGStreaming()
     {
@@ -463,16 +549,25 @@ public class LakeEnvironmentManager : MonoBehaviour
         SetupBGChunks();
 
         float trackZ = GetTrackingZ();
-        if (autoChunkSize <= 0f) autoChunkSize = 500f;
 
-        // 🌟 현재 청크의 30% 지점만 지나도 다음 청크를 조용히 미리 생성하여 허공 도달 원천 방지
-        int requiredChunkIndex = Mathf.FloorToInt((trackZ + (autoChunkSize * 0.70f)) / autoChunkSize);
-
-        for (int i = 1; i <= requiredChunkIndex; i++)
+        // 마지막으로 스폰된 청크의 End Anchor Z 위치 추적
+        GameObject lastChunk = dynamicChunks.Count > 0 ? dynamicChunks[dynamicChunks.Count - 1] : baseBGChunk0;
+        float lastEndZ = 0f;
+        if (lastChunk != null)
         {
-            if (!spawnedChunkIndices.Contains(i))
+            MapAnchorHelper.GetOrCreateAnchors(lastChunk, out _, out Transform lastAnchorE);
+            if (lastAnchorE != null) lastEndZ = lastAnchorE.position.z;
+            else lastEndZ = spawnedChunkIndices.Count * 500f;
+        }
+
+        // 현재 추적 위치가 마지막 청크 끝단으로부터 350m 이내에 도달하면 다음 청크 사전 스폰
+        float spawnThreshold = 350f;
+        if (trackZ >= lastEndZ - spawnThreshold)
+        {
+            int nextIndex = dynamicChunks.Count;
+            if (!spawnedChunkIndices.Contains(nextIndex))
             {
-                EnsureChunkSpawned(i);
+                EnsureChunkSpawned(nextIndex);
             }
         }
     }
@@ -489,5 +584,63 @@ public class LakeEnvironmentManager : MonoBehaviour
         return Camera.main != null ? Camera.main.transform.position.z : 0f;
     }
 
+    #endregion
+
+    #region 에디터 테스트 도구 (In-Editor Test Tools)
+    /// <summary>
+    /// 규칙대로 설정된 전체 시퀀스 맵을 에디터 씬에 일괄 생성
+    /// </summary>
+    public void TestBuildFullSequence()
+    {
+        ClearDynamicChunks();
+        SetupBGChunks();
+
+        int totalChunks = 0;
+        if (loopSlots != null && loopSlots.Count > 0)
+        {
+            if (endingTriggerMode == EndingTriggerMode.ByLoopCount && loopRepeatCount > 0 && endingMapPrefab != null)
+            {
+                totalChunks = (loopRepeatCount * loopSlots.Count) + 1; // 슬롯 N회 + 엔딩 1개
+            }
+            else
+            {
+                totalChunks = Mathf.Max(loopSlots.Count * 2, 4);
+            }
+        }
+        else
+        {
+            totalChunks = 3;
+        }
+
+        for (int i = 1; i <= totalChunks; i++)
+        {
+            EnsureChunkSpawned(i);
+        }
+
+        Debug.Log($"[LakeEnvironmentManager] 🚀 규칙 기반 시퀀스 맵 생성 완료: 총 {dynamicChunks.Count}개 청크가 소켓 앵커로 도킹되었습니다.");
+    }
+
+    /// <summary>
+    /// 다음 순서의 1개 청크만 순차적으로 스폰
+    /// </summary>
+    public void TestSpawnNextChunk()
+    {
+        SetupBGChunks();
+        int nextIndex = dynamicChunks.Count;
+        GameObject spawned = EnsureChunkSpawned(nextIndex);
+        if (spawned != null)
+        {
+            Debug.Log($"[LakeEnvironmentManager] ➕ {nextIndex}번 청크 '{spawned.name}' 스폰 완료!");
+        }
+    }
+
+    /// <summary>
+    /// 생성된 동적 청크들을 모두 제거하고 초기화
+    /// </summary>
+    public void TestClearChunks()
+    {
+        ClearDynamicChunks();
+        Debug.Log("[LakeEnvironmentManager] 🧹 생성된 테스트 청크 초기화 완료!");
+    }
     #endregion
 }

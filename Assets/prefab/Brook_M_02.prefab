@@ -1,0 +1,1309 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &621767381616929045
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 7546667089543457045}
+  m_Layer: 0
+  m_Name: PP01
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &7546667089543457045
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 621767381616929045}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: 6.01, y: 0.813, z: -13.28}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 6490543837948129939}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &2188497160760177466
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 4764351435962607361}
+  - component: {fileID: 811047798227705757}
+  m_Layer: 0
+  m_Name: Spawn_Objects
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &4764351435962607361
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2188497160760177466}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 1446872644335776399}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &811047798227705757
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2188497160760177466}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 9ec72664a1362e243b0a28b31d14dd55, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::RiverSpawner
+  riverLength: 4800
+  riverWidth: 50
+  riverWaterMinX: -28
+  riverWaterMaxX: 28
+  startBankPos: {x: 0, y: 0, z: 0}
+  spawnDirection: {x: 0, y: 0, z: 1}
+  groundLayerMask:
+    serializedVersion: 2
+    m_Bits: 1
+  raycastHeight: 20
+  defaultWaterHeight: 16
+  boostPadPrefab: {fileID: 0}
+  obstacleRockPrefab: {fileID: 0}
+  targetZonePrefab: {fileID: 0}
+  friendFlagPrefab: {fileID: 0}
+  jumpingFishPrefab: {fileID: 0}
+  lilyPadClusterPrefab: {fileID: 0}
+--- !u!1 &5383947351005177099
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1446872644335776399}
+  - component: {fileID: 2431861861986307527}
+  m_Layer: 0
+  m_Name: Brook_M_02
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &1446872644335776399
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5383947351005177099}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7947221040528202452}
+  - {fileID: 7503318953638572130}
+  - {fileID: 4764351435962607361}
+  - {fileID: 6490543837948129939}
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &2431861861986307527
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 5383947351005177099}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c32dcb654632acf4d88c93f61d45383b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Terrain.RiverPathChunkData
+  nodes:
+  - localPosition: {x: -194.36633, y: 0, z: -250}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 0
+  - localPosition: {x: -194.36633, y: 0, z: -245.68394}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 4.3160553
+  - localPosition: {x: -194.36633, y: 0, z: -241.36789}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 8.632111
+  - localPosition: {x: -194.36633, y: 0, z: -237.05183}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 12.948166
+  - localPosition: {x: -194.36633, y: 0, z: -232.73578}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 17.264221
+  - localPosition: {x: -194.36633, y: 0, z: -228.41972}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 21.580276
+  - localPosition: {x: -194.36633, y: 0, z: -224.10367}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 25.896332
+  - localPosition: {x: -194.36633, y: 0, z: -219.78761}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 30.212387
+  - localPosition: {x: -194.36633, y: 0, z: -215.47157}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 34.528427
+  - localPosition: {x: -194.36633, y: 0, z: -211.15552}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 38.844482
+  - localPosition: {x: -194.36633, y: 0, z: -206.83946}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 43.160538
+  - localPosition: {x: -194.36633, y: 0, z: -202.5234}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 47.476593
+  - localPosition: {x: -194.36633, y: 0, z: -198.20735}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 51.79265
+  - localPosition: {x: -194.36633, y: 0, z: -193.8913}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 56.108704
+  - localPosition: {x: -194.36633, y: 0, z: -189.57524}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 60.42476
+  - localPosition: {x: -194.36633, y: 0, z: -185.25919}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 64.740814
+  - localPosition: {x: -194.36633, y: 0, z: -180.94313}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 69.05687
+  - localPosition: {x: -194.36633, y: 0, z: -176.62708}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 73.372925
+  - localPosition: {x: -194.36633, y: 0, z: -172.31102}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 77.68898
+  - localPosition: {x: -194.36633, y: 0, z: -167.99496}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 82.005035
+  - localPosition: {x: -194.36633, y: 0, z: -163.67891}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 86.32109
+  - localPosition: {x: -194.36633, y: 0, z: -159.36285}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 90.637146
+  - localPosition: {x: -194.36633, y: 0, z: -155.0468}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 94.9532
+  - localPosition: {x: -194.36633, y: 0, z: -150.73074}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 99.26926
+  - localPosition: {x: -194.36633, y: 0, z: -146.4147}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 103.5853
+  - localPosition: {x: -194.36633, y: 0, z: -142.09865}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 107.90135
+  - localPosition: {x: -194.36633, y: 0, z: -137.7826}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 112.21741
+  - localPosition: {x: -194.36633, y: 0, z: -133.46654}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 116.53346
+  - localPosition: {x: -194.36633, y: 0, z: -129.15048}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 120.84952
+  - localPosition: {x: -194.36633, y: 0, z: -124.83443}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 125.16557
+  - localPosition: {x: -194.36633, y: 0, z: -120.51837}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 129.48163
+  - localPosition: {x: -194.36633, y: 0, z: -116.20232}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 133.79768
+  - localPosition: {x: -194.36633, y: 0, z: -111.88627}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 138.11374
+  - localPosition: {x: -194.36633, y: 0, z: -107.57021}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 142.4298
+  - localPosition: {x: -194.36633, y: 0, z: -103.25416}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 146.74585
+  - localPosition: {x: -194.36633, y: 0, z: -98.9381}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 151.0619
+  - localPosition: {x: -194.36633, y: 0, z: -94.62205}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 155.37796
+  - localPosition: {x: -194.36633, y: 0, z: -90.306}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 159.694
+  - localPosition: {x: -194.36633, y: 0, z: -85.989944}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 164.01006
+  - localPosition: {x: -194.36633, y: 0, z: -81.67389}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 168.32611
+  - localPosition: {x: -194.36633, y: 0, z: -77.35783}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 172.64218
+  - localPosition: {x: -194.36633, y: 0, z: -73.04178}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 176.95822
+  - localPosition: {x: -194.36633, y: 0, z: -68.725716}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 181.27429
+  - localPosition: {x: -194.36633, y: 0, z: -64.409676}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 185.59033
+  - localPosition: {x: -194.36633, y: 0, z: -60.09361}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 189.9064
+  - localPosition: {x: -194.36633, y: 0, z: -55.777565}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 194.22244
+  - localPosition: {x: -194.36633, y: 0, z: -51.461502}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 198.53851
+  - localPosition: {x: -194.36633, y: 0, z: -47.14546}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 202.85455
+  - localPosition: {x: -194.36633, y: 0, z: -42.829395}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 207.17062
+  - localPosition: {x: -194.36633, y: 0, z: -38.51335}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 211.48666
+  - localPosition: {x: -194.36633, y: 0, z: -34.197285}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 215.80273
+  - localPosition: {x: -194.36633, y: 0, z: -29.881243}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 220.11877
+  - localPosition: {x: -194.36633, y: 0, z: -25.565178}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 224.43484
+  - localPosition: {x: -194.36633, y: 0, z: -21.249136}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 228.75089
+  - localPosition: {x: -194.36633, y: 0, z: -16.933071}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 233.06696
+  - localPosition: {x: -194.36633, y: 0, z: -12.617027}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 237.383
+  - localPosition: {x: -194.36633, y: 0, z: -8.300963}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 241.69907
+  - localPosition: {x: -194.36633, y: 0, z: -3.9849195}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 246.0151
+  - localPosition: {x: -194.36633, y: 0, z: 0.33114433}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 250.33118
+  - localPosition: {x: -194.36633, y: 0, z: 4.647188}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 254.64722
+  - localPosition: {x: -194.36633, y: 0, z: 8.963252}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 258.9633
+  - localPosition: {x: -194.36633, y: 0, z: 13.279296}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 263.27933
+  - localPosition: {x: -194.36633, y: 0, z: 17.59536}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 267.5954
+  - localPosition: {x: -194.36633, y: 0, z: 21.911404}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 271.91144
+  - localPosition: {x: -194.36633, y: 0, z: 26.227468}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 276.2275
+  - localPosition: {x: -194.36633, y: 0, z: 30.54351}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 280.54355
+  - localPosition: {x: -194.36633, y: 0, z: 34.859577}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 284.85962
+  - localPosition: {x: -194.36633, y: 0, z: 39.175617}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 289.17566
+  - localPosition: {x: -194.36633, y: 0, z: 43.491684}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 293.49173
+  - localPosition: {x: -194.36633, y: 0, z: 47.807728}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 297.80777
+  - localPosition: {x: -194.36633, y: 0, z: 52.12379}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 302.12384
+  - localPosition: {x: -194.36633, y: 0, z: 56.439835}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 306.43988
+  - localPosition: {x: -194.36633, y: 0, z: 60.755898}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 310.75595
+  - localPosition: {x: -194.36633, y: 0, z: 65.071945}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 315.072
+  - localPosition: {x: -194.36633, y: 0, z: 69.38801}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 319.38806
+  - localPosition: {x: -194.36633, y: 0, z: 73.70405}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 323.7041
+  - localPosition: {x: -194.36633, y: 0, z: 78.02011}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 328.02017
+  - localPosition: {x: -194.36633, y: 0, z: 82.33616}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 332.3362
+  - localPosition: {x: -194.36633, y: 0, z: 86.65222}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 336.65228
+  - localPosition: {x: -194.36633, y: 0, z: 90.96826}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 340.96832
+  - localPosition: {x: -194.36633, y: 0, z: 95.28435}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 345.28442
+  - localPosition: {x: -194.36633, y: 0, z: 99.600395}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 349.60046
+  - localPosition: {x: -194.36633, y: 0, z: 103.916435}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 353.9165
+  - localPosition: {x: -194.36633, y: 0, z: 108.23248}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 358.23254
+  - localPosition: {x: -194.36633, y: 0, z: 112.54857}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 362.54865
+  - localPosition: {x: -194.36633, y: 0, z: 116.86461}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 366.8647
+  - localPosition: {x: -194.36633, y: 0, z: 121.18065}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 371.18073
+  - localPosition: {x: -194.36633, y: 0, z: 125.4967}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 375.49677
+  - localPosition: {x: -194.36633, y: 0, z: 129.81277}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 379.81284
+  - localPosition: {x: -194.36633, y: 0, z: 134.12883}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 384.1289
+  - localPosition: {x: -194.36633, y: 0, z: 138.44487}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 388.44495
+  - localPosition: {x: -194.36633, y: 0, z: 142.76091}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 392.761
+  - localPosition: {x: -194.36633, y: 0, z: 147.077}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 397.0771
+  - localPosition: {x: -194.36633, y: 0, z: 151.39304}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 401.39313
+  - localPosition: {x: -194.36633, y: 0, z: 155.70908}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 405.70917
+  - localPosition: {x: -194.36633, y: 0, z: 160.02513}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 410.0252
+  - localPosition: {x: -194.36633, y: 0, z: 164.34122}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 414.3413
+  - localPosition: {x: -194.36633, y: 0, z: 168.65726}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 418.65735
+  - localPosition: {x: -194.36633, y: 0, z: 172.9733}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 422.9734
+  - localPosition: {x: -194.36633, y: 0, z: 177.28934}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 427.28943
+  - localPosition: {x: -194.36633, y: 0, z: 181.60542}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 431.60553
+  - localPosition: {x: -194.36633, y: 0, z: 185.92148}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 435.92157
+  - localPosition: {x: -194.36633, y: 0, z: 190.23752}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 440.2376
+  - localPosition: {x: -194.36633, y: 0, z: 194.55356}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 444.55365
+  - localPosition: {x: -194.36633, y: 0, z: 198.86964}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 448.86975
+  - localPosition: {x: -194.36633, y: 0, z: 203.18568}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 453.1858
+  - localPosition: {x: -194.36633, y: 0, z: 207.50172}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 457.50183
+  - localPosition: {x: -194.36633, y: 0, z: 211.81778}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 461.81787
+  - localPosition: {x: -194.36633, y: 0, z: 216.13387}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 466.13397
+  - localPosition: {x: -194.36633, y: 0, z: 220.4499}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 470.45
+  - localPosition: {x: -194.36633, y: 0, z: 224.76595}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 474.76605
+  - localPosition: {x: -194.36633, y: 0, z: 229.08199}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 479.0821
+  - localPosition: {x: -194.36633, y: 0, z: 233.39807}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 483.3982
+  - localPosition: {x: -194.36633, y: 0, z: 237.71411}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 487.71423
+  - localPosition: {x: -194.36633, y: 0, z: 242.03017}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 492.03027
+  - localPosition: {x: -194.36633, y: 0, z: 246.3462}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 496.3463
+  - localPosition: {x: -194.36633, y: 0, z: 250.6623}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 500.6624
+  - localPosition: {x: -194.36633, y: 0, z: 254.97833}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 504.97845
+  - localPosition: {x: -194.36633, y: 0, z: 259.29437}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 509.2945
+  - localPosition: {x: -194.36633, y: 0, z: 263.61047}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 513.6106
+  - localPosition: {x: -194.36633, y: 0, z: 267.9265}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 517.92664
+  - localPosition: {x: -194.36633, y: 0, z: 272.24255}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 522.2427
+  - localPosition: {x: -194.36633, y: 0, z: 276.5586}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 526.5587
+  - localPosition: {x: -194.36633, y: 0, z: 280.87466}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 530.87476
+  - localPosition: {x: -194.36633, y: 0, z: 285.19073}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 535.1908
+  - localPosition: {x: -194.36633, y: 0, z: 289.50677}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 539.50684
+  - localPosition: {x: -194.36633, y: 0, z: 293.8228}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 543.8229
+  - localPosition: {x: -194.36633, y: 0, z: 298.1389}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 548.1389
+  - localPosition: {x: -194.36633, y: 0, z: 302.45493}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 552.45496
+  - localPosition: {x: -194.36633, y: 0, z: 306.77097}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 556.771
+  - localPosition: {x: -194.36633, y: 0, z: 311.08704}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 561.08704
+  - localPosition: {x: -194.36633, y: 0, z: 315.4031}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 565.4031
+  - localPosition: {x: -194.36633, y: 0, z: 319.71915}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 569.7191
+  - localPosition: {x: -194.36633, y: 0, z: 324.0352}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 574.03516
+  - localPosition: {x: -194.36633, y: 0, z: 328.35123}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 578.3512
+  - localPosition: {x: -194.36633, y: 0, z: 332.66733}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 582.6673
+  - localPosition: {x: -194.36633, y: 0, z: 336.98337}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 586.98334
+  - localPosition: {x: -194.36633, y: 0, z: 341.2994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 591.2994
+  - localPosition: {x: -194.36633, y: 0, z: 345.61545}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 595.6154
+  - localPosition: {x: -194.36633, y: 0, z: 349.93155}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 599.9315
+  - localPosition: {x: -194.36633, y: 0, z: 354.2476}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 604.24756
+  - localPosition: {x: -194.36633, y: 0, z: 358.56363}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 608.5636
+  - localPosition: {x: -194.36633, y: 0, z: 362.87967}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 612.87964
+  - localPosition: {x: -194.36633, y: 0, z: 367.19574}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 617.1957
+  - localPosition: {x: -194.36633, y: 0, z: 371.5118}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 621.5117
+  - localPosition: {x: -194.36633, y: 0, z: 375.82785}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 625.82776
+  - localPosition: {x: -194.36633, y: 0, z: 380.1439}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 630.1438
+  - localPosition: {x: -194.36633, y: 0, z: 384.45996}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 634.45984
+  - localPosition: {x: -194.36633, y: 0, z: 388.776}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 638.7759
+  - localPosition: {x: -194.36633, y: 0, z: 393.09204}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 643.0919
+  - localPosition: {x: -194.36633, y: 0, z: 397.4081}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 647.40796
+  - localPosition: {x: -194.36633, y: 0, z: 401.72418}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 651.724
+  - localPosition: {x: -194.36633, y: 0, z: 406.04022}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 656.04004
+  - localPosition: {x: -194.36633, y: 0, z: 410.35626}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 660.3561
+  - localPosition: {x: -194.36633, y: 0, z: 414.6723}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 664.6721
+  - localPosition: {x: -194.36633, y: 0, z: 418.9884}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 668.9882
+  - localPosition: {x: -194.36633, y: 0, z: 423.30444}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 344.3662
+    rightWidth: 344.3662
+    cumulativeDistance: 673.30426
+  totalLength: 673.30426
+  averageWidth: 688.7324
+  showGizmos: 1
+  centerlineColor: {r: 0, g: 0.9, b: 1, a: 0.9}
+  bankBoundaryColor: {r: 1, g: 0.85, b: 0.2, a: 0.45}
+--- !u!1 &6095030701635082205
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6490543837948129939}
+  m_Layer: 0
+  m_Name: Player_Position
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6490543837948129939
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6095030701635082205}
+  serializedVersion: 2
+  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
+  m_LocalPosition: {x: -24, y: -0.94, z: 7}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children:
+  - {fileID: 7546667089543457045}
+  m_Father: {fileID: 1446872644335776399}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1001 &7620242385306189119
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1446872644335776399}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 919132149155446097, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      propertyPath: m_Name
+      value: brook__M_02
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 551790458219995240}
+  m_SourcePrefab: {fileID: 100100000, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+--- !u!1 &7278348898299658350 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+  m_PrefabInstance: {fileID: 7620242385306189119}
+  m_PrefabAsset: {fileID: 0}
+--- !u!64 &551790458219995240
+MeshCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7278348898299658350}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 5
+  m_Convex: 0
+  m_CookingOptions: 30
+  m_Mesh: {fileID: 1074123315852906811, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+--- !u!4 &7947221040528202452 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: fa1de70af426b974d9b7400a20255877, type: 3}
+  m_PrefabInstance: {fileID: 7620242385306189119}
+  m_PrefabAsset: {fileID: 0}
+--- !u!1001 &8046698508312926089
+PrefabInstance:
+  m_ObjectHideFlags: 0
+  serializedVersion: 2
+  m_Modification:
+    serializedVersion: 3
+    m_TransformParent: {fileID: 1446872644335776399}
+    m_Modifications:
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalPosition.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalPosition.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalPosition.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalRotation.w
+      value: 1
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalRotation.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalRotation.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalRotation.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.x
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.y
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_LocalEulerAnglesHint.z
+      value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: c8b4adf750dc74f4289f738078083a02, type: 2}
+    - target: {fileID: 919132149155446097, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      propertyPath: m_Name
+      value: Brook_WS_02
+      objectReference: {fileID: 0}
+    m_RemovedComponents: []
+    m_RemovedGameObjects: []
+    m_AddedGameObjects: []
+    m_AddedComponents:
+    - targetCorrespondingSourceObject: {fileID: 919132149155446097, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+      insertIndex: -1
+      addedObject: {fileID: 685026696449065745}
+  m_SourcePrefab: {fileID: 100100000, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+--- !u!1 &7163806958328572632 stripped
+GameObject:
+  m_CorrespondingSourceObject: {fileID: 919132149155446097, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+  m_PrefabInstance: {fileID: 8046698508312926089}
+  m_PrefabAsset: {fileID: 0}
+--- !u!65 &685026696449065745
+BoxCollider:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7163806958328572632}
+  m_Material: {fileID: 0}
+  m_IncludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_ExcludeLayers:
+    serializedVersion: 2
+    m_Bits: 0
+  m_LayerOverridePriority: 0
+  m_IsTrigger: 0
+  m_ProvidesContacts: 0
+  m_Enabled: 1
+  serializedVersion: 3
+  m_Size: {x: 688.7325, y: 4, z: 673.3043}
+  m_Center: {x: -194.36624, y: -2, z: 86.652145}
+--- !u!4 &7503318953638572130 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 36dd6754c4980ff44bdf3567996a984c, type: 3}
+  m_PrefabInstance: {fileID: 8046698508312926089}
+  m_PrefabAsset: {fileID: 0}

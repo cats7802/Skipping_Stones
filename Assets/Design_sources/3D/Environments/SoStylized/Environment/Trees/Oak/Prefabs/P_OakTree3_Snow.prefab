@@ -142,15 +142,15 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -6337472379182834910, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 8819600e7b722bc4dbdd50bcbc629e77, type: 2}
     - target: {fileID: -5562269851308916840, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: afb0ae7d70eaaa5479c3cc43c942a882, type: 2}
     - target: {fileID: -5562269851308916840, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: acbd0f1082b421248ba56717e01c9faf, type: 2}
     - target: {fileID: 919132149155446097, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
@@ -158,11 +158,11 @@ PrefabInstance:
       value: P_OakTree3_Snow
       objectReference: {fileID: 0}
     - target: {fileID: 1294238977265129797, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 7702633237c0be44cb88b6eec8dab6f7, type: 2}
     - target: {fileID: 1294238977265129797, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: c6140fbee6186a34cba3b771eb934c90, type: 2}
     m_RemovedComponents: []
@@ -175,12 +175,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 4915986747881946691, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
       insertIndex: -1
       addedObject: {fileID: 7526803887708447263}
-    - targetCorrespondingSourceObject: {fileID: 4915986747881946691, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 2974622528707667992}
-    - targetCorrespondingSourceObject: {fileID: 4915986747881946691, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 5139535644344605235}
   m_SourcePrefab: {fileID: 100100000, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}
 --- !u!1 &4305472777489017881 stripped
 GameObject:
@@ -210,30 +204,6 @@ CapsuleCollider:
   m_Height: 5.53
   m_Direction: 1
   m_Center: {x: 0.03, y: 1.44, z: -0.17}
---- !u!114 &2974622528707667992
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4305472777489017881}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f018dd554ae2ca44b8dbe657f21f5964, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
---- !u!114 &5139535644344605235
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4305472777489017881}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f018dd554ae2ca44b8dbe657f21f5964, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &8679476851047036337 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 9dfeeaf83b2f31243959eb0a73b4c7b8, type: 3}

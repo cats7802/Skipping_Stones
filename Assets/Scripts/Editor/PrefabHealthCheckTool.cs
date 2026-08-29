@@ -3,15 +3,17 @@ using System.Collections.Generic;
 using UnityEngine;
 using UnityEditor;
 using SkippingStones.Visuals;
+using SkippingStones.Terrain;
 
 namespace SkippingStones.EditorTools
 {
     /// <summary>
     /// [물수제비 프리팹 무결성 검증 & 원클릭 자동 수리 툴]
-    /// - 캐릭터, 돌, 수면, 로비 등 필수 게임오브젝트의 컴포넌트 누락 여부를 전수 검사
-    /// - PrefabUtility를 사용해 누락된 필수 컴포넌트를 프리팹 파일 원본에 정식으로 자동 부착 & 저장(Auto-Fix)
+    /// - 캐릭터, 돌, 수면, 로비, 맵 앵커 등 필수 게임오브젝트의 컴포넌트 누락 여부를 전수 검사
+    /// - PrefabUtility를 사용해 누락된 필수 컴포넌트/앵커를 프리팹 파일 원본에 정식으로 자동 부착 & 저장(Auto-Fix)
     /// - 메뉴 1: Tools -> Skipping Stones -> 🔍 프리팹 무결성 검증 (Health Check)
     /// - 메뉴 2: Tools -> Skipping Stones -> 🛠️ 누락 컴포넌트 원클릭 자동 수리 (Auto-Fix)
+    /// - 메뉴 4: Tools -> Skipping Stones -> ⚓ 맵 프리팹 앵커 검증 및 자동 부착 (Anchor Auto-Fix)
     /// </summary>
     public static class PrefabHealthCheckTool
     {
@@ -37,6 +39,9 @@ namespace SkippingStones.EditorTools
 
             // 4. 로비 프리팹 검증
             CheckLobbyPrefabs(ref totalChecked, ref errorCount, ref warningCount);
+
+            // 5. 맵 지형 소켓 앵커 검증
+            CheckTerrainAnchors(ref totalChecked, ref errorCount, ref warningCount);
 
             Debug.Log("=========================================================");
             if (errorCount == 0 && warningCount == 0)
@@ -73,21 +78,60 @@ namespace SkippingStones.EditorTools
             // 2. 돌 프리팹 자동 수리
             FixStonePrefabs(ref fixedCount);
 
-            // 3. 로비 프리팹 자동 수리
+            // 4. 로비 프리팹 자동 수리
             FixLobbyPrefabs(ref fixedCount);
+
+            // 5. 맵 지형 앵커 자동 수리
+            FixTerrainAnchors(ref fixedCount);
 
             AssetDatabase.SaveAssets();
             AssetDatabase.Refresh();
 
-            Debug.Log($"🎉 [수리 완료] 총 {fixedCount}개 프리팹에 누락된 컴포넌트가 정식 부착 및 저장되었습니다!");
-            EditorUtility.DisplayDialog("자동 수리 완료", $"총 {fixedCount}개 프리팹의 필수 컴포넌트가 정식으로 추가 및 저장되었습니다!\n\n이제 검증(Health Check)을 실행해보세요.", "확인");
+            Debug.Log($"🎉 [수리 완료] 총 {fixedCount}개 프리팹에 누락된 컴포넌트/앵커가 정식 부착 및 저장되었습니다!");
+            EditorUtility.DisplayDialog("자동 수리 완료", $"총 {fixedCount}개 프리팹의 필수 컴포넌트/앵커가 정식으로 추가 및 저장되었습니다!\n\n이제 검증(Health Check)을 실행해보세요.", "확인");
             Debug.Log("=========================================================");
 
             // 수리 후 즉시 재검증
             RunFullHealthCheck();
         }
 
-        [MenuItem("Tools/Skipping Stones/🧹 전체 프리팹 Missing Script 일괄 삭제", priority = 3)]
+        [MenuItem("Tools/Skipping Stones/⚓ 맵 프리팹 앵커 검증 및 자동 부착 (Anchor Auto-Fix)", priority = 4)]
+        public static void RunMapAnchorCheckAndFix()
+        {
+            Debug.Log("=========================================================");
+            Debug.Log("⚓ [맵 프리팹 소켓 앵커 검증 및 자동 부착 시작] ⚓");
+            Debug.Log("=========================================================");
+
+            int totalChecked = 0;
+            int errorCount = 0;
+            int warningCount = 0;
+
+            CheckTerrainAnchors(ref totalChecked, ref errorCount, ref warningCount);
+
+            if (warningCount == 0 && errorCount == 0)
+            {
+                Debug.Log($"🎉 [검증 완료] 총 {totalChecked}개 맵 프리팹의 앵커가 완벽합니다!");
+                EditorUtility.DisplayDialog("맵 앵커 검증 완료", $"총 {totalChecked}개의 맵 프리팹을 검사했습니다.\n모든 맵에 Start/End 앵커가 정상 배치되어 있습니다!", "확인");
+            }
+            else
+            {
+                bool fixNow = EditorUtility.DisplayDialog("맵 앵커 누락 발견",
+                    $"총 {totalChecked}개 맵 중 {warningCount + errorCount}개에서 앵커가 누락되었습니다.\n\n지형 바운드(X=0, minZ/maxZ) 기준으로 Anchor_S, Anchor_E를 프리팹에 자동 생성 및 저장하시겠습니까?",
+                    "⚓ 지금 앵커 자동 부착", "취소");
+                if (fixNow)
+                {
+                    int fixedCount = 0;
+                    FixTerrainAnchors(ref fixedCount);
+                    AssetDatabase.SaveAssets();
+                    AssetDatabase.Refresh();
+                    Debug.Log($"🎉 [수리 완료] 총 {fixedCount}개 맵 프리팹에 앵커가 정식 부착 및 저장되었습니다!");
+                    EditorUtility.DisplayDialog("앵커 부착 완료", $"총 {fixedCount}개 맵 프리팹에 앵커(Anchor_S, Anchor_E)를 자동 부착 및 저장했습니다!", "확인");
+                }
+            }
+            Debug.Log("=========================================================");
+        }
+
+        [MenuItem("Tools/Skipping Stones/🧹 전체 프리팹 Missing Script 일괄 삭제", priority = 5)]
         public static void RemoveAllMissingScripts()
         {
             Debug.Log("=========================================================");
@@ -571,6 +615,93 @@ namespace SkippingStones.EditorTools
                     PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
                     fixedCount++;
                 }
+                PrefabUtility.UnloadPrefabContents(prefabRoot);
+            }
+        }
+        #endregion
+
+        #region 5. 맵/지형 앵커 검증 & 수리
+        private static void CheckTerrainAnchors(ref int total, ref int errors, ref int warnings)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab", "Assets/_Project/Prefabs" });
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null) continue;
+
+                // 캐릭터, 스톤, UI, 로비, 발판 등 명확한 비-맵 프리팹 제외
+                if (prefab.GetComponentInChildren<StoneThrowerCharacter>(true) != null ||
+                    prefab.GetComponentInChildren<SkippingStone>(true) != null ||
+                    prefab.name.Contains("Lobby") || prefab.name.Contains("UGUI") || prefab.name.Contains("Pier"))
+                {
+                    continue;
+                }
+
+                // 맵/지형 관련 프리팹 여부 판별 (Brook, BG_, River_, Terrain, WaterSurface, RiverSpawner 등)
+                bool isMapPrefab = prefab.name.StartsWith("Brook", StringComparison.OrdinalIgnoreCase) ||
+                                   prefab.name.StartsWith("BG_", StringComparison.OrdinalIgnoreCase) ||
+                                   prefab.name.StartsWith("River_", StringComparison.OrdinalIgnoreCase) ||
+                                   prefab.GetComponentInChildren<WaterSurface>(true) != null ||
+                                   prefab.GetComponentInChildren<RiverSpawner>(true) != null;
+
+                if (isMapPrefab)
+                {
+                    total++;
+                    List<string> issues = new List<string>();
+
+                    Transform anchorS = MapAnchorHelper.FindStartAnchor(prefab);
+                    Transform anchorE = MapAnchorHelper.FindEndAnchor(prefab);
+
+                    if (anchorS == null) issues.Add("⚠️ [앵커] 시작 앵커(Anchor_S / Ancher_S) 누락 (소켓 도킹 스트리밍 시작점)");
+                    if (anchorE == null) issues.Add("⚠️ [앵커] 끝 앵커(Anchor_E / Ancher_E) 누락 (다음 청크 도킹 연결점)");
+
+                    ReportResult("🗺️ [맵 앵커]", prefab.name, path, issues, ref errors, ref warnings);
+                }
+            }
+        }
+
+        private static void FixTerrainAnchors(ref int fixedCount)
+        {
+            string[] guids = AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab", "Assets/_Project/Prefabs" });
+            foreach (string guid in guids)
+            {
+                string path = AssetDatabase.GUIDToAssetPath(guid);
+                GameObject prefab = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab == null) continue;
+
+                // 캐릭터, 스톤, UI, 로비, 발판 제외
+                if (prefab.GetComponentInChildren<StoneThrowerCharacter>(true) != null ||
+                    prefab.GetComponentInChildren<SkippingStone>(true) != null ||
+                    prefab.name.Contains("Lobby") || prefab.name.Contains("UGUI") || prefab.name.Contains("Pier"))
+                {
+                    continue;
+                }
+
+                bool isMapPrefab = prefab.name.StartsWith("Brook", StringComparison.OrdinalIgnoreCase) ||
+                                   prefab.name.StartsWith("BG_", StringComparison.OrdinalIgnoreCase) ||
+                                   prefab.name.StartsWith("River_", StringComparison.OrdinalIgnoreCase) ||
+                                   prefab.GetComponentInChildren<WaterSurface>(true) != null ||
+                                   prefab.GetComponentInChildren<RiverSpawner>(true) != null;
+
+                if (!isMapPrefab) continue;
+
+                Transform existingS = MapAnchorHelper.FindStartAnchor(prefab);
+                Transform existingE = MapAnchorHelper.FindEndAnchor(prefab);
+
+                if (existingS != null && existingE != null) continue; // 이미 둘 다 존재하면 스킵
+
+                GameObject prefabRoot = PrefabUtility.LoadPrefabContents(path);
+                if (prefabRoot == null) continue;
+
+                bool modified = MapAnchorHelper.GetOrCreateAnchors(prefabRoot, out Transform s, out Transform e);
+                if (modified)
+                {
+                    PrefabUtility.SaveAsPrefabAsset(prefabRoot, path);
+                    fixedCount++;
+                    Debug.Log($"🛠️ [{prefabRoot.name}] 맵 앵커(Anchor_S, Anchor_E) 자동 생성 및 영구 저장 완료!");
+                }
+
                 PrefabUtility.UnloadPrefabContents(prefabRoot);
             }
         }

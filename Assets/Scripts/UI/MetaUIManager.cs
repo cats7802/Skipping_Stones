@@ -742,9 +742,14 @@ namespace SkippingStones.UI
                 }
 
                 MatchSessionData session = dm.CreateCurrentMatchSession();
-                if (envMgrPrefabs.Count > selectedMapIndex)
+                ScanEnvManagers();
+                if (envMgrPrefabs.Count > selectedMapIndex && selectedMapIndex >= 0)
                 {
                     session.mapPrefabOverride = envMgrPrefabs[selectedMapIndex];
+                }
+                else if (envMgrPrefabs.Count > 0)
+                {
+                    session.mapPrefabOverride = envMgrPrefabs[0];
                 }
 
                 ShowScreen(MetaScreen.InGame);

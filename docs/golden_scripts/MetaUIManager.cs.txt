@@ -58,6 +58,8 @@ namespace SkippingStones.UI
         [Header("로비 3D 쇼케이스 프리팹 & 카메라")]
         [SerializeField] private GameObject lobbyPrefab;
         private GameObject spawnedLobbyInstance;
+        private SkippingStones.Visuals.LobbyStoneShowcaseController spawnedLobbyController;
+        private SkippingStones.Visuals.LobbyCharacterShowcaseController spawnedCharacterController;
         private Camera cachedMainCamera;
 
         // 9:16 가상 좌표계 변환 필드
@@ -195,6 +197,34 @@ namespace SkippingStones.UI
                     spawnedLobbyInstance.SetActive(true);
                 }
 
+                // Lobby 3D 스톤 셀렉터 & 캐릭터 쇼케이스 컨트롤러 캐싱 (프리팹에 정식 부착된 컴포넌트만 참조)
+                if (spawnedLobbyInstance != null)
+                {
+                    spawnedLobbyController = spawnedLobbyInstance.GetComponentInChildren<SkippingStones.Visuals.LobbyStoneShowcaseController>();
+                    if (spawnedLobbyController == null)
+                    {
+                        Debug.LogWarning("[MetaUIManager] Lobby 프리팹에 'LobbyStoneShowcaseController' 컴포넌트가 누락되어 있습니다! 프리팹에 스크립트를 추가해주세요.");
+                    }
+                    else
+                    {
+                        spawnedLobbyController.OnSelectedStoneChanged += (idx, prefab) =>
+                        {
+                            var dm = GameDataManager.Instance;
+                            if (dm != null && prefab != null)
+                            {
+                                dm.UserData.selectedStoneId = prefab.name;
+                                dm.SaveUserData();
+                            }
+                        };
+                    }
+
+                    spawnedCharacterController = spawnedLobbyInstance.GetComponentInChildren<SkippingStones.Visuals.LobbyCharacterShowcaseController>();
+                    if (spawnedCharacterController == null)
+                    {
+                        Debug.LogWarning("[MetaUIManager] Lobby 프리팹에 'LobbyCharacterShowcaseController' 컴포넌트가 누락되어 있습니다! 프리팹에 스크립트를 추가해주세요.");
+                    }
+                }
+
                 // 2. 메인 카메라 비활성화 (로비 카메라 우선 구동)
                 if (cachedMainCamera != null)
                 {
@@ -209,6 +239,8 @@ namespace SkippingStones.UI
                     Destroy(spawnedLobbyInstance);
                     spawnedLobbyInstance = null;
                 }
+                spawnedLobbyController = null;
+                spawnedCharacterController = null;
 
                 if (cachedMainCamera != null)
                 {
@@ -539,10 +571,14 @@ namespace SkippingStones.UI
 
             var dm = GameDataManager.Instance;
 
-            // 1. 캐릭터 스위처 (배경 박스 및 텍스트 삭제, 좌/우 화살표만 상단 3D 뷰에 배치)
+            // 1. 캐릭터 스위처 (좌/우 화살표 클릭 시 3D 쇼케이스 트랜지션 연동)
             if (DrawResponsiveButton(new Rect(60, 320, 80, 80), "◀", _glassBtnStyle))
             {
-                if (dm != null && dm.characterCatalog.Count > 0)
+                if (spawnedCharacterController != null)
+                {
+                    spawnedCharacterController.PreviousCharacter();
+                }
+                else if (dm != null && dm.characterCatalog.Count > 0)
                 {
                     selectedCharIndex = (selectedCharIndex - 1 + dm.characterCatalog.Count) % dm.characterCatalog.Count;
                     dm.UserData.selectedCharacterId = dm.characterCatalog[selectedCharIndex].id;
@@ -550,16 +586,18 @@ namespace SkippingStones.UI
             }
             if (DrawResponsiveButton(new Rect(580, 320, 80, 80), "▶", _glassBtnStyle))
             {
-                if (dm != null && dm.characterCatalog.Count > 0)
+                if (spawnedCharacterController != null)
+                {
+                    spawnedCharacterController.NextCharacter();
+                }
+                else if (dm != null && dm.characterCatalog.Count > 0)
                 {
                     selectedCharIndex = (selectedCharIndex + 1) % dm.characterCatalog.Count;
                     dm.UserData.selectedCharacterId = dm.characterCatalog[selectedCharIndex].id;
                 }
             }
 
-            // 2. 하단 3D 스톤 셀렉터 다이얼 좌우 안내 화살표 (다이얼 링 지점 Y=865, 좌: 110, 우: 275)
-            GUI.Label(new Rect(110, 865, 50, 50), "⇦", _titleStyle);
-            GUI.Label(new Rect(275, 865, 50, 50), "⇨", _titleStyle);
+
 
             // 3. 하단 독 바 & GO 버튼 (최하단 Y=1150으로 바짝 밀착)
             if (DrawResponsiveButton(new Rect(30, 1150, 130, 95), "🛒\n상점", _glassBtnStyle))
@@ -621,11 +659,19 @@ namespace SkippingStones.UI
 
             if (DrawResponsiveButton(new Rect(150, 140, 250, 60), isLong ? "🔘 1500m 원거리" : "⚪ 1500m 원거리", isLong ? _tabActiveStyle : _tabInactiveStyle))
             {
-                if (dm != null) dm.UserData.selectedGameMode = GameController.GameMode.LongDistance;
+                if (dm != null)
+                {
+                    dm.UserData.selectedGameMode = GameController.GameMode.LongDistance;
+                    dm.SaveUserData();
+                }
             }
             if (DrawResponsiveButton(new Rect(410, 140, 270, 60), !isLong ? "🔘 🎯 강 건너기(타깃)" : "⚪ 🎯 강 건너기(타깃)", !isLong ? _tabActiveStyle : _tabInactiveStyle))
             {
-                if (dm != null) dm.UserData.selectedGameMode = GameController.GameMode.TargetAccuracy;
+                if (dm != null)
+                {
+                    dm.UserData.selectedGameMode = GameController.GameMode.TargetAccuracy;
+                    dm.SaveUserData();
+                }
             }
 
             // 맵 메타 정보 및 썸네일 결정
@@ -696,9 +742,14 @@ namespace SkippingStones.UI
                 }
 
                 MatchSessionData session = dm.CreateCurrentMatchSession();
-                if (envMgrPrefabs.Count > selectedMapIndex)
+                ScanEnvManagers();
+                if (envMgrPrefabs.Count > selectedMapIndex && selectedMapIndex >= 0)
                 {
                     session.mapPrefabOverride = envMgrPrefabs[selectedMapIndex];
+                }
+                else if (envMgrPrefabs.Count > 0)
+                {
+                    session.mapPrefabOverride = envMgrPrefabs[0];
                 }
 
                 ShowScreen(MetaScreen.InGame);

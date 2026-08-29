@@ -142,15 +142,15 @@ PrefabInstance:
       value: 0
       objectReference: {fileID: 0}
     - target: {fileID: -3427419096950250208, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: acbd0f1082b421248ba56717e01c9faf, type: 2}
     - target: {fileID: -3427419096950250208, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: afb0ae7d70eaaa5479c3cc43c942a882, type: 2}
     - target: {fileID: -491344036259517717, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: 8819600e7b722bc4dbdd50bcbc629e77, type: 2}
     - target: {fileID: 919132149155446097, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
@@ -158,11 +158,11 @@ PrefabInstance:
       value: P_OakTree2_Snow
       objectReference: {fileID: 0}
     - target: {fileID: 964041235876215566, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
-      propertyPath: m_Materials.Array.data[0]
+      propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c6140fbee6186a34cba3b771eb934c90, type: 2}
     - target: {fileID: 964041235876215566, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
-      propertyPath: m_Materials.Array.data[1]
+      propertyPath: 'm_Materials.Array.data[1]'
       value: 
       objectReference: {fileID: 2100000, guid: 7702633237c0be44cb88b6eec8dab6f7, type: 2}
     m_RemovedComponents: []
@@ -175,9 +175,6 @@ PrefabInstance:
     - targetCorrespondingSourceObject: {fileID: 3623903898671510990, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
       insertIndex: -1
       addedObject: {fileID: 1728731925202430130}
-    - targetCorrespondingSourceObject: {fileID: 3623903898671510990, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
-      insertIndex: -1
-      addedObject: {fileID: 983306762481027138}
   m_SourcePrefab: {fileID: 100100000, guid: ba7497991cf65cd418b86428b28faedf, type: 3}
 --- !u!1 &752607812246720577 stripped
 GameObject:
@@ -207,18 +204,6 @@ CapsuleCollider:
   m_Height: 2.61
   m_Direction: 1
   m_Center: {x: 0.06, y: 0.44, z: -0.1}
---- !u!114 &983306762481027138
-MonoBehaviour:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 752607812246720577}
-  m_Enabled: 1
-  m_EditorHideFlags: 0
-  m_Script: {fileID: 11500000, guid: f018dd554ae2ca44b8dbe657f21f5964, type: 3}
-  m_Name: 
-  m_EditorClassIdentifier: 
 --- !u!4 &4589665864494400100 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: ba7497991cf65cd418b86428b28faedf, type: 3}

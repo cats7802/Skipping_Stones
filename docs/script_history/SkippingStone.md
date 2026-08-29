@@ -25,3 +25,10 @@
 * **물리 보간(`Interpolate`) 활성화**:
   * 50Hz 물리 주기와 고주사율 모니터 간의 떨림 제거.
   - **물리 렌더링 보간 영구 고정**: `rb.interpolation = RigidbodyInterpolation.Interpolate;`를 `Awake()` 및 라이프사이클 전반에 영구 고정하여 고주사율 모니터 상의 링 미세 떨림/고스팅 잔상 원천 차단.
+
+### [2026-08-30] 오토 바운스(isGodMode) 지형 충돌 및 물길 이탈 착지 정상 피니시 처리
+- **수정 목적**: `Dev God Mode` 또는 물리 비행 중 돌이 물길을 벗어나 지형/강둑/바위에 닿았을 때 충돌이 무시되어 무한 멈춤이 발생하던 문제를 해결하고 즉시 착지 피니시(Crash/Landing)로 결과창에 정상 연결.
+- **핵심 구조**:
+  - `OnCollisionEnter`, `OnTriggerEnter`: `isGodMode` 상태에서도 땅/바위 충돌 시 무시하지 않고 `CrashOnLand()`를 정상 호출.
+  - `FixedUpdate`: `!hasWaterBelow` 상태에서 지면에 닿았을 때 `CrashOnLand("물길 이탈 / 지형 착지")`로 최종 비거리를 확정하고 정상 종료.
+  - 빌드 및 컴파일 0 Warnings, 0 Errors 완료.

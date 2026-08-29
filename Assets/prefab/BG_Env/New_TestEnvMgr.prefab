@@ -47,14 +47,23 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::LakeEnvironmentManager
   mapTitle: Test_River
   mapThumbnail: {fileID: 21300000, guid: bc21e943a371ed24e9a5c1427c010cf1, type: 3}
-  startMapPrefab: {fileID: 0}
+  startMapPrefab: {fileID: 6708703547746336420, guid: 349e898e043e0f84388b5ac06e6798de, type: 3}
   loopSlots:
-  - baseMapPrefab: {fileID: 402401199427695740, guid: 6bc7a8350648e5044934050e6a21cf87, type: 3}
+  - baseMapPrefab: {fileID: 3149365434183643242, guid: 295957657382eae4da2afd44ede03806, type: 3}
     useVariations: 0
     variationPrefabs: []
-  endingMapPrefab: {fileID: 0}
+  - baseMapPrefab: {fileID: 5383947351005177099, guid: 3beec41f9ceaab440a812691b2a0d305, type: 3}
+    useVariations: 0
+    variationPrefabs: []
+  - baseMapPrefab: {fileID: 285337812976644970, guid: 056a4beb3db30b44c83ce2054a16a8b9, type: 3}
+    useVariations: 0
+    variationPrefabs: []
+  endingTriggerMode: 0
+  loopRepeatCount: 1
+  endingMapPrefab: {fileID: 3163282452559328709, guid: cdf2850118de9ab4e8dc9bf0a8091508, type: 3}
   targetClearDistance: 0
-  autoChunkSize: 500
+  stopSpawningOnEnding: 1
+  autoChunkSize: 500.0001
 --- !u!114 &6034964308888221376
 MonoBehaviour:
   m_ObjectHideFlags: 0

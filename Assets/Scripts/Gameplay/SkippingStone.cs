@@ -558,8 +558,8 @@ public class SkippingStone : MonoBehaviour
         {
             if (!hasWaterBelow)
             {
-                // 배경 미로딩으로 인한 허공 추락 즉시 침몰 처리
-                Sink("허공 추락 (수면 없음)");
+                // 물길 밖(강둑/지형)으로 날아가 착지한 경우 즉시 착지 피니시
+                CrashOnLand("물길 이탈 / 지형 착지");
                 return;
             }
 
@@ -856,16 +856,16 @@ public class SkippingStone : MonoBehaviour
 
     private void OnCollisionEnter(Collision collision)
     {
-        if (isGodMode || !isThrown || isSunk || isCrashed) return;
+        if (!isThrown || isSunk || isCrashed) return;
 
         string hitName = collision.gameObject.name.ToLower();
         bool isRock = hitName.Contains("rock") || hitName.Contains("obstacle");
-        CrashOnLand(isRock ? "바위 장애물 충돌 - 게임 오버" : "땅에 충돌 - 게임 오버", isRockObstacle: isRock);
+        CrashOnLand(isRock ? "바위 장애물 충돌" : "지형 착지", isRockObstacle: isRock);
     }
 
     private void OnTriggerEnter(Collider other)
     {
-        if (isGodMode || !isThrown || isSunk || isCrashed) return;
+        if (!isThrown || isSunk || isCrashed) return;
 
         // 1. WaterSurface 컴포넌트 검사로 수면 감지
         WaterSurface ws = other.GetComponent<WaterSurface>() ?? other.GetComponentInParent<WaterSurface>();
@@ -874,6 +874,12 @@ public class SkippingStone : MonoBehaviour
             waterLevel = other.bounds.max.y;
             if (!hasTappedInCurrentBounce && rb.linearVelocity.y <= 0f)
             {
+                if (isGodMode)
+                {
+                    TryRhythmBounce(0f, out _);
+                    return;
+                }
+
                 if (skipCount >= minSkimSkips && !isSkimming) StartSkimmingFinish();
                 else Sink("수면 착수 - 탭 미입력");
             }
@@ -881,17 +887,18 @@ public class SkippingStone : MonoBehaviour
         }
 
         // 2. Terrain 컴포넌트 검사로 지형/바위 감지
-        bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<Terrain>() != null;
-        bool isRock = other.name.ToLower().Contains("rock") || other.name.ToLower().Contains("obstacle");
+        bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<Terrain>() != null || other.GetComponent<MeshCollider>() != null;
+        bool isRock = other.name.ToLower().Contains("rock") || other.name.ToLower().Contains("obstacle") || other.name.ToLower().Contains("ground") || other.name.ToLower().Contains("bank");
 
         if (isTerrain || isRock)
         {
-            CrashOnLand(isRock ? "바위 장애물 충돌 - 게임 오버" : "지형 충돌 - 게임 오버", isRockObstacle: isRock);
+            CrashOnLand(isRock ? "바위 장애물 충돌" : "지형 착지", isRockObstacle: isRock);
         }
     }
+
     public void CrashOnLand(string reason = "땅에 충돌 - 게임 오버", bool isRockObstacle = false)
     {
-        if (isGodMode || isSunk || isCrashed) return;
+        if (isSunk || isCrashed) return;
         isCrashed = true;
         isThrown = false;
         isInTimingWindow = false;

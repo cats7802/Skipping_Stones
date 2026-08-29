@@ -1,6 +1,7 @@
 using System.Collections;
 using UnityEngine;
 using UnityEngine.InputSystem;
+using SkippingStones.Terrain;
 
 public class EnvironmentTestHelper : MonoBehaviour
 {
@@ -73,39 +74,6 @@ public class EnvironmentTestHelper : MonoBehaviour
         if (pressF1) showTestUI = !showTestUI;
     }
 
-    private void OnGUI()
-    {
-        // 🌟 F1 키 또는 인스펙터 showTestUI 체크 시 화면 좌상단에 테스트 오버레이 표시
-        if (!showTestUI) return;
-
-        GUILayout.BeginArea(new Rect(20, 20, 260, 220), GUI.skin.box);
-        GUILayout.Label("🚀 [스트리밍 & 갓모드 테스트 메뉴]", GUI.skin.label);
-        GUILayout.Space(5);
-
-        string flyBtnText = isAutoFlying ? "⏹️ 갓모드 비행 중지 (Stop)" : "▶️ 3,500m 갓모드 자동비행 시작";
-        GUI.color = isAutoFlying ? Color.red : Color.green;
-        if (GUILayout.Button(flyBtnText, GUILayout.Height(38)))
-        {
-            ToggleAutoFlyGodMode();
-        }
-        GUI.color = Color.white;
-
-        GUILayout.Space(8);
-        GUILayout.Label($"현재 비거리: {simulatedDistance:F1} m");
-        if (LakeEnvironmentManager.Instance != null)
-        {
-            GUILayout.Label($"청크 크기: {LakeEnvironmentManager.Instance.autoChunkSize:F0} m");
-        }
-
-        GUILayout.Space(8);
-        if (GUILayout.Button("창 닫기 (F1)", GUILayout.Height(26)))
-        {
-            showTestUI = false;
-        }
-
-        GUILayout.EndArea();
-    }
-
     public void SetPreviewDistance(float dist)
     {
         simulatedDistance = dist;
@@ -120,10 +88,20 @@ public class EnvironmentTestHelper : MonoBehaviour
     {
         StopAllCoroutines();
         isAutoFlying = false;
-        var gc = FindAnyObjectByType<GameController>();
-        if (gc != null && gc.stone != null)
+        var gc = GameController.Instance != null ? GameController.Instance : FindAnyObjectByType<GameController>();
+        if (gc != null)
         {
-            gc.stone.isGodMode = false;
+            if (gc.stone != null)
+            {
+                gc.stone.isGodMode = false;
+                gc.stone.isThrown = false;
+            }
+            if (gc.character != null)
+            {
+                gc.character.RestoreVisibility();
+                Transform pier = GameController.FindPlatformInScene();
+                gc.character.transform.rotation = pier != null ? pier.rotation : Quaternion.identity;
+            }
         }
     }
 
@@ -144,7 +122,7 @@ public class EnvironmentTestHelper : MonoBehaviour
     {
         isAutoFlying = true;
 
-        var gc = FindAnyObjectByType<GameController>();
+        var gc = GameController.Instance != null ? GameController.Instance : FindAnyObjectByType<GameController>();
         if (gc == null)
         {
             Debug.LogError("[EnvironmentTestHelper] ❌ GameController를 찾을 수 없습니다!");
@@ -152,14 +130,31 @@ public class EnvironmentTestHelper : MonoBehaviour
             yield break;
         }
 
-        // 1. 장거리 모드 전환
-        gc.SelectGameMode(GameController.GameMode.LongDistance);
-        yield return null;
+        // 1. 인게임 화면으로 확실히 전환 및 세션 리셋
+        if (SkippingStones.UI.MetaUIManager.Instance != null)
+        {
+            SkippingStones.UI.MetaUIManager.Instance.ShowScreen(SkippingStones.UI.MetaScreen.InGame);
+        }
 
-        // 2. 캐릭터 바인딩
+        gc.ResetToPositioning();
+
+        // 2. 씬에 이미 세팅된 환경 매니저(브룩 등)를 파괴하지 않고 유지 & 발판 갱신
+        if (LakeEnvironmentManager.Instance != null)
+        {
+            LakeEnvironmentManager.Instance.SetupBGChunks();
+        }
+
+        // 3. 캐릭터 바인딩 및 발판 정중앙 정면 배치
         if (gc.character == null)
         {
             gc.character = FindAnyObjectByType<StoneThrowerCharacter>();
+        }
+
+        if (gc.character == null && gc.defaultCharacterPrefab != null)
+        {
+            GameObject spawnedObj = Instantiate(gc.defaultCharacterPrefab);
+            spawnedObj.name = gc.defaultCharacterPrefab.name;
+            gc.character = spawnedObj.GetComponentInChildren<StoneThrowerCharacter>(true);
         }
 
         if (gc.character == null)
@@ -172,10 +167,40 @@ public class EnvironmentTestHelper : MonoBehaviour
         gc.character.gameObject.SetActive(true);
         gc.character.RestoreVisibility();
 
+        gc.startPosX = 0f;
+        gc.aimGaugeValue = 0f;
+        gc.powerGaugeValue = 1.0f;
+        gc.currentMode = GameController.GameMode.LongDistance;
+
+        Transform pier = GameController.FindPlatformInScene();
+        if (pier != null)
+        {
+            gc.currentLaunchPier = pier;
+            Collider pierCol = pier.GetComponent<Collider>();
+            Vector3 pierTopPos = pierCol != null ? new Vector3(pierCol.bounds.center.x, pierCol.bounds.max.y, pierCol.bounds.center.z) : (pier.position + Vector3.up * 0.5f);
+            gc.character.basePosition = pierTopPos;
+            gc.character.transform.position = pierTopPos;
+            gc.character.transform.rotation = pier.rotation;
+        }
+
+        if (gc.dualCamera != null)
+        {
+            gc.dualCamera.targetCharacter = gc.character.transform;
+            gc.dualCamera.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
+            gc.dualCamera.SnapCameraImmediate();
+        }
+
+        // 4. 경로 사전 베이킹
+        GlobalRiverPath riverPath = GlobalRiverPath.Instance;
+        riverPath.RebuildPath();
+
+        yield return new WaitForSeconds(0.2f);
+
+        gc.currentState = GameController.GameState.ThrowingAnimation;
         bool isReleased = false;
         Vector3 spawnWorldPos = Vector3.zero;
 
-        // 🌟 3. 45프레임 카메라 선행 가속 & 55프레임 돌 스폰 콜백 등록 후 투구 실행
+        // 🌟 5. 45프레임 카메라 선행 가속 & 55프레임 돌 스폰 콜백 등록 후 투구 실행
         gc.character.PlayThrowAnimation(
             // 45프레임 카메라 리드인 콜백
             (anchorPos, forwardDir) =>
@@ -230,10 +255,26 @@ public class EnvironmentTestHelper : MonoBehaviour
             }
         );
 
-        // 4. 캐릭터가 55프레임에 도달해 돌을 놓을 때까지 대기
-        while (!isReleased)
+        // 5. 캐릭터가 55프레임에 도달해 돌을 놓을 때까지 대기 (타임아웃 2.5초 안전망)
+        float waitElapsed = 0f;
+        while (!isReleased && waitElapsed < 2.5f)
         {
+            waitElapsed += Time.deltaTime;
             yield return null;
+        }
+
+        if (!isReleased && gc.stone == null)
+        {
+            spawnWorldPos = gc.character.GetHandPosition();
+            GameObject stoneObj = new GameObject("GodMode_SkippingStone");
+            stoneObj.transform.position = spawnWorldPos;
+            var ss = stoneObj.AddComponent<SkippingStone>();
+            gc.stone = ss;
+            if (gc.dualCamera != null)
+            {
+                gc.dualCamera.targetStone = stoneObj.transform;
+                gc.dualCamera.SetCameraMode(DualCameraSetup.CameraMode.DynamicFlight);
+            }
         }
 
         if (gc.stone == null)
@@ -263,8 +304,12 @@ public class EnvironmentTestHelper : MonoBehaviour
         gc.stone.bounceHistory.Clear();
         gc.stone.bounceHistory.Add(new SkippingStone.BounceRecord { position = spawnWorldPos, skipIndex = 0, grade = "START", distance = 0f });
 
+        // 6. 강줄기 스플라인 기반 곡선 수면 관통 비행 루프 (GlobalRiverPath 연동)
+        riverPath.RebuildPath();
+
+        // 맵 시퀀스의 실제 끝단 완주 거리 산출
+        float targetDist = riverPath.totalRiverLength > 100f ? riverPath.totalRiverLength : 3500f;
         float currentDist = 0f;
-        float targetDist = 3500f;
         float flySpeed = 110f;
         float bounceWavelength = 130f;
         float lastBounceZ = 0f;
@@ -274,7 +319,6 @@ public class EnvironmentTestHelper : MonoBehaviour
         WaterSurface ws = FindAnyObjectByType<WaterSurface>();
         float baseWaterY = (ws != null && ws.GetComponent<BoxCollider>() != null) ? ws.GetComponent<BoxCollider>().bounds.max.y : 16.0f;
 
-        // 6. 3,500m 수면 관통 비행 루프 (S자 물길 곡선 및 수면 Y 높이 동적 추적)
         while (currentDist < targetDist && isAutoFlying)
         {
             currentDist += flySpeed * Time.deltaTime;
@@ -283,17 +327,31 @@ public class EnvironmentTestHelper : MonoBehaviour
                 LakeEnvironmentManager.Instance.UpdateEnvironmentByDistance(currentDist);
             }
 
-            float currentZ = spawnWorldPos.z + currentDist;
-            float centerOffset = (terrainGen != null) ? (terrainGen.GetRiverCenterX(currentZ) - terrainGen.sizeX * 0.5f) : spawnWorldPos.x;
+            Vector3 centerPos;
+            Vector3 tangentDir = Vector3.forward;
+            float waterY = baseWaterY;
+
+            if (riverPath.EvaluateAtDistance(currentDist, out centerPos, out tangentDir, out _, out float ptWaterY))
+            {
+                waterY = ptWaterY;
+            }
+            else
+            {
+                float currentZ = spawnWorldPos.z + currentDist;
+                float centerOffset = (terrainGen != null) ? (terrainGen.GetRiverCenterX(currentZ) - terrainGen.sizeX * 0.5f) : spawnWorldPos.x;
+                centerPos = new Vector3(centerOffset, waterY, currentZ);
+            }
+
             float wavePhase = (currentDist % bounceWavelength) / bounceWavelength;
-            float stoneY = baseWaterY + Mathf.Sin(wavePhase * Mathf.PI) * 2.2f + 0.15f;
+            float stoneY = waterY + Mathf.Sin(wavePhase * Mathf.PI) * 2.2f + 0.15f;
 
             float pitchAngle = Mathf.Cos(wavePhase * Mathf.PI) * 35f;
             float spinYaw = (currentDist * 18f) % 360f;
-            gc.stone.transform.rotation = Quaternion.Euler(-pitchAngle, spinYaw, 0f);
+            Quaternion baseLookRot = (tangentDir != Vector3.zero) ? Quaternion.LookRotation(tangentDir) : Quaternion.identity;
+            gc.stone.transform.rotation = baseLookRot * Quaternion.Euler(-pitchAngle, spinYaw, 0f);
 
             gc.stone.totalDistance = currentDist;
-            gc.stone.transform.position = new Vector3(centerOffset, stoneY, currentZ);
+            gc.stone.transform.position = new Vector3(centerPos.x, stoneY, centerPos.z);
             simulatedDistance = currentDist;
 
             // 바운스 이펙트 및 히스토리 기록
@@ -302,10 +360,10 @@ public class EnvironmentTestHelper : MonoBehaviour
                 lastBounceZ = currentDist;
                 skipCounter++;
 
-                string grade = (currentDist >= targetDist - 200f) ? "FINISH" :
+                string grade = (currentDist >= targetDist - 150f) ? "FINISH" :
                                (skipCounter % 4 == 0) ? "🔥 BOOST" : "🔥 PERFECT";
 
-                Vector3 bouncePos = new Vector3(centerOffset, baseWaterY + 0.05f, currentZ);
+                Vector3 bouncePos = new Vector3(centerPos.x, waterY + 0.05f, centerPos.z);
                 gc.stone.bounceHistory.Add(new SkippingStone.BounceRecord
                 {
                     position = bouncePos,

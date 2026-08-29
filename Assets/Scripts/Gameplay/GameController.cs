@@ -190,22 +190,18 @@ public class GameController : MonoBehaviour
     /// </summary>
     public static Transform FindPlatformInScene()
     {
-        string[] candidateNames = { "Lakeside_Platform", "Platform", "Lakeside_WoodenPier", "Pier" };
+        string[] candidateKeywords = { "woodenpier_platform", "lakeside_woodenpier", "lakeside_platform", "platform", "pier" };
 
-        // 1. 루트 직접 탐색
-        foreach (var name in candidateNames)
-        {
-            GameObject obj = GameObject.Find(name);
-            if (obj != null) return obj.transform;
-        }
-
-        // 2. BG 청크 하위 자식 탐색
         var allObjs = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var obj in allObjs)
         {
-            foreach (var name in candidateNames)
+            if (obj == null) continue;
+            string lowerName = obj.name.ToLower();
+            if (lowerName.Contains("camera") || lowerName.Contains("canvas") || lowerName.Contains("ui") || lowerName.Contains("guide")) continue;
+
+            foreach (var kw in candidateKeywords)
             {
-                if (obj.name.Equals(name, System.StringComparison.OrdinalIgnoreCase))
+                if (lowerName.Contains(kw))
                 {
                     return obj.transform;
                 }
@@ -335,22 +331,55 @@ public class GameController : MonoBehaviour
 
     private void SetupMapEnvironment(GameObject mapPrefab)
     {
-        // 🌟 3번 맵 선택에서 넘겨받은 환경 매니저 프리팹이 있다면 씬에 인스턴스화
-        if (mapPrefab != null)
-        {
-            LakeEnvironmentManager existingMgr = FindAnyObjectByType<LakeEnvironmentManager>();
-            if (existingMgr != null)
-            {
-                DestroyImmediate(existingMgr.gameObject);
-            }
+        LakeEnvironmentManager existingMgr = LakeEnvironmentManager.Instance != null ? LakeEnvironmentManager.Instance : FindAnyObjectByType<LakeEnvironmentManager>();
 
-            GameObject newMgrObj = Instantiate(mapPrefab, Vector3.zero, Quaternion.identity);
-            newMgrObj.name = mapPrefab.name;
+        // 🌟 mapPrefab이 LakeEnvironmentManager가 아니거나 null일 때 기본 환경 매니저(New_TestEnvMgr) 자동 폴백
+        if (mapPrefab == null || mapPrefab.GetComponent<LakeEnvironmentManager>() == null)
+        {
+            if (existingMgr == null)
+            {
+                GameObject envPrefab = Resources.Load<GameObject>("New_TestEnvMgr");
+#if UNITY_EDITOR
+                if (envPrefab == null)
+                {
+                    envPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Env/New_TestEnvMgr.prefab");
+                }
+#endif
+                if (envPrefab != null)
+                {
+                    mapPrefab = envPrefab;
+                }
+            }
         }
 
-        if (LakeEnvironmentManager.Instance != null)
+        // 🌟 씬에 이미 환경 매니저가 존재하고 동일한 맵이면 파괴 없이 보존 및 청크 세팅
+        if (existingMgr != null)
         {
-            LakeEnvironmentManager.Instance.SetupBGChunks();
+            if (mapPrefab == null || existingMgr.gameObject.name.StartsWith(mapPrefab.name, System.StringComparison.OrdinalIgnoreCase))
+            {
+                existingMgr.SetupBGChunks();
+            }
+            else
+            {
+                // 다른 맵으로 교체 요청된 경우에만 이전 매니저 교체
+                LakeEnvironmentManager.Instance = null;
+                if (Application.isPlaying) Destroy(existingMgr.gameObject);
+                else DestroyImmediate(existingMgr.gameObject);
+                existingMgr = null;
+            }
+        }
+
+        // 씬에 환경 매니저가 없으면 새로 생성
+        if (existingMgr == null && mapPrefab != null)
+        {
+            GameObject newMgrObj = Instantiate(mapPrefab, Vector3.zero, Quaternion.identity);
+            newMgrObj.name = mapPrefab.name;
+            var lem = newMgrObj.GetComponent<LakeEnvironmentManager>();
+            if (lem != null)
+            {
+                LakeEnvironmentManager.Instance = lem;
+                lem.SetupBGChunks();
+            }
         }
 
         ResolveSceneReferences();
@@ -391,33 +420,48 @@ public class GameController : MonoBehaviour
 
     private void SetupCharacter(GameObject charPrefab)
     {
-        // 씬에 이미 캐릭터가 배치되어 있는데 다른 프리팹을 선택해서 들어온 경우 교체
-        if (character != null && charPrefab != null)
+        if (charPrefab == null) charPrefab = defaultCharacterPrefab;
+
+        // 1. 기존 유효 캐릭터 탐색 (쇼케이스 더미 제외)
+        StoneThrowerCharacter validCharacter = character;
+        if (validCharacter == null)
         {
-            if (!character.gameObject.name.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase))
+            StoneThrowerCharacter[] allCharacters = FindObjectsByType<StoneThrowerCharacter>(FindObjectsInactive.Include);
+            foreach (var c in allCharacters)
             {
-                DestroyImmediate(character.gameObject);
-                character = null;
+                if (c == null) continue;
+                if (c.gameObject.name.Contains("[Showcase") || c.gameObject.name.Contains("Showcase_Ctrl")) continue;
+                validCharacter = c;
+                break;
             }
         }
 
-        if (character == null)
+        // 2. 다른 프리팹이 요청되었고 기존 캐릭터가 있다면 교체
+        if (validCharacter != null && charPrefab != null && !validCharacter.gameObject.name.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase))
         {
-            character = FindAnyObjectByType<StoneThrowerCharacter>();
+            if (Application.isPlaying) Destroy(validCharacter.gameObject);
+            else DestroyImmediate(validCharacter.gameObject);
+            validCharacter = null;
         }
 
-        if (character == null && charPrefab != null)
+        // 3. 캐릭터가 없으면 새로 1개 생성
+        if (validCharacter == null && charPrefab != null)
         {
             GameObject spawnedObj = Instantiate(charPrefab);
-            character = spawnedObj.GetComponentInChildren<StoneThrowerCharacter>(true);
-            if (character == null)
+            spawnedObj.name = charPrefab.name;
+            validCharacter = spawnedObj.GetComponentInChildren<StoneThrowerCharacter>(true);
+            if (validCharacter == null)
             {
-                character = spawnedObj.AddComponent<StoneThrowerCharacter>();
+                validCharacter = spawnedObj.AddComponent<StoneThrowerCharacter>();
             }
         }
+
+        character = validCharacter;
 
         if (character != null)
         {
+            character.gameObject.SetActive(true);
+            character.RestoreVisibility();
             PositionCharacterForMode();
             character.InitializeCharacter();
             character.SetHandStonePrefab(defaultStonePrefab);
@@ -477,8 +521,10 @@ public class GameController : MonoBehaviour
         }
         else
         {
-            // 발판이 없을 시 지형 시작점 강변 기본 위치(0, 16.5, 0)로 안전 배치
-            Vector3 defaultSpawnPos = new Vector3(0f, 16.5f, 0f);
+            // 발판이 아직 없을 시 수면 높이를 반영하여 안전 배치
+            WaterSurface ws = FindAnyObjectByType<WaterSurface>();
+            float waterY = (ws != null && ws.GetComponent<BoxCollider>() != null) ? ws.GetComponent<BoxCollider>().bounds.max.y : 16.0f;
+            Vector3 defaultSpawnPos = new Vector3(0f, waterY + 0.5f, -10f);
             character.basePosition = defaultSpawnPos;
             character.currentPosition = defaultSpawnPos;
             character.baseRotation = Quaternion.Euler(0f, 0f, 0f);
@@ -1094,6 +1140,10 @@ public class GameController : MonoBehaviour
 
     public void RestartGame()
     {
+        if (LakeEnvironmentManager.Instance != null)
+        {
+            LakeEnvironmentManager.Instance.ClearDynamicChunks();
+        }
         ResetToPositioning();
     }
 
@@ -1104,6 +1154,13 @@ public class GameController : MonoBehaviour
         {
             topDownReplay.isReplayActive = false;
             topDownReplay.isDrawing = false;
+        }
+        if (LakeEnvironmentManager.Instance != null)
+        {
+            var mgrObj = LakeEnvironmentManager.Instance.gameObject;
+            LakeEnvironmentManager.Instance = null;
+            if (Application.isPlaying) Destroy(mgrObj);
+            else DestroyImmediate(mgrObj);
         }
         currentState = GameState.ModeSelect;
 
@@ -1118,7 +1175,7 @@ public class GameController : MonoBehaviour
         FinishMatchAndReturnToMapSelect();
     }
 
-    private void ResetToPositioning()
+    public void ResetToPositioning()
     {
         StopAllCoroutines();
         if (topDownReplay != null) topDownReplay.isReplayActive = false;
@@ -1141,11 +1198,6 @@ public class GameController : MonoBehaviour
         totalScore = 0;
         earnedCoins = 0;
         hasCalculatedResult = false;
-
-        if (LakeEnvironmentManager.Instance != null)
-        {
-            LakeEnvironmentManager.Instance.ResetEnvironment();
-        }
 
         if (dualCamera != null)
         {

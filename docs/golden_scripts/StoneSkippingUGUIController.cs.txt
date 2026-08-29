@@ -424,7 +424,7 @@ public class StoneSkippingUGUIController : MonoBehaviour
     {
         if (gameController == null) return;
 
-        // 🌟 MetaUIManager가 메타 화면(타이틀, 로비, 맵선택, 결과) 제어 중이면 인게임 UGUI 비활성화
+        // 🌟 MetaUIManager가 메타 화면(타이틀, 로비, 맵선택, 결과) 제어 중일 때의 인게임 UGUI 처리
         if (SkippingStones.UI.MetaUIManager.Instance != null && SkippingStones.UI.MetaUIManager.Instance.currentScreen != SkippingStones.UI.MetaScreen.InGame)
         {
             if (topBarObj != null) topBarObj.SetActive(false);
@@ -437,17 +437,26 @@ public class StoneSkippingUGUIController : MonoBehaviour
             if (resultObj != null) resultObj.SetActive(false);
             if (aquariumModalObj != null) aquariumModalObj.SetActive(false);
             if (stoneSelectorModalObj != null) stoneSelectorModalObj.SetActive(false);
+
+            // 🛠️ 개발자 메뉴: F1 토글 시 로비 화면에서도 안전하게 열고 닫기 지원
+            bool showDevInMeta = (EnvironmentTestHelper.Instance != null && EnvironmentTestHelper.Instance.showTestUI);
+            if (devTestMenuObj != null && devTestMenuObj.activeSelf != showDevInMeta)
+            {
+                devTestMenuObj.SetActive(showDevInMeta);
+            }
+            if (devGodModeBtnText != null && EnvironmentTestHelper.Instance != null)
+            {
+                devGodModeBtnText.text = EnvironmentTestHelper.Instance.isAutoFlying ? "⏹️ 비행 중지" : "▶️ 갓모드 자동 비행";
+            }
             return;
         }
 
         var state = gameController.currentState;
-        bool showDevMenu = (EnvironmentTestHelper.Instance != null && EnvironmentTestHelper.Instance.showTestUI);
-
-        // 🌟 상단바: 모드 선택 화면에서만 표시하고, 실제 투구/비행/리플레이/결과 등 플레이 중에는 시야 확보를 위해 완전 숨김
+        // 🌟 레거시 모드선택 및 구형 상단바는 MetaUIManager가 전담하므로 영구 비활성화
         if (topBarObj != null)
-            topBarObj.SetActive(state == GameController.GameState.ModeSelect && !showDevMenu);
+            topBarObj.SetActive(false);
         if (modeSelectObj != null)
-            modeSelectObj.SetActive(state == GameController.GameState.ModeSelect && !showDevMenu); // 비행테스트 창이 열려 있으면 모드선택창 비활성화
+            modeSelectObj.SetActive(false);
         if (positioningObj != null)
             positioningObj.SetActive(state == GameController.GameState.Positioning);
         if (aimingObj != null)
@@ -472,6 +481,10 @@ public class StoneSkippingUGUIController : MonoBehaviour
         if (devTestMenuObj != null && devTestMenuObj.activeSelf != showDev)
         {
             devTestMenuObj.SetActive(showDev);
+        }
+        if (devGodModeBtnText != null && EnvironmentTestHelper.Instance != null)
+        {
+            devGodModeBtnText.text = EnvironmentTestHelper.Instance.isAutoFlying ? "⏹️ 비행 중지" : "▶️ 갓모드 자동 비행";
         }
 
         // 상단 알림 배너: 비행 중(Flying)에만 표시하고 결과/리플레이/대기 시에는 즉시 완전 숨김
