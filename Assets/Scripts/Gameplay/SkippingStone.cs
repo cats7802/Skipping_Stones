@@ -604,17 +604,10 @@ public class SkippingStone : MonoBehaviour
         }
 
         float distToWater = transform.position.y - waterLevel;
-        bool hasWaterBelow = CheckWaterUnderneath();
 
         // 🌟 자동 바운스 (갓모드)
         if (isGodMode && distToWater <= 0.22f && rb.linearVelocity.y <= 0.5f)
         {
-            if (!hasWaterBelow)
-            {
-                CrashOnLand("물길 이탈 / 지형 착지");
-                return;
-            }
-
             TryRhythmBounce(0f, out _);
             return;
         }
@@ -627,16 +620,10 @@ public class SkippingStone : MonoBehaviour
             waterSubmergeTimer = 0f;
         }
 
-        // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했거나 발밑이 허공일 때)
+        // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했을 때)
         // 🌟 모멘텀 스태미나 기반 자동 구제: 플레이어가 LATE(-20cm), TOO LATE(-32cm) 탭마저 놓쳐 심해(-34cm)에 도달했을 때 발동!
         if (distToWater <= -0.06f && rb.linearVelocity.y <= 0f)
         {
-            if (!hasWaterBelow)
-            {
-                CrashOnLand("물길 이탈 / 지형 착지");
-                return;
-            }
-
             if (waterSubmergeTimer <= 0f)
             {
                 waterSubmergeTimer = Time.time;
