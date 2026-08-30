@@ -6,20 +6,20 @@ using UnityEngine;
 namespace SkippingStones.Terrain
 {
     /// <summary>
-    /// [3D 메쉬 청크 강줄기 자동 추적 & 메쉬 버텍스 직접 분석 베이킹 엔진]
-    /// - 물리 엔진(Raycast)의 에디터 지연/오차에 의존하지 않고, 지형 메쉬 버텍스(Mesh.vertices)를 직접 C#에서 수학적으로 분석
-    /// - 2.5m 간격 횡단면에서 지형 고도 곡선을 계산하여 수면 아래로 파인 V자 계곡 골짜기(Waterline) 100% 정밀 검출
-    /// - 섬(Island)으로 물길이 2개로 갈라지는 분기 지형도 경로 연속성이 가장 자연스러운 주 물길을 자동 선택
-    /// - 실제 S자 굴곡을 100% 반영한 3D 연속 스플라인 경로와 강폭 데이터를 프리팹/씬에 영구 직렬화
+    /// [3D 메쉬 청크 강줄기 자동 추적 & 곡선 법선 단면 베이킹 엔진]
+    /// - 직선 맵뿐만 아니라 90도 급커브 및 복합 곡선 맵도 완벽 지원
+    /// - Anchor_S ➔ Anchor_E 베지어 베이스라인을 따라 진행 방향의 수직 법선(Normal) 단면을 회전 스캔
+    /// - 지형 메쉬 버텍스(Mesh.vertices)를 직접 C#에서 수학적으로 분석하여 V자 골짜기 중심선과 실제 강폭 산출
+    /// - 실제 S자/커브 굴곡을 100% 반영한 3D 연속 스플라인 경로와 강폭 데이터를 프리팹/씬에 영구 직렬화
     /// </summary>
     public static class RiverPathBaker
     {
         private struct WaterChannel
         {
-            public float leftX;
-            public float rightX;
-            public float centerX => (leftX + rightX) * 0.5f;
-            public float width => rightX - leftX;
+            public float leftOffset;
+            public float rightOffset;
+            public float centerOffset => (leftOffset + rightOffset) * 0.5f;
+            public float width => rightOffset - leftOffset;
         }
 
         private struct TransformedTerrainMesh
@@ -34,7 +34,7 @@ namespace SkippingStones.Terrain
 
             bool isPrefabAsset = PrefabUtility.IsPartOfPrefabAsset(chunkRoot);
 
-            // 1. 앵커(Anchor_S / Anchor_E) 탐색
+            // 1. 앵커(Anchor_S / Anchor_E) 탐색 및 방향 산출
             Transform anchorS = MapAnchorHelper.FindStartAnchor(chunkRoot);
             Transform anchorE = MapAnchorHelper.FindEndAnchor(chunkRoot);
 
@@ -46,8 +46,20 @@ namespace SkippingStones.Terrain
             Vector3 startLocal = chunkRoot.transform.InverseTransformPoint(anchorS.position);
             Vector3 endLocal = chunkRoot.transform.InverseTransformPoint(anchorE.position);
 
-            float totalZSpan = Mathf.Abs(endLocal.z - startLocal.z);
-            if (totalZSpan < 10f) totalZSpan = 500f;
+            Vector3 startFwd = chunkRoot.transform.InverseTransformDirection(anchorS.forward).normalized;
+            Vector3 endFwd = chunkRoot.transform.InverseTransformDirection(anchorE.forward).normalized;
+
+            if (startFwd == Vector3.zero) startFwd = Vector3.forward;
+            if (endFwd == Vector3.zero) endFwd = (endLocal - startLocal).normalized;
+
+            float chordDist = Vector3.Distance(startLocal, endLocal);
+            if (chordDist < 10f) chordDist = 500f;
+
+            // 베지어 제어점 생성 (커브 맵의 회전 궤적 추종)
+            Vector3 p0 = startLocal;
+            Vector3 p1 = startLocal + startFwd * (chordDist * 0.4f);
+            Vector3 p2 = endLocal - endFwd * (chordDist * 0.4f);
+            Vector3 p3 = endLocal;
 
             // 2. 수면 높이(waterY) 취득
             WaterSurface ws = chunkRoot.GetComponentInChildren<WaterSurface>(true);
@@ -61,7 +73,7 @@ namespace SkippingStones.Terrain
                 defaultWaterY = boxCenterLocal.y + (waterBox.size.y * boxScale.y * 0.5f);
             }
 
-            // 3. 지형 메쉬 버텍스들을 청크 로컬 좌표계로 미리 일괄 변환하여 수집
+            // 3. 지형 메쉬 버텍스 수집
             MeshFilter[] terrainFilters = chunkRoot.GetComponentsInChildren<MeshFilter>(true);
             List<TransformedTerrainMesh> terrainMeshes = new List<TransformedTerrainMesh>();
 
@@ -93,29 +105,42 @@ namespace SkippingStones.Terrain
                 terrainMeshes.Add(new TransformedTerrainMesh { localVertices = localVerts, localBounds = localB });
             }
 
-            int stepCount = Mathf.Max(5, Mathf.CeilToInt(totalZSpan / sampleInterval));
+            // 대략적인 총 호(Arc) 길이 계산
+            float estimatedArcLength = 0f;
+            Vector3 prevEval = p0;
+            for (int i = 1; i <= 20; i++)
+            {
+                Vector3 currEval = EvaluateCubicBezier(p0, p1, p2, p3, i / 20f);
+                estimatedArcLength += Vector3.Distance(prevEval, currEval);
+                prevEval = currEval;
+            }
+            if (estimatedArcLength < 10f) estimatedArcLength = chordDist;
+
+            int stepCount = Mathf.Max(8, Mathf.CeilToInt(estimatedArcLength / sampleInterval));
             List<RiverPathNode> bakedNodes = new List<RiverPathNode>();
 
             float accumulatedDist = 0f;
             Vector3 prevNodePos = startLocal;
-            float lastSelectedCenterX = startLocal.x;
+            float lastSelectedOffset = 0f;
 
-            float scanStepX = 1.0f; // 1m 단위 횡단면 검사
+            float scanStepOffset = 1.0f; // 1m 단위 횡단면 오프셋 검사
 
             for (int i = 0; i <= stepCount; i++)
             {
                 float t = (float)i / stepCount;
-                float currentZ = Mathf.Lerp(startLocal.z, endLocal.z, t);
+                Vector3 basePos = EvaluateCubicBezier(p0, p1, p2, p3, t);
+                Vector3 tangent = EvaluateCubicBezierTangent(p0, p1, p2, p3, t);
+                Vector3 normal = Vector3.Cross(Vector3.up, tangent).normalized;
+                if (normal == Vector3.zero) normal = Vector3.right;
 
-                // 현재 Z 슬라이스에서 메쉬 버텍스를 기반으로 수면 아래 침수 채널들 검출
-                List<WaterChannel> detectedChannels = ScanChannelsFromMeshVertices(terrainMeshes, currentZ, defaultWaterY, scanHalfWidth, scanStepX);
+                // 🌟 진행 방향(Tangent)의 수직 법선(Normal) 단면을 회전 스캔하여 물길 검출
+                List<WaterChannel> detectedChannels = ScanChannelsAlongNormal(terrainMeshes, basePos, normal, defaultWaterY, scanHalfWidth, scanStepOffset);
 
-                float chosenLeftX = -20f;
-                float chosenRightX = 20f;
+                float chosenLeftOffset = -18f;
+                float chosenRightOffset = 18f;
 
                 if (detectedChannels.Count > 0)
                 {
-                    // 🌟 섬(Island) 분기 시 이전 노드 중심 X와 가장 가깝고 연속성이 자연스러운 메인 물길 선택
                     WaterChannel bestChannel = detectedChannels[0];
                     float minDiff = float.MaxValue;
 
@@ -123,7 +148,7 @@ namespace SkippingStones.Terrain
                     {
                         if (ch.width < 4.0f && detectedChannels.Count > 1) continue;
 
-                        float diff = Mathf.Abs(ch.centerX - lastSelectedCenterX);
+                        float diff = Mathf.Abs(ch.centerOffset - lastSelectedOffset);
                         if (diff < minDiff)
                         {
                             minDiff = diff;
@@ -131,22 +156,22 @@ namespace SkippingStones.Terrain
                         }
                     }
 
-                    chosenLeftX = bestChannel.leftX;
-                    chosenRightX = bestChannel.rightX;
-                    lastSelectedCenterX = bestChannel.centerX;
+                    chosenLeftOffset = bestChannel.leftOffset;
+                    chosenRightOffset = bestChannel.rightOffset;
+                    lastSelectedOffset = bestChannel.centerOffset;
                 }
                 else
                 {
-                    // 버텍스 밀도가 낮은 구간은 이전 중심선 유지
-                    chosenLeftX = lastSelectedCenterX - 18f;
-                    chosenRightX = lastSelectedCenterX + 18f;
+                    chosenLeftOffset = lastSelectedOffset - 16f;
+                    chosenRightOffset = lastSelectedOffset + 16f;
                 }
 
-                float centerX = (chosenLeftX + chosenRightX) * 0.5f;
-                float leftW = Mathf.Max(4f, centerX - chosenLeftX);
-                float rightW = Mathf.Max(4f, chosenRightX - centerX);
+                float midOffset = (chosenLeftOffset + chosenRightOffset) * 0.5f;
+                float leftW = Mathf.Max(4f, midOffset - chosenLeftOffset);
+                float rightW = Mathf.Max(4f, chosenRightOffset - midOffset);
 
-                Vector3 nodeLocalPos = new Vector3(centerX, defaultWaterY, currentZ);
+                Vector3 nodeLocalPos = basePos + normal * midOffset;
+                nodeLocalPos.y = defaultWaterY;
 
                 if (i > 0)
                 {
@@ -157,7 +182,7 @@ namespace SkippingStones.Terrain
                 RiverPathNode node = new RiverPathNode
                 {
                     localPosition = nodeLocalPos,
-                    localTangent = (endLocal - startLocal).normalized,
+                    localTangent = tangent,
                     waterHeight = defaultWaterY,
                     leftWidth = leftW,
                     rightWidth = rightW,
@@ -167,20 +192,20 @@ namespace SkippingStones.Terrain
                 bakedNodes.Add(node);
             }
 
-            // 4. 중심선 스플라인 1차 스무딩 (노이즈 완화)
+            // 4. 중심선 스플라인 스무딩
             SmoothPathCenterline(bakedNodes);
 
-            // 5. 각 노드의 접선(Tangent) 벡터 정밀 계산 (Catmull-Rom 중앙 차분)
+            // 5. 각 노드의 접선(Tangent) 벡터 정밀 갱신
             for (int i = 0; i < bakedNodes.Count; i++)
             {
                 Vector3 pPrev = (i > 0) ? bakedNodes[i - 1].localPosition : bakedNodes[0].localPosition;
                 Vector3 pNext = (i < bakedNodes.Count - 1) ? bakedNodes[i + 1].localPosition : bakedNodes[bakedNodes.Count - 1].localPosition;
 
-                Vector3 tangent = (pNext - pPrev).normalized;
-                if (tangent == Vector3.zero) tangent = Vector3.forward;
+                Vector3 tan = (pNext - pPrev).normalized;
+                if (tan == Vector3.zero) tan = bakedNodes[i].localTangent;
 
                 RiverPathNode n = bakedNodes[i];
-                n.localTangent = tangent;
+                n.localTangent = tan;
                 bakedNodes[i] = n;
             }
 
@@ -198,74 +223,70 @@ namespace SkippingStones.Terrain
                 PrefabUtility.SavePrefabAsset(chunkRoot);
             }
 
-            Debug.Log($"[RiverPathBaker] 🌟 '{chunkRoot.name}' 메쉬 버텍스 직접 분석 S자 곡선 베이킹 완료! (노드 {bakedNodes.Count}개, 총 길이 {accumulatedDist:F1}m, 평균 강폭 {data.averageWidth:F1}m)");
+            Debug.Log($"[RiverPathBaker] 🌟 '{chunkRoot.name}' 커브 적응형 S자 곡선 베이킹 완료! (노드 {bakedNodes.Count}개, 총 길이 {accumulatedDist:F1}m, 평균 강폭 {data.averageWidth:F1}m)");
             return true;
         }
 
+        private static Vector3 EvaluateCubicBezier(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
+        {
+            t = Mathf.Clamp01(t);
+            float u = 1f - t;
+            return (u * u * u * p0) + (3f * u * u * t * p1) + (3f * u * t * t * p2) + (t * t * t * p3);
+        }
+
+        private static Vector3 EvaluateCubicBezierTangent(Vector3 p0, Vector3 p1, Vector3 p2, Vector3 p3, float t)
+        {
+            t = Mathf.Clamp01(t);
+            float u = 1f - t;
+            Vector3 tan = 3f * u * u * (p1 - p0) + 6f * u * t * (p2 - p1) + 3f * t * t * (p3 - p2);
+            return (tan == Vector3.zero) ? Vector3.forward : tan.normalized;
+        }
+
         /// <summary>
-        /// 특정 Z 단면에서 C# 버텍스 배열을 직접 읽어 수면(waterY) 아래로 파여있는 V자 계곡 골짜기 채널 검출
+        /// 진행 법선(Normal) 단면을 따라 수면(waterY) 아래로 파여있는 V자 골짜기 침수 구간 검출
         /// </summary>
-        private static List<WaterChannel> ScanChannelsFromMeshVertices(List<TransformedTerrainMesh> meshes, float currentZ, float waterY, float halfScanWidth, float stepX)
+        private static List<WaterChannel> ScanChannelsAlongNormal(List<TransformedTerrainMesh> meshes, Vector3 basePos, Vector3 normal, float waterY, float halfScanWidth, float stepOffset)
         {
             List<WaterChannel> channels = new List<WaterChannel>();
-            float zWindow = 4.0f; // Z 슬라이스 검색 폭
-
-            // 1. 현재 Z 단면에 인접한 버텍스들만 필터링
-            List<Vector3> sliceVerts = new List<Vector3>();
-            foreach (var tm in meshes)
-            {
-                if (currentZ < tm.localBounds.min.z - zWindow || currentZ > tm.localBounds.max.z + zWindow) continue;
-
-                foreach (var v in tm.localVertices)
-                {
-                    if (Mathf.Abs(v.z - currentZ) <= zWindow)
-                    {
-                        sliceVerts.Add(v);
-                    }
-                }
-            }
-
-            if (sliceVerts.Count < 5) return channels;
+            float sampleRadius = 4.0f;
 
             bool inWater = false;
-            float channelStartX = 0f;
+            float channelStartOffset = 0f;
 
-            for (float x = -halfScanWidth; x <= halfScanWidth; x += stepX)
+            for (float offset = -halfScanWidth; offset <= halfScanWidth; offset += stepOffset)
             {
-                // 해당 X, Z 위치 주변의 지형 높이 샘플링 (반경 3.5m 내 버텍스들의 역거리 가중 평균 또는 최저/최고 높이)
-                float sampledHeight = SampleHeightFromVertices(sliceVerts, x, currentZ, 3.5f);
+                Vector3 samplePos = basePos + normal * offset;
 
-                // 지형이 수면(waterY)보다 낮거나 거의 같은 구간을 물길(침수 구역)로 판정
+                // 해당 위치의 지형 버텍스 높이 샘플링
+                float sampledHeight = SampleHeightFromAllMeshes(meshes, samplePos, sampleRadius);
+
                 bool isUnderwater = (sampledHeight < waterY + 0.15f);
 
                 if (isUnderwater && !inWater)
                 {
                     inWater = true;
-                    channelStartX = x;
+                    channelStartOffset = offset;
                 }
                 else if (!isUnderwater && inWater)
                 {
                     inWater = false;
-                    float channelEndX = x - stepX;
-                    if (channelEndX - channelStartX >= 3.0f) // 폭 3m 이상의 수로만 인정
+                    float channelEndOffset = offset - stepOffset;
+                    if (channelEndOffset - channelStartOffset >= 3.0f)
                     {
-                        channels.Add(new WaterChannel { leftX = channelStartX, rightX = channelEndX });
+                        channels.Add(new WaterChannel { leftOffset = channelStartOffset, rightOffset = channelEndOffset });
                     }
                 }
             }
 
             if (inWater)
             {
-                channels.Add(new WaterChannel { leftX = channelStartX, rightX = halfScanWidth });
+                channels.Add(new WaterChannel { leftOffset = channelStartOffset, rightOffset = halfScanWidth });
             }
 
             return channels;
         }
 
-        /// <summary>
-        /// 특정 (X, Z) 주변의 버텍스들로부터 지형 높이 보간 산출
-        /// </summary>
-        private static float SampleHeightFromVertices(List<Vector3> verts, float targetX, float targetZ, float searchRadius)
+        private static float SampleHeightFromAllMeshes(List<TransformedTerrainMesh> meshes, Vector3 targetPos, float searchRadius)
         {
             float searchRadiusSq = searchRadius * searchRadius;
             float totalWeight = 0f;
@@ -273,23 +294,29 @@ namespace SkippingStones.Terrain
             float nearestDistSq = float.MaxValue;
             float nearestHeight = 0f;
 
-            foreach (var v in verts)
+            foreach (var tm in meshes)
             {
-                float dx = v.x - targetX;
-                float dz = v.z - targetZ;
-                float distSq = dx * dx + dz * dz;
+                if (targetPos.x < tm.localBounds.min.x - searchRadius || targetPos.x > tm.localBounds.max.x + searchRadius) continue;
+                if (targetPos.z < tm.localBounds.min.z - searchRadius || targetPos.z > tm.localBounds.max.z + searchRadius) continue;
 
-                if (distSq < nearestDistSq)
+                foreach (var v in tm.localVertices)
                 {
-                    nearestDistSq = distSq;
-                    nearestHeight = v.y;
-                }
+                    float dx = v.x - targetPos.x;
+                    float dz = v.z - targetPos.z;
+                    float distSq = dx * dx + dz * dz;
 
-                if (distSq <= searchRadiusSq)
-                {
-                    float weight = 1f / (Mathf.Sqrt(distSq) + 0.1f);
-                    weightedHeight += v.y * weight;
-                    totalWeight += weight;
+                    if (distSq < nearestDistSq)
+                    {
+                        nearestDistSq = distSq;
+                        nearestHeight = v.y;
+                    }
+
+                    if (distSq <= searchRadiusSq)
+                    {
+                        float weight = 1f / (Mathf.Sqrt(distSq) + 0.1f);
+                        weightedHeight += v.y * weight;
+                        totalWeight += weight;
+                    }
                 }
             }
 
@@ -301,9 +328,6 @@ namespace SkippingStones.Terrain
             return nearestHeight;
         }
 
-        /// <summary>
-        /// 중심선 경로의 3점 이동평균 스무딩 (급격한 지형 꺾임 완화)
-        /// </summary>
         private static void SmoothPathCenterline(List<RiverPathNode> nodes)
         {
             if (nodes.Count < 3) return;
@@ -316,8 +340,8 @@ namespace SkippingStones.Terrain
                     RiverPathNode curr = nodes[i];
                     RiverPathNode next = nodes[i + 1];
 
-                    float smoothX = (prev.localPosition.x * 0.25f) + (curr.localPosition.x * 0.5f) + (next.localPosition.x * 0.25f);
-                    curr.localPosition = new Vector3(smoothX, curr.localPosition.y, curr.localPosition.z);
+                    Vector3 smoothPos = (prev.localPosition * 0.25f) + (curr.localPosition * 0.5f) + (next.localPosition * 0.25f);
+                    curr.localPosition = smoothPos;
                     nodes[i] = curr;
                 }
             }

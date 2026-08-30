@@ -109,824 +109,824 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Terrain.RiverPathChunkData
   nodes:
-  - localPosition: {x: 0, y: 0, z: -250}
-    localTangent: {x: 0, y: 0, z: 1}
+  - localPosition: {x: -6.5, y: 0, z: -250}
+    localTangent: {x: 0.95064867, y: 0, z: 0.31026945}
     waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
+    leftWidth: 45.5
+    rightWidth: 45.5
     cumulativeDistance: 0
-  - localPosition: {x: 0, y: 0, z: -245.01256}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 4.987442
-  - localPosition: {x: 0, y: 0, z: -240.02512}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 9.974884
-  - localPosition: {x: 0, y: 0, z: -235.03767}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 14.962326
-  - localPosition: {x: 0, y: 0, z: -230.05023}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 19.949768
-  - localPosition: {x: 0, y: 0, z: -225.0628}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 24.937195
-  - localPosition: {x: 0, y: 0, z: -220.07536}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 29.924637
-  - localPosition: {x: 0, y: 0, z: -215.08792}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 34.91208
-  - localPosition: {x: 0, y: 0, z: -210.10048}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 39.89952
-  - localPosition: {x: 0, y: 0, z: -205.11304}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 44.886963
-  - localPosition: {x: 0, y: 0, z: -200.1256}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 49.874405
-  - localPosition: {x: 0, y: 0, z: -195.13815}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 54.861847
-  - localPosition: {x: 0, y: 0, z: -190.15071}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 59.84929
-  - localPosition: {x: 0, y: 0, z: -185.16327}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 64.83673
-  - localPosition: {x: 0, y: 0, z: -180.17584}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 69.82416
-  - localPosition: {x: 0, y: 0, z: -175.1884}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 74.8116
-  - localPosition: {x: 0, y: 0, z: -170.20096}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 79.79904
-  - localPosition: {x: 0, y: 0, z: -165.21352}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 84.78648
-  - localPosition: {x: 0, y: 0, z: -160.22607}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 89.773926
-  - localPosition: {x: 0, y: 0, z: -155.23863}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 94.76137
-  - localPosition: {x: 0, y: 0, z: -150.25119}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 99.74881
-  - localPosition: {x: 0, y: 0, z: -145.26375}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 104.73625
-  - localPosition: {x: 0, y: 0, z: -140.27632}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 109.72368
-  - localPosition: {x: 0, y: 0, z: -135.28888}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 114.71112
-  - localPosition: {x: 0, y: 0, z: -130.30142}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 119.69858
-  - localPosition: {x: 0, y: 0, z: -125.313995}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 124.686005
-  - localPosition: {x: 0, y: 0, z: -120.32655}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 129.67345
-  - localPosition: {x: 0, y: 0, z: -115.33911}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 134.66089
-  - localPosition: {x: 0, y: 0, z: -110.35168}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 139.64832
-  - localPosition: {x: 0, y: 0, z: -105.364235}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 144.63576
-  - localPosition: {x: 0, y: 0, z: -100.37679}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 149.6232
-  - localPosition: {x: 0, y: 0, z: -95.38934}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 154.61066
-  - localPosition: {x: 0, y: 0, z: -90.40191}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 159.59808
-  - localPosition: {x: 0, y: 0, z: -85.41447}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 164.58553
-  - localPosition: {x: 0, y: 0, z: -80.427025}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 169.57297
-  - localPosition: {x: 0, y: 0, z: -75.43959}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 174.5604
-  - localPosition: {x: 0, y: 0, z: -70.45214}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 179.54785
-  - localPosition: {x: 0, y: 0, z: -65.46471}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 184.53528
-  - localPosition: {x: 0, y: 0, z: -60.477272}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 189.5227
-  - localPosition: {x: 0, y: 0, z: -55.48982}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 194.51016
-  - localPosition: {x: 0, y: 0, z: -50.502384}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 199.49759
-  - localPosition: {x: 0, y: 0, z: -45.514954}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 204.48502
-  - localPosition: {x: 0, y: 0, z: -40.5275}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 209.47247
-  - localPosition: {x: 0, y: 0, z: -35.540066}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 214.4599
-  - localPosition: {x: 0, y: 0, z: -30.552631}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 219.44733
-  - localPosition: {x: 0, y: 0, z: -25.565178}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 224.43478
-  - localPosition: {x: 0, y: 0, z: -20.577745}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 229.42221
-  - localPosition: {x: 0, y: 0, z: -15.590312}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 234.40964
-  - localPosition: {x: 0, y: 0, z: -10.602859}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 239.3971
-  - localPosition: {x: 0, y: 0, z: -5.6154256}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 244.38452
-  - localPosition: {x: 0, y: 0, z: -0.6279921}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 249.37195
-  - localPosition: {x: 0, y: 0, z: 4.3594613}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 254.3594
-  - localPosition: {x: 0, y: 0, z: 9.346894}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 259.34683
-  - localPosition: {x: 0, y: 0, z: 14.334328}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 264.33426
-  - localPosition: {x: 0, y: 0, z: 19.321781}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 269.32172
-  - localPosition: {x: 0, y: 0, z: 24.309216}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 274.30914
-  - localPosition: {x: 0, y: 0, z: 29.296648}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 279.29657
-  - localPosition: {x: 0, y: 0, z: 34.2841}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 284.28403
-  - localPosition: {x: 0, y: 0, z: 39.271534}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 289.27145
-  - localPosition: {x: 0, y: 0, z: 44.258987}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 294.2589
-  - localPosition: {x: 0, y: 0, z: 49.24642}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 299.24634
-  - localPosition: {x: 0, y: 0, z: 54.233856}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 304.23376
-  - localPosition: {x: 0, y: 0, z: 59.22131}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 309.22122
-  - localPosition: {x: 0, y: 0, z: 64.20874}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 314.20865
-  - localPosition: {x: 0, y: 0, z: 69.196175}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 319.19608
-  - localPosition: {x: 0, y: 0, z: 74.18363}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 324.18353
-  - localPosition: {x: 0, y: 0, z: 79.17106}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 329.17096
-  - localPosition: {x: 0, y: 0, z: 84.15849}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 334.1584
-  - localPosition: {x: 0, y: 0, z: 89.14595}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 339.14584
-  - localPosition: {x: 0, y: 0, z: 94.1334}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 344.1333
-  - localPosition: {x: 0, y: 0, z: 99.12081}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 349.12073
-  - localPosition: {x: 0, y: 0, z: 104.10827}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 354.1082
-  - localPosition: {x: 0, y: 0, z: 109.09572}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 359.09564
-  - localPosition: {x: 0, y: 0, z: 114.08314}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 364.08307
-  - localPosition: {x: 0, y: 0, z: 119.07059}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 369.07053
-  - localPosition: {x: 0, y: 0, z: 124.058044}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 374.05798
-  - localPosition: {x: 0, y: 0, z: 129.04546}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 379.0454
-  - localPosition: {x: 0, y: 0, z: 134.03291}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 384.03287
-  - localPosition: {x: 0, y: 0, z: 139.02036}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 389.02032
-  - localPosition: {x: 0, y: 0, z: 144.00778}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 394.00775
-  - localPosition: {x: 0, y: 0, z: 148.99522}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 398.99518
-  - localPosition: {x: 0, y: 0, z: 153.98268}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 403.98264
-  - localPosition: {x: 0, y: 0, z: 158.9701}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 408.97003
-  - localPosition: {x: 0, y: 0, z: 163.95755}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 413.9575
-  - localPosition: {x: 0, y: 0, z: 168.945}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 418.94495
-  - localPosition: {x: 0, y: 0, z: 173.93242}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 423.93237
-  - localPosition: {x: 0, y: 0, z: 178.91988}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 428.91983
-  - localPosition: {x: 0, y: 0, z: 183.90732}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 433.9073
-  - localPosition: {x: 0, y: 0, z: 188.89473}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 438.8947
-  - localPosition: {x: 0, y: 0, z: 193.88219}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 443.88217
-  - localPosition: {x: 0, y: 0, z: 198.86964}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 448.86963
-  - localPosition: {x: 0, y: 0, z: 203.85706}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 453.85706
-  - localPosition: {x: 0, y: 0, z: 208.84451}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 458.8445
-  - localPosition: {x: 0, y: 0, z: 213.83195}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 463.83197
-  - localPosition: {x: 0, y: 0, z: 218.81938}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 468.8194
-  - localPosition: {x: 0, y: 0, z: 223.80682}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 473.80682
-  - localPosition: {x: 0, y: 0, z: 228.79428}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 478.79428
-  - localPosition: {x: 0, y: 0, z: 233.7817}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 483.78168
-  - localPosition: {x: 0, y: 0, z: 238.76915}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 488.76913
-  - localPosition: {x: 0, y: 0, z: 243.7566}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 493.7566
-  - localPosition: {x: 0, y: 0, z: 248.74402}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 498.74402
-  - localPosition: {x: 0, y: 0, z: 253.73148}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 503.73148
-  - localPosition: {x: 0, y: 0, z: 258.71893}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 508.71893
-  - localPosition: {x: 0, y: 0, z: 263.70633}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 513.7063
-  - localPosition: {x: 0, y: 0, z: 268.6938}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 518.6937
-  - localPosition: {x: 0, y: 0, z: 273.68124}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 523.68115
-  - localPosition: {x: 0, y: 0, z: 278.66867}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 528.6686
-  - localPosition: {x: 0, y: 0, z: 283.6561}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 533.656
-  - localPosition: {x: 0, y: 0, z: 288.64355}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 538.64343
-  - localPosition: {x: 0, y: 0, z: 293.63098}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 543.63086
-  - localPosition: {x: 0, y: 0, z: 298.61844}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 548.6183
-  - localPosition: {x: 0, y: 0, z: 303.6059}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 553.6057
-  - localPosition: {x: 0, y: 0, z: 308.5933}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 558.59314
-  - localPosition: {x: 0, y: 0, z: 313.58075}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 563.58057
-  - localPosition: {x: 0, y: 0, z: 318.5682}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 568.568
-  - localPosition: {x: 0, y: 0, z: 323.55566}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 573.5554
-  - localPosition: {x: 0, y: 0, z: 328.54306}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 578.54285
-  - localPosition: {x: 0, y: 0, z: 333.53052}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 583.5303
-  - localPosition: {x: 0, y: 0, z: 338.51797}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 588.5177
-  - localPosition: {x: 0, y: 0, z: 343.5054}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 593.5051
-  - localPosition: {x: 0, y: 0, z: 348.49283}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 598.49255
-  - localPosition: {x: 0, y: 0, z: 353.4803}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 603.48
-  - localPosition: {x: 0, y: 0, z: 358.4677}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 608.4674
-  - localPosition: {x: 0, y: 0, z: 363.45517}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 613.45483
-  - localPosition: {x: 0, y: 0, z: 368.44263}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 618.44226
-  - localPosition: {x: 0, y: 0, z: 373.43002}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 623.4297
-  - localPosition: {x: 0, y: 0, z: 378.41748}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 628.4171
-  - localPosition: {x: 0, y: 0, z: 383.40494}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 633.40454
-  - localPosition: {x: 0, y: 0, z: 388.39236}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 638.39197
-  - localPosition: {x: 0, y: 0, z: 393.3798}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 643.3794
-  - localPosition: {x: 0, y: 0, z: 398.36725}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 648.3668
-  - localPosition: {x: 0, y: 0, z: 403.35468}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 653.35425
-  - localPosition: {x: 0, y: 0, z: 408.34213}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 658.3417
-  - localPosition: {x: 0, y: 0, z: 413.3296}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 663.3291
-  - localPosition: {x: 0, y: 0, z: 418.317}
-    localTangent: {x: 0, y: 0, z: 1}
-    waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 668.3165
+  - localPosition: {x: 8.78125, y: 0, z: -245.01256}
+    localTangent: {x: 0.5752884, y: 0, z: 0.81795067}
+    waterHeight: 0
+    leftWidth: 101
+    rightWidth: 101
+    cumulativeDistance: 55.723644
+  - localPosition: {x: 0.515625, y: 0, z: -240.02512}
+    localTangent: {x: -0.81276906, y: 0, z: 0.58258605}
+    waterHeight: 0
+    leftWidth: 45.5
+    rightWidth: 45.5
+    cumulativeDistance: 112.443344
+  - localPosition: {x: -5.1347656, y: 0, z: -235.03767}
+    localTangent: {x: -0.6795755, y: 0, z: 0.7336055}
+    waterHeight: 0
+    leftWidth: 46.5
+    rightWidth: 46.5
+    cumulativeDistance: 117.430786
+  - localPosition: {x: -8.724609, y: 0, z: -230.05023}
+    localTangent: {x: -0.5055122, y: 0, z: 0.8628195}
+    waterHeight: 0
+    leftWidth: 45.5
+    rightWidth: 45.5
+    cumulativeDistance: 122.517494
+  - localPosition: {x: -10.978882, y: 0, z: -225.0628}
+    localTangent: {x: -0.34162393, y: 0, z: 0.93983674}
+    waterHeight: 0
+    leftWidth: 42.5
+    rightWidth: 42.5
+    cumulativeDistance: 129.57968
+  - localPosition: {x: -12.350403, y: 0, z: -220.07536}
+    localTangent: {x: -0.23543768, y: 0, z: 0.9718895}
+    waterHeight: 0
+    leftWidth: 47
+    rightWidth: 47
+    cumulativeDistance: 135.67267
+  - localPosition: {x: -13.395271, y: 0, z: -215.08792}
+    localTangent: {x: -0.10101887, y: 0, z: 0.99488455}
+    waterHeight: 0
+    leftWidth: 42
+    rightWidth: 42
+    cumulativeDistance: 144.2677
+  - localPosition: {x: -13.363235, y: 0, z: -210.10048}
+    localTangent: {x: -0.023091096, y: 0, z: 0.9997333}
+    waterHeight: 0
+    leftWidth: 46.5
+    rightWidth: 46.5
+    cumulativeDistance: 152.46066
+  - localPosition: {x: -13.625664, y: 0, z: -205.11304}
+    localTangent: {x: 0.022987254, y: 0, z: 0.9997357}
+    waterHeight: 0
+    leftWidth: 39.5
+    rightWidth: 39.5
+    cumulativeDistance: 160.26288
+  - localPosition: {x: -13.13388, y: 0, z: -200.1256}
+    localTangent: {x: 0.012939208, y: 0, z: 0.99991626}
+    waterHeight: 0
+    leftWidth: 46
+    rightWidth: 46
+    cumulativeDistance: 167.68747
+  - localPosition: {x: -13.496586, y: 0, z: -195.13815}
+    localTangent: {x: -0.09169789, y: 0, z: 0.9957869}
+    waterHeight: 0
+    leftWidth: 41.5
+    rightWidth: 41.5
+    cumulativeDistance: 173.78046
+  - localPosition: {x: -14.052425, y: 0, z: -190.15071}
+    localTangent: {x: -0.13031828, y: 0, z: 0.9914722}
+    waterHeight: 0
+    leftWidth: 44.5
+    rightWidth: 44.5
+    cumulativeDistance: 179.15396
+  - localPosition: {x: -14.807676, y: 0, z: -185.16327}
+    localTangent: {x: -0.08781953, y: 0, z: 0.99613637}
+    waterHeight: 0
+    leftWidth: 40.5
+    rightWidth: 40.5
+    cumulativeDistance: 185.54729
+  - localPosition: {x: -14.931811, y: 0, z: -180.17584}
+    localTangent: {x: -0.020196544, y: 0, z: 0.99979603}
+    waterHeight: 0
+    leftWidth: 44
+    rightWidth: 44
+    cumulativeDistance: 191.12622
+  - localPosition: {x: -15.009175, y: 0, z: -175.1884}
+    localTangent: {x: 0.032986153, y: 0, z: 0.9994558}
+    waterHeight: 0
+    leftWidth: 43
+    rightWidth: 43
+    cumulativeDistance: 196.49973
+  - localPosition: {x: -14.602599, y: 0, z: -170.20096}
+    localTangent: {x: 0.00836556, y: 0, z: 0.999965}
+    waterHeight: 0
+    leftWidth: 45.5
+    rightWidth: 45.5
+    cumulativeDistance: 201.70786
+  - localPosition: {x: -14.925727, y: 0, z: -165.21352}
+    localTangent: {x: -0.1436202, y: 0, z: 0.9896329}
+    waterHeight: 0
+    leftWidth: 45.5
+    rightWidth: 45.5
+    cumulativeDistance: 206.79456
+  - localPosition: {x: -16.050201, y: 0, z: -160.22607}
+    localTangent: {x: -0.22389647, y: 0, z: 0.9746129}
+    waterHeight: 0
+    leftWidth: 45.5
+    rightWidth: 45.5
+    cumulativeDistance: 212.61475
+  - localPosition: {x: -17.217243, y: 0, z: -155.23863}
+    localTangent: {x: -0.27073184, y: 0, z: 0.96265477}
+    waterHeight: 0
+    leftWidth: 46
+    rightWidth: 46
+    cumulativeDistance: 217.62718
+  - localPosition: {x: -18.855484, y: 0, z: -150.25119}
+    localTangent: {x: -0.29432455, y: 0, z: 0.9557055}
+    waterHeight: 0
+    leftWidth: 45
+    rightWidth: 45
+    cumulativeDistance: 222.71388
+  - localPosition: {x: -20.289165, y: 0, z: -145.26375}
+    localTangent: {x: -0.2187006, y: 0, z: 0.975792}
+    waterHeight: 0
+    leftWidth: 43
+    rightWidth: 43
+    cumulativeDistance: 229.10721
+  - localPosition: {x: -21.091114, y: 0, z: -140.27632}
+    localTangent: {x: -0.1716824, y: 0, z: 0.98515236}
+    waterHeight: 0
+    leftWidth: 44
+    rightWidth: 44
+    cumulativeDistance: 234.4807
+  - localPosition: {x: -22.027485, y: 0, z: -135.28888}
+    localTangent: {x: -0.1618189, y: 0, z: 0.98682046}
+    waterHeight: 0
+    leftWidth: 43
+    rightWidth: 43
+    cumulativeDistance: 240.30089
+  - localPosition: {x: -22.726799, y: 0, z: -130.30142}
+    localTangent: {x: -0.16888855, y: 0, z: 0.98563516}
+    waterHeight: 0
+    leftWidth: 43
+    rightWidth: 43
+    cumulativeDistance: 245.3876
+  - localPosition: {x: -23.736681, y: 0, z: -125.313995}
+    localTangent: {x: -0.20270926, y: 0, z: 0.979239}
+    waterHeight: 0
+    leftWidth: 41
+    rightWidth: 41
+    cumulativeDistance: 250.7611
+  - localPosition: {x: -24.791666, y: 0, z: -120.32655}
+    localTangent: {x: -0.21893124, y: 0, z: 0.9757403}
+    waterHeight: 0
+    leftWidth: 41.5
+    rightWidth: 41.5
+    cumulativeDistance: 255.77353
+  - localPosition: {x: -25.97479, y: 0, z: -115.33911}
+    localTangent: {x: -0.22781081, y: 0, z: 0.9737054}
+    waterHeight: 0
+    leftWidth: 41
+    rightWidth: 41
+    cumulativeDistance: 260.98166
+  - localPosition: {x: -27.125416, y: 0, z: -110.35168}
+    localTangent: {x: -0.2931271, y: 0, z: 0.95607346}
+    waterHeight: 0
+    leftWidth: 38.5
+    rightWidth: 38.5
+    cumulativeDistance: 266.1898
+  - localPosition: {x: -29.033035, y: 0, z: -105.364235}
+    localTangent: {x: -0.41185048, y: 0, z: 0.9112514}
+    waterHeight: 0
+    leftWidth: 40
+    rightWidth: 40
+    cumulativeDistance: 271.20224
+  - localPosition: {x: -31.633678, y: 0, z: -100.37679}
+    localTangent: {x: -0.40410462, y: 0, z: 0.9147127}
+    waterHeight: 0
+    leftWidth: 40
+    rightWidth: 40
+    cumulativeDistance: 279.00446
+  - localPosition: {x: -33.439774, y: 0, z: -95.38934}
+    localTangent: {x: -0.3428344, y: 0, z: 0.93939584}
+    waterHeight: 0
+    leftWidth: 39.5
+    rightWidth: 39.5
+    cumulativeDistance: 284.0169
+  - localPosition: {x: -35.274033, y: 0, z: -90.40191}
+    localTangent: {x: -0.39302823, y: 0, z: 0.9195264}
+    waterHeight: 0
+    leftWidth: 38
+    rightWidth: 38
+    cumulativeDistance: 289.22504
+  - localPosition: {x: -37.70328, y: 0, z: -85.41447}
+    localTangent: {x: -0.4951898, y: 0, z: 0.86878484}
+    waterHeight: 0
+    leftWidth: 38
+    rightWidth: 38
+    cumulativeDistance: 294.59854
+  - localPosition: {x: -40.959515, y: 0, z: -80.427025}
+    localTangent: {x: -0.5853406, y: 0, z: 0.81078744}
+    waterHeight: 0
+    leftWidth: 39.5
+    rightWidth: 39.5
+    cumulativeDistance: 300.69153
+  - localPosition: {x: -44.904552, y: 0, z: -75.43959}
+    localTangent: {x: -0.6399748, y: 0, z: 0.76839596}
+    waterHeight: 0
+    leftWidth: 40.5
+    rightWidth: 40.5
+    cumulativeDistance: 307.08484
+  - localPosition: {x: -49.267307, y: 0, z: -70.45214}
+    localTangent: {x: -0.64092946, y: 0, z: 0.7675998}
+    waterHeight: 0
+    leftWidth: 44
+    rightWidth: 44
+    cumulativeDistance: 313.80234
+  - localPosition: {x: -53.233368, y: 0, z: -65.46471}
+    localTangent: {x: -0.59393144, y: 0, z: 0.8045157}
+    waterHeight: 0
+    leftWidth: 44.5
+    rightWidth: 44.5
+    cumulativeDistance: 321.22693
+  - localPosition: {x: -56.631226, y: 0, z: -60.477272}
+    localTangent: {x: -0.56952834, y: 0, z: 0.8219717}
+    waterHeight: 0
+    leftWidth: 45
+    rightWidth: 45
+    cumulativeDistance: 326.43506
+  - localPosition: {x: -60.144775, y: 0, z: -55.48982}
+    localTangent: {x: -0.5529952, y: 0, z: 0.8331845}
+    waterHeight: 0
+    leftWidth: 44.5
+    rightWidth: 44.5
+    cumulativeDistance: 333.15256
+  - localPosition: {x: -63.251686, y: 0, z: -50.502384}
+    localTangent: {x: -0.48725978, y: 0, z: 0.87325704}
+    waterHeight: 0
+    leftWidth: 43.5
+    rightWidth: 43.5
+    cumulativeDistance: 338.97275
+  - localPosition: {x: -65.71055, y: 0, z: -45.514954}
+    localTangent: {x: -0.41077602, y: 0, z: 0.91173625}
+    waterHeight: 0
+    leftWidth: 41.5
+    rightWidth: 41.5
+    cumulativeDistance: 344.79294
+  - localPosition: {x: -67.7458, y: 0, z: -40.5275}
+    localTangent: {x: -0.42011842, y: 0, z: 0.9074693}
+    waterHeight: 0
+    leftWidth: 43.5
+    rightWidth: 43.5
+    cumulativeDistance: 349.87967
+  - localPosition: {x: -70.32848, y: 0, z: -35.540066}
+    localTangent: {x: -0.49920762, y: 0, z: 0.86648244}
+    waterHeight: 0
+    leftWidth: 45.5
+    rightWidth: 45.5
+    cumulativeDistance: 355.25317
+  - localPosition: {x: -73.49263, y: 0, z: -30.552631}
+    localTangent: {x: -0.54171854, y: 0, z: 0.8405599}
+    waterHeight: 0
+    leftWidth: 45.5
+    rightWidth: 45.5
+    cumulativeDistance: 361.64648
+  - localPosition: {x: -76.757034, y: 0, z: -25.565178}
+    localTangent: {x: -0.58853686, y: 0, z: 0.80847037}
+    waterHeight: 0
+    leftWidth: 46
+    rightWidth: 46
+    cumulativeDistance: 367.7395
+  - localPosition: {x: -80.75398, y: 0, z: -20.577745}
+    localTangent: {x: -0.64065033, y: 0, z: 0.76783276}
+    waterHeight: 0
+    leftWidth: 48
+    rightWidth: 48
+    cumulativeDistance: 373.113
+  - localPosition: {x: -85.07968, y: 0, z: -15.590312}
+    localTangent: {x: -0.5668651, y: 0, z: 0.82381064}
+    waterHeight: 0
+    leftWidth: 51.5
+    rightWidth: 51.5
+    cumulativeDistance: 382.11993
+  - localPosition: {x: -87.617714, y: 0, z: -10.602859}
+    localTangent: {x: -0.40208465, y: 0, z: 0.91560245}
+    waterHeight: 0
+    leftWidth: 54.5
+    rightWidth: 54.5
+    cumulativeDistance: 387.94012
+  - localPosition: {x: -89.46013, y: 0, z: -5.6154256}
+    localTangent: {x: -0.4167996, y: 0, z: 0.90899837}
+    waterHeight: 0
+    leftWidth: 51
+    rightWidth: 51
+    cumulativeDistance: 393.14825
+  - localPosition: {x: -92.19145, y: 0, z: -0.6279921}
+    localTangent: {x: -0.46665934, y: 0, z: 0.88443714}
+    waterHeight: 0
+    leftWidth: 53
+    rightWidth: 53
+    cumulativeDistance: 399.54156
+  - localPosition: {x: -94.72322, y: 0, z: 4.3594613}
+    localTangent: {x: -0.39212555, y: 0, z: 0.91991174}
+    waterHeight: 0
+    leftWidth: 54.5
+    rightWidth: 54.5
+    cumulativeDistance: 405.63458
+  - localPosition: {x: -96.44339, y: 0, z: 9.346894}
+    localTangent: {x: -0.28940007, y: 0, z: 0.9572083}
+    waterHeight: 0
+    leftWidth: 53
+    rightWidth: 53
+    cumulativeDistance: 410.8427
+  - localPosition: {x: -97.739, y: 0, z: 14.334328}
+    localTangent: {x: -0.23089826, y: 0, z: 0.97297794}
+    waterHeight: 0
+    leftWidth: 52.5
+    rightWidth: 52.5
+    cumulativeDistance: 415.85513
+  - localPosition: {x: -98.81054, y: 0, z: 19.321781}
+    localTangent: {x: -0.19907762, y: 0, z: 0.97998375}
+    waterHeight: 0
+    leftWidth: 50.5
+    rightWidth: 50.5
+    cumulativeDistance: 421.22864
+  - localPosition: {x: -99.765335, y: 0, z: 24.309216}
+    localTangent: {x: -0.21037215, y: 0, z: 0.9776214}
+    waterHeight: 0
+    leftWidth: 51
+    rightWidth: 51
+    cumulativeDistance: 426.24106
+  - localPosition: {x: -100.95701, y: 0, z: 29.296648}
+    localTangent: {x: -0.22668451, y: 0, z: 0.97396827}
+    waterHeight: 0
+    leftWidth: 48.5
+    rightWidth: 48.5
+    cumulativeDistance: 431.81998
+  - localPosition: {x: -102.08692, y: 0, z: 34.2841}
+    localTangent: {x: -0.2254147, y: 0, z: 0.9742629}
+    waterHeight: 0
+    leftWidth: 48.5
+    rightWidth: 48.5
+    cumulativeDistance: 436.80743
+  - localPosition: {x: -103.26489, y: 0, z: 39.271534}
+    localTangent: {x: -0.24391897, y: 0, z: 0.9697956}
+    waterHeight: 0
+    leftWidth: 46
+    rightWidth: 46
+    cumulativeDistance: 442.38635
+  - localPosition: {x: -104.595764, y: 0, z: 44.258987}
+    localTangent: {x: -0.3272026, y: 0, z: 0.9449542}
+    waterHeight: 0
+    leftWidth: 46.5
+    rightWidth: 46.5
+    cumulativeDistance: 447.3988
+  - localPosition: {x: -106.71883, y: 0, z: 49.24642}
+    localTangent: {x: -0.38275784, y: 0, z: 0.9238486}
+    waterHeight: 0
+    leftWidth: 43.5
+    rightWidth: 43.5
+    cumulativeDistance: 453.219
+  - localPosition: {x: -108.72843, y: 0, z: 54.233856}
+    localTangent: {x: -0.36011687, y: 0, z: 0.93290716}
+    waterHeight: 0
+    leftWidth: 40.5
+    rightWidth: 40.5
+    cumulativeDistance: 459.03918
+  - localPosition: {x: -110.56929, y: 0, z: 59.22131}
+    localTangent: {x: -0.40488708, y: 0, z: 0.91436666}
+    waterHeight: 0
+    leftWidth: 37
+    rightWidth: 37
+    cumulativeDistance: 464.05164
+  - localPosition: {x: -113.14537, y: 0, z: 64.20874}
+    localTangent: {x: -0.51142925, y: 0, z: 0.85932535}
+    waterHeight: 0
+    leftWidth: 33.5
+    rightWidth: 33.5
+    cumulativeDistance: 469.63055
+  - localPosition: {x: -116.50585, y: 0, z: 69.196175}
+    localTangent: {x: -0.56600875, y: 0, z: 0.82439923}
+    waterHeight: 0
+    leftWidth: 31
+    rightWidth: 31
+    cumulativeDistance: 475.72354
+  - localPosition: {x: -119.99384, y: 0, z: 74.18363}
+    localTangent: {x: -0.53608036, y: 0, z: 0.84416693}
+    waterHeight: 0
+    leftWidth: 29.5
+    rightWidth: 29.5
+    cumulativeDistance: 482.44104
+  - localPosition: {x: -122.84031, y: 0, z: 79.17106}
+    localTangent: {x: -0.47362867, y: 0, z: 0.8807246}
+    waterHeight: 0
+    leftWidth: 26.5
+    rightWidth: 26.5
+    cumulativeDistance: 488.2612
+  - localPosition: {x: -125.35804, y: 0, z: 84.15849}
+    localTangent: {x: -0.46173823, y: 0, z: 0.88701624}
+    waterHeight: 0
+    leftWidth: 25
+    rightWidth: 25
+    cumulativeDistance: 493.46933
+  - localPosition: {x: -128.03276, y: 0, z: 89.14595}
+    localTangent: {x: -0.4577717, y: 0, z: 0.8890698}
+    waterHeight: 0
+    leftWidth: 22
+    rightWidth: 22
+    cumulativeDistance: 499.28952
+  - localPosition: {x: -130.494, y: 0, z: 94.1334}
+    localTangent: {x: -0.42945528, y: 0, z: 0.9030881}
+    waterHeight: 0
+    leftWidth: 19
+    rightWidth: 19
+    cumulativeDistance: 505.1097
+  - localPosition: {x: -132.77621, y: 0, z: 99.12081}
+    localTangent: {x: -0.44277126, y: 0, z: 0.89663464}
+    waterHeight: 0
+    leftWidth: 17.5
+    rightWidth: 17.5
+    cumulativeDistance: 510.3178
+  - localPosition: {x: -135.41974, y: 0, z: 104.10827}
+    localTangent: {x: -0.47931138, y: 0, z: 0.8776449}
+    waterHeight: 0
+    leftWidth: 15
+    rightWidth: 15
+    cumulativeDistance: 515.8968
+  - localPosition: {x: -138.22385, y: 0, z: 109.09572}
+    localTangent: {x: -0.47928384, y: 0, z: 0.87766}
+    waterHeight: 0
+    leftWidth: 11.5
+    rightWidth: 11.5
+    cumulativeDistance: 521.9898
+  - localPosition: {x: -140.86694, y: 0, z: 114.08314}
+    localTangent: {x: -0.47705472, y: 0, z: 0.8788736}
+    waterHeight: 0
+    leftWidth: 9
+    rightWidth: 9
+    cumulativeDistance: 527.5687
+  - localPosition: {x: -143.63823, y: 0, z: 119.07059}
+    localTangent: {x: -0.45641503, y: 0, z: 0.889767}
+    waterHeight: 0
+    leftWidth: 7
+    rightWidth: 7
+    cumulativeDistance: 532.94226
+  - localPosition: {x: -145.98367, y: 0, z: 124.058044}
+    localTangent: {x: -0.31793806, y: 0, z: 0.9481114}
+    waterHeight: 0
+    leftWidth: 4
+    rightWidth: 4
+    cumulativeDistance: 539.6597
+  - localPosition: {x: -146.98318, y: 0, z: 129.04546}
+    localTangent: {x: -0.13437998, y: 0, z: 0.9909299}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 544.64716
+  - localPosition: {x: -147.33636, y: 0, z: 134.03291}
+    localTangent: {x: -0.04679631, y: 0, z: 0.99890447}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 549.63464
+  - localPosition: {x: -147.45049, y: 0, z: 139.02036}
+    localTangent: {x: -0.014946786, y: 0, z: 0.99988824}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 554.6221
+  - localPosition: {x: -147.48547, y: 0, z: 144.00778}
+    localTangent: {x: -0.004544761, y: 0, z: 0.9999897}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 559.6095
+  - localPosition: {x: -147.49582, y: 0, z: 148.99522}
+    localTangent: {x: -0.0013369729, y: 0, z: 0.99999917}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 564.5969
+  - localPosition: {x: -147.49881, y: 0, z: 153.98268}
+    localTangent: {x: -0.00038549025, y: 0, z: 0.9999999}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 569.58435
+  - localPosition: {x: -147.49966, y: 0, z: 158.9701}
+    localTangent: {x: -0.00011014008, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 574.5718
+  - localPosition: {x: -147.49991, y: 0, z: 163.95755}
+    localTangent: {x: -0.000030594325, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 579.5592
+  - localPosition: {x: -147.49997, y: 0, z: 168.945}
+    localTangent: {x: -0.0000091783395, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 584.54663
+  - localPosition: {x: -147.5, y: 0, z: 173.93242}
+    localTangent: {x: -0.0000030594465, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 589.53406
+  - localPosition: {x: -147.5, y: 0, z: 178.91988}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 594.5215
+  - localPosition: {x: -147.5, y: 0, z: 183.90732}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 599.5089
+  - localPosition: {x: -147.5, y: 0, z: 188.89473}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 604.49634
+  - localPosition: {x: -147.5, y: 0, z: 193.88219}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 609.48376
+  - localPosition: {x: -147.5, y: 0, z: 198.86964}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 614.4712
+  - localPosition: {x: -147.5, y: 0, z: 203.85706}
+    localTangent: {x: 0.20542586, y: 0, z: 0.9786727}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 619.4586
+  - localPosition: {x: -145.40625, y: 0, z: 208.84451}
+    localTangent: {x: 0.7558615, y: 0, z: 0.6547315}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 624.44604
+  - localPosition: {x: -135.98438, y: 0, z: 213.83195}
+    localTangent: {x: 0.9133632, y: 0, z: 0.40714562}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 629.4335
+  - localPosition: {x: -123.0293, y: 0, z: 218.81938}
+    localTangent: {x: 0.88381183, y: 0, z: 0.46784252}
+    waterHeight: 0
+    leftWidth: 4
+    rightWidth: 4
+    cumulativeDistance: 663.3027
+  - localPosition: {x: -117.140625, y: 0, z: 223.80682}
+    localTangent: {x: 0.6267599, y: 0, z: 0.7792124}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 668.2901
+  - localPosition: {x: -115.00598, y: 0, z: 228.79428}
+    localTangent: {x: 0.2732908, y: 0, z: 0.96193147}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 673.2776
+  - localPosition: {x: -114.3067, y: 0, z: 233.7817}
+    localTangent: {x: 0.09139696, y: 0, z: 0.99581456}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 678.265
+  - localPosition: {x: -114.09048, y: 0, z: 238.76915}
+    localTangent: {x: 0.028122649, y: 0, z: 0.99960446}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 683.25244
+  - localPosition: {x: -114.02607, y: 0, z: 243.7566}
+    localTangent: {x: 0.008330584, y: 0, z: 0.9999653}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 688.23987
+  - localPosition: {x: -114.00738, y: 0, z: 248.74402}
+    localTangent: {x: 0.0024070127, y: 0, z: 0.99999714}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 693.2273
+  - localPosition: {x: -114.00206, y: 0, z: 253.73148}
+    localTangent: {x: 0.0006830182, y: 0, z: 0.9999998}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 698.2147
+  - localPosition: {x: -114.000565, y: 0, z: 258.71893}
+    localTangent: {x: 0.58134687, y: 0, z: 0.81365585}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 703.20215
+  - localPosition: {x: -106.87515, y: 0, z: 263.70633}
+    localTangent: {x: 0.9690988, y: 0, z: 0.24667281}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 708.1896
+  - localPosition: {x: -74.812546, y: 0, z: 268.6938}
+    localTangent: {x: 0.9915293, y: 0, z: 0.12988319}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 713.177
+  - localPosition: {x: -30.726576, y: 0, z: 273.68124}
+    localTangent: {x: 0.98811674, y: 0, z: 0.15370515}
+    waterHeight: 0
+    leftWidth: 150
+    rightWidth: 150
+    cumulativeDistance: 827.2861
+  - localPosition: {x: -10.687504, y: 0, z: 278.66867}
+    localTangent: {x: 0.9392797, y: 0, z: 0.34315264}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 832.2735
+  - localPosition: {x: -3.4233408, y: 0, z: 283.6561}
+    localTangent: {x: 0.69507486, y: 0, z: 0.71893746}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 837.2609
+  - localPosition: {x: -1.0437014, y: 0, z: 288.64355}
+    localTangent: {x: 0.29812658, y: 0, z: 0.95452636}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 842.2484
+  - localPosition: {x: -0.3078919, y: 0, z: 293.63098}
+    localTangent: {x: 0.095303364, y: 0, z: 0.9954483}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 847.23584
+  - localPosition: {x: -0.088714615, y: 0, z: 298.61844}
+    localTangent: {x: 0.028337514, y: 0, z: 0.99959844}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 852.22327
+  - localPosition: {x: -0.025114063, y: 0, z: 303.6059}
+    localTangent: {x: 0.008190547, y: 0, z: 0.99996644}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 857.2107
+  - localPosition: {x: -0.007012368, y: 0, z: 308.5933}
+    localTangent: {x: 0.0023235877, y: 0, z: 0.9999973}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 862.1981
+  - localPosition: {x: -0.0019365551, y: 0, z: 313.58075}
+    localTangent: {x: 0.0006498665, y: 0, z: 0.9999998}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 867.18555
+  - localPosition: {x: -0.00053000456, y: 0, z: 318.5682}
+    localTangent: {x: 0.00017970956, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 872.173
+  - localPosition: {x: -0.00014396758, y: 0, z: 323.55566}
+    localTangent: {x: 0.000049238424, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 877.1604
+  - localPosition: {x: -0.000038858507, y: 0, z: 328.54306}
+    localTangent: {x: 0.0000133872945, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 882.1478
+  - localPosition: {x: -0.000010431279, y: 0, z: 333.53052}
+    localTangent: {x: 0.000003616224, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 887.13525
+  - localPosition: {x: -0.000002786983, y: 0, z: 338.51797}
+    localTangent: {x: 0.0000009714141, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 892.1227
+  - localPosition: {x: -0.00000074153655, y: 0, z: 343.5054}
+    localTangent: {x: 0.00000025969317, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 897.1101
+  - localPosition: {x: -0.00000019658184, y: 0, z: 348.49283}
+    localTangent: {x: 0.0000000691328, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 902.09753
+  - localPosition: {x: -0.000000051944884, y: 0, z: 353.4803}
+    localTangent: {x: 0.000000018335628, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 907.08496
+  - localPosition: {x: -0.000000013686077, y: 0, z: 358.4677}
+    localTangent: {x: 0.000000004847014, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 912.0724
+  - localPosition: {x: -0.0000000035964833, y: 0, z: 363.45517}
+    localTangent: {x: 0.0000000012775263, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 917.0598
+  - localPosition: {x: -9.428619e-10, y: 0, z: 368.44263}
+    localTangent: {x: 3.3582775e-10, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 922.04724
+  - localPosition: {x: -2.4665073e-10, y: 0, z: 373.43002}
+    localTangent: {x: 8.8068004e-11, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 927.03467
+  - localPosition: {x: -6.4396495e-11, y: 0, z: 378.41748}
+    localTangent: {x: 2.3044624e-11, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 932.0221
+  - localPosition: {x: -1.6782577e-11, y: 0, z: 383.40494}
+    localTangent: {x: 6.018114e-12, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 937.0095
+  - localPosition: {x: -4.3665076e-12, y: 0, z: 388.39236}
+    localTangent: {x: 1.5687683e-12, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 941.99695
+  - localPosition: {x: -1.1343427e-12, y: 0, z: 393.3798}
+    localTangent: {x: 4.0824966e-13, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 946.9844
+  - localPosition: {x: -2.9426464e-13, y: 0, z: 398.36725}
+    localTangent: {x: 1.0607711e-13, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 951.9718
+  - localPosition: {x: -7.62359e-14, y: 0, z: 403.35468}
+    localTangent: {x: 2.752295e-14, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 956.9592
+  - localPosition: {x: -1.972641e-14, y: 0, z: 408.34213}
+    localTangent: {x: 7.131634e-15, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 961.94666
+  - localPosition: {x: -5.098461e-15, y: 0, z: 413.3296}
+    localTangent: {x: 1.8461138e-15, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 966.9341
+  - localPosition: {x: -1.311695e-15, y: 0, z: 418.317}
+    localTangent: {x: 5.1113144e-16, y: 0, z: 1}
+    waterHeight: 0
+    leftWidth: 18
+    rightWidth: 18
+    cumulativeDistance: 971.9215
   - localPosition: {x: 0, y: 0, z: 423.30444}
-    localTangent: {x: 0, y: 0, z: 1}
+    localTangent: {x: 2.6299875e-16, y: 0, z: 1}
     waterHeight: 0
-    leftWidth: 15
-    rightWidth: 15
-    cumulativeDistance: 673.30396
-  totalLength: 673.30396
-  averageWidth: 30
+    leftWidth: 150
+    rightWidth: 150
+    cumulativeDistance: 976.90894
+  totalLength: 976.90894
+  averageWidth: 91
   showGizmos: 1
   centerlineColor: {r: 0, g: 0.9, b: 1, a: 0.9}
   bankBoundaryColor: {r: 1, g: 0.85, b: 0.2, a: 0.45}
