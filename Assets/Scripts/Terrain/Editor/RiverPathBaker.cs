@@ -329,27 +329,30 @@ namespace SkippingStones.Terrain
         }
 
         /// <summary>
-        /// 고속도로 램프(Highway Ramp) 완화 곡선 스무딩:
-        /// - 갈림길 진입/합류점의 급격한 꺾임을 20~30m에 걸쳐 완만하게 분산
-        /// - 인접 노드 간 급격한 비틀림을 완화하여 카메라/돌 비행 안정성 극대화
+        /// 초유려 완화 곡선(Ultra-Smooth Transition Curve) 스무딩:
+        /// - 갈림길 진입/합류점의 꺾임을 40~50m에 걸쳐 고속도로 램프처럼 완벽히 평탄화
+        /// - 7점 가우시안 10-Pass Multi-Pass Relax 적용
+        /// - 접선(Tangent) 및 법선(Normal)의 부채꼴 정렬로 뾰족한 교차/쐐기 현상 완전 제거
         /// </summary>
         private static void SmoothPathCenterline(List<RiverPathNode> nodes)
         {
-            if (nodes.Count < 5) return;
+            if (nodes.Count < 7) return;
 
-            // 1. 가우시안 5점 가중 이동평균 (Multi-Pass Gaussian Relax)
-            for (int pass = 0; pass < 5; pass++)
+            // 1. 7점 가우시안 가중 이동평균 (10-Pass Multi-Pass Relax)
+            // 가중치: 1 : 6 : 15 : 20 : 15 : 6 : 1 (합 64)
+            for (int pass = 0; pass < 10; pass++)
             {
-                for (int i = 2; i < nodes.Count - 2; i++)
+                for (int i = 3; i < nodes.Count - 3; i++)
                 {
-                    Vector3 pPrev2 = nodes[i - 2].localPosition;
-                    Vector3 pPrev1 = nodes[i - 1].localPosition;
-                    Vector3 pCurr = nodes[i].localPosition;
-                    Vector3 pNext1 = nodes[i + 1].localPosition;
-                    Vector3 pNext2 = nodes[i + 2].localPosition;
+                    Vector3 pM3 = nodes[i - 3].localPosition;
+                    Vector3 pM2 = nodes[i - 2].localPosition;
+                    Vector3 pM1 = nodes[i - 1].localPosition;
+                    Vector3 p0  = nodes[i].localPosition;
+                    Vector3 pP1 = nodes[i + 1].localPosition;
+                    Vector3 pP2 = nodes[i + 2].localPosition;
+                    Vector3 pP3 = nodes[i + 3].localPosition;
 
-                    // 1:4:6:4:1 가중치로 완만하게 스무딩
-                    Vector3 smoothPos = (pPrev2 * 1f + pPrev1 * 4f + pCurr * 6f + pNext1 * 4f + pNext2 * 1f) / 16f;
+                    Vector3 smoothPos = (pM3 * 1f + pM2 * 6f + pM1 * 15f + p0 * 20f + pP1 * 15f + pP2 * 6f + pP3 * 1f) / 64f;
 
                     RiverPathNode n = nodes[i];
                     n.localPosition = smoothPos;
@@ -357,8 +360,8 @@ namespace SkippingStones.Terrain
                 }
             }
 
-            // 2. 강폭(Width) 급변 완화 블렌딩
-            for (int pass = 0; pass < 3; pass++)
+            // 2. 강폭(Width) 급변 6-Pass 가우시안 스무딩 (쐐기 현상 방지)
+            for (int pass = 0; pass < 6; pass++)
             {
                 for (int i = 1; i < nodes.Count - 1; i++)
                 {
@@ -369,6 +372,23 @@ namespace SkippingStones.Terrain
                     curr.leftWidth = (prev.leftWidth * 0.25f) + (curr.leftWidth * 0.5f) + (next.leftWidth * 0.25f);
                     curr.rightWidth = (prev.rightWidth * 0.25f) + (curr.rightWidth * 0.5f) + (next.rightWidth * 0.25f);
                     nodes[i] = curr;
+                }
+            }
+
+            // 3. 접선(Tangent) 벡터 5점 가우시안 회전 정렬 (부채꼴 전개)
+            for (int i = 2; i < nodes.Count - 2; i++)
+            {
+                Vector3 tanM2 = (nodes[i - 1].localPosition - nodes[i - 2].localPosition).normalized;
+                Vector3 tanM1 = (nodes[i].localPosition - nodes[i - 1].localPosition).normalized;
+                Vector3 tanP1 = (nodes[i + 1].localPosition - nodes[i].localPosition).normalized;
+                Vector3 tanP2 = (nodes[i + 2].localPosition - nodes[i + 1].localPosition).normalized;
+
+                Vector3 blendedTan = (tanM2 * 1f + tanM1 * 3f + tanP1 * 3f + tanP2 * 1f).normalized;
+                if (blendedTan != Vector3.zero)
+                {
+                    RiverPathNode n = nodes[i];
+                    n.localTangent = blendedTan;
+                    nodes[i] = n;
                 }
             }
         }
