@@ -1069,7 +1069,10 @@ public class SkippingStone : MonoBehaviour
 
     public void Sink(string reason = "")
     {
-        if (isGodMode || isSunk || isCrashed) return;
+        // 🌟 갓모드라도 스키밍(도로록) 피니시가 완료되었거나 명시적 완주 시 정상 침몰 및 결과 처리
+        if (isSunk || isCrashed) return;
+        if (isGodMode && !isSkimming) return;
+
         isSunk = true;
         isSkimming = false;
         isInTimingWindow = false;

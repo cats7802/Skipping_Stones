@@ -221,38 +221,40 @@ public class DualCameraSetup : MonoBehaviour
                         Vector3 velXZ = new Vector3(stoneRb.linearVelocity.x, 0f, stoneRb.linearVelocity.z);
                         if (velXZ.sqrMagnitude > 0.4f)
                         {
-                            Vector3 rawHeading = velXZ.normalized;
-                            float dot = Vector3.Dot(rawHeading, forwardDir);
-                            if (dot > 0.30f)
-                            {
-                                targetHeading = Vector3.RotateTowards(forwardDir, rawHeading, Mathf.Deg2Rad * 22f, 0f);
-                            }
-                            else
-                            {
-                                targetHeading = forwardDir;
-                            }
+                            targetHeading = velXZ.normalized;
+                        }
+                        else
+                        {
+                            targetHeading = targetStone.forward;
+                            targetHeading.y = 0f;
+                            if (targetHeading.sqrMagnitude > 0.01f) targetHeading.Normalize();
+                            else targetHeading = forwardDir;
                         }
                     }
                     else
                     {
-                        targetHeading = forwardDir;
+                        targetHeading = targetStone.forward;
+                        targetHeading.y = 0f;
+                        if (targetHeading.sqrMagnitude > 0.01f) targetHeading.Normalize();
+                        else targetHeading = forwardDir;
                     }
                 }
 
                 if (smoothedFlightHeading.sqrMagnitude < 0.01f) smoothedFlightHeading = targetHeading;
 
-                float dynamicCatchupSpeed = Mathf.Max(headingCatchupSpeed, 14f);
-                smoothedFlightHeading = Vector3.Slerp(smoothedFlightHeading, targetHeading, Time.deltaTime * dynamicCatchupSpeed);
+                // 🌟 돌이 먼저 코너로 꺾인 후 카메라가 시간차를 두고 부드럽게 후방으로 따라오도록 Slerp 보간
+                float catchupRate = Mathf.Max(headingCatchupSpeed, 4.5f);
+                smoothedFlightHeading = Vector3.Slerp(smoothedFlightHeading, targetHeading, Time.deltaTime * catchupRate);
                 Vector3 moveDir = smoothedFlightHeading.normalized;
 
-                // 🌟 과거의 다이내믹 Y축 바운스 추적 공식 복원 (수면 상대 높이 100% 연동)
+                // 🌟 과거의 다이내믹 Y축 바운스 추적 공식 보존 (수면 상대 높이 100% 연동)
                 float relativeStoneY = Mathf.Max(0f, stonePos.y - waterLevel);
                 float dynamicCamY = waterLevel + (relativeStoneY * 0.75f) + flightHeight;
                 float dynamicLookY = waterLevel + (relativeStoneY * 0.35f) + flightLookHeight;
 
                 Vector3 stoneXZ = new Vector3(stonePos.x, 0f, stonePos.z);
                 targetOffset = stoneXZ - (moveDir * flightDistBack) + (Vector3.up * dynamicCamY);
-                targetLookOffset = stoneXZ + (forwardDir * flightLookForward) + (Vector3.up * dynamicLookY);
+                targetLookOffset = stoneXZ + (moveDir * flightLookForward) + (Vector3.up * dynamicLookY);
                 break;
         }
 
