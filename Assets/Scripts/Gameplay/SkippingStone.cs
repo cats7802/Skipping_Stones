@@ -619,7 +619,16 @@ public class SkippingStone : MonoBehaviour
             return;
         }
 
+        // 🌟 돌이 위로 솟구치며 비행 중일 때(상승 궤적) 다음 바운스를 위해 탭 상태 및 서브머지 타이머 자동 리셋
+        if (rb.linearVelocity.y > 0.1f)
+        {
+            hasTappedInCurrentBounce = false;
+            earlyRetryCount = 0;
+            waterSubmergeTimer = 0f;
+        }
+
         // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했거나 발밑이 허공일 때)
+        // 🌟 모멘텀 스태미나 기반 자동 구제: 탭 입력을 놓치더라도 모멘텀이 남아있으면 BAD(-3.0)로 자동 바운스 회생!
         if (distToWater <= -0.06f && rb.linearVelocity.y <= 0f)
         {
             if (!hasWaterBelow)
@@ -633,20 +642,30 @@ public class SkippingStone : MonoBehaviour
                 waterSubmergeTimer = Time.time;
             }
 
-            // 120ms 유예 윈도우 초과 시 최종 침몰/피니시
-            if (Time.time - waterSubmergeTimer > LATE_GRACE_WINDOW)
+            // 착수 후 일정 깊이(-0.16m) 또는 0.15초 경과 시 모멘텀 스태미나 체크
+            if (distToWater <= -0.16f || (Time.time - waterSubmergeTimer > 0.15f))
             {
-                if (skipCount >= minSkimSkips && !isSkimming)
+                // 모멘텀이 0보다 큰 경우: BAD 구제 바운스로 강제 회생!
+                if (currentMomentum > 0.1f)
                 {
-                    StartSkimmingFinish();
+                    TryRhythmBounce(0f, out _);
+                    return;
                 }
                 else
                 {
-                    Sink("MISS - 타이밍 탭 실패!");
+                    // 모멘텀이 완전히 고갈된 경우 최종 침몰/피니시
+                    if (skipCount >= minSkimSkips && !isSkimming)
+                    {
+                        StartSkimmingFinish();
+                    }
+                    else
+                    {
+                        Sink("MISS - 모멘텀 고갈 침몰!");
+                    }
                 }
             }
         }
-        else if (distToWater > 0.1f)
+        else if (distToWater > 0.05f)
         {
             waterSubmergeTimer = 0f;
         }
@@ -715,8 +734,15 @@ public class SkippingStone : MonoBehaviour
         float distToWater = transform.position.y - waterLevel;
         float dynWindowHeight = Mathf.Lerp(timingWindowHeight, 1.4f, Mathf.Clamp01(skipCount / 30f));
 
-        // 🌟 이미 침몰 중이거나 수면에 너무 깊이 빠진 상태에서 늦게 누른 경우에도 [지각 입력 마커] 100% 무조건 기록!
-        if (isSunk || distToWater < -0.05f)
+        // 🌟 상승 중이거나 정점 통과 후 하강 시작 시 탭 기회 자동 갱신
+        if (rb != null && rb.linearVelocity.y > 0.1f)
+        {
+            hasTappedInCurrentBounce = false;
+            earlyRetryCount = 0;
+        }
+
+        // 🌟 이미 침몰 중이거나 심해(-0.35m) 이하로 완전히 가라앉았을 때만 LATE MISS 차단
+        if (isSunk || distToWater < -0.35f)
         {
             timingGrade = $"❌ LATE MISS (수심: {distToWater:F2}m에 누름)";
             TapDebugRecord lateRec = new TapDebugRecord
@@ -1264,7 +1290,7 @@ public class SkippingStone : MonoBehaviour
     /// </summary>
     public bool CheckWaterUnderneath()
     {
-        // 1. 씬 내 모든 활성화된 WaterSurface 콜라이더의 X, Z 범위 검사
+        // 1. 씬 내 모든 활성화된 WaterSurface 콜라이더의 X, Z 범위 검사 (안전 마진 1.5m 부여)
         var allWaters = FindObjectsByType<WaterSurface>(FindObjectsInactive.Exclude);
         if (allWaters != null && allWaters.Length > 0)
         {
@@ -1276,14 +1302,25 @@ public class SkippingStone : MonoBehaviour
                 if (col != null)
                 {
                     Bounds b = col.bounds;
-                    // 돌의 X, Z 좌표가 실제 수면 콜라이더 바운드 영역 안에 들어있는지 정밀 확인
-                    if (pos.x >= b.min.x && pos.x <= b.max.x && pos.z >= b.min.z && pos.z <= b.max.z)
+                    // 돌의 X, Z 좌표가 실제 수면 콜라이더 바운드 영역 안에 들어있는지 정밀 확인 (경계 오차 방지 마진 1.5m)
+                    if (pos.x >= (b.min.x - 1.5f) && pos.x <= (b.max.x + 1.5f) && pos.z >= (b.min.z - 1.5f) && pos.z <= (b.max.z + 1.5f))
                     {
                         return true;
                     }
                 }
             }
-            // 씬에 수면이 존재하는데 돌이 수면 바깥(허공/강변 밖)으로 나간 경우
+
+            // 2. 곡선 스플라인 강물 경로가 있는 경우, 강 중심선으로부터의 거리로 2차 검증
+            if (GlobalRiverPath.Instance != null && GlobalRiverPath.Instance.GetClosestPointOnRiver(pos, out Vector3 riverCenter, out _, out _))
+            {
+                float riverDist = Vector2.Distance(new Vector2(pos.x, pos.z), new Vector2(riverCenter.x, riverCenter.z));
+                if (riverDist <= 28f) // 표준 강 폭 허용 범위
+                {
+                    return true;
+                }
+            }
+
+            // 씬에 수면이 존재하는데 돌이 수면 바깥(완전 육지 지형 밖)으로 나간 경우
             return false;
         }
 

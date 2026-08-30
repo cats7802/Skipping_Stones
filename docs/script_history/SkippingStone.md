@@ -55,4 +55,10 @@
   4. `ClearAllTapDebugMarkers()`: 재투구 시 이전 탭 디버그 마커 일괄 정리.
 - **컴파일 검증**: 0 Errors.
 
-
+### [2026-08-31] 무입력/지각 시 모멘텀 스태미나 기반 자동 구제(Auto BAD Bounce) 탑재
+- **수정 목적**: 플레이어가 탭을 놓치거나 입력을 전혀 하지 않더라도, 모멘텀(스태미나)이 남아있다면 `BAD (-3.0)` 판정으로 강제 구제 바운스를 일으켜 회생하도록 개편.
+- **핵심 구조**:
+  1. `FixedUpdate`에서 돌이 수면에 도달했을 때(`distToWater <= -0.16m`), `currentMomentum > 0.1f`이면 `TryRhythmBounce`를 통해 `BAD (-3.0)` 판정으로 바운스 유도.
+  2. 모멘텀이 `0` 이하로 고갈되었을 때만 최종 침몰/스키밍 피니시 처리.
+  3. `rb.linearVelocity.y > 0.1f`(상승 궤적) 진입 시 `hasTappedInCurrentBounce = false`, `earlyRetryCount = 0`, `waterSubmergeTimer = 0f` 자동 초기화.
+- **컴파일 검증**: Assembly-CSharp, Assembly-CSharp-Editor 모두 0 Errors, 0 Warnings.
