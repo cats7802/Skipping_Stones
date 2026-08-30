@@ -628,7 +628,7 @@ public class SkippingStone : MonoBehaviour
         }
 
         // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했거나 발밑이 허공일 때)
-        // 🌟 모멘텀 스태미나 기반 자동 구제: 탭 입력을 놓치더라도 모멘텀이 남아있으면 BAD(-3.0)로 자동 바운스 회생!
+        // 🌟 모멘텀 스태미나 기반 자동 구제: 플레이어가 LATE(-20cm), TOO LATE(-32cm) 탭마저 놓쳐 심해(-34cm)에 도달했을 때 발동!
         if (distToWater <= -0.06f && rb.linearVelocity.y <= 0f)
         {
             if (!hasWaterBelow)
@@ -642,12 +642,13 @@ public class SkippingStone : MonoBehaviour
                 waterSubmergeTimer = Time.time;
             }
 
-            // 착수 후 일정 깊이(-0.16m) 또는 0.15초 경과 시 모멘텀 스태미나 체크
-            if (distToWater <= -0.16f || (Time.time - waterSubmergeTimer > 0.15f))
+            // 플레이어가 수동 탭할 수 있는 시간(LATE/TOO LATE)을 충분히 보장한 후 심해(-0.34m) 또는 0.4초 경과 시 자동 구제
+            if (distToWater <= -0.34f || (Time.time - waterSubmergeTimer > 0.40f))
             {
-                // 모멘텀이 0보다 큰 경우: BAD 구제 바운스로 강제 회생!
+                // 모멘텀이 0보다 큰 경우: BAD(-3.0) 자동 회생 바운스 발동!
                 if (currentMomentum > 0.1f)
                 {
+                    hasTappedInCurrentBounce = false; // 자동 회생 강제 허용
                     TryRhythmBounce(0f, out _);
                     return;
                 }
