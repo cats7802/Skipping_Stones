@@ -947,6 +947,13 @@ namespace SkippingStones.Sandbox
             else timingGrade += $" RIGHT {steerAngleDegrees:F0}° ▶";
         }
 
+        // 🌟 수면 아래(LATE/TOO LATE/BAD)에서 바운스 시, 돌 위치를 즉시 수면 위로 올려서 침몰 재판정 원천 차단
+        if (transform.position.y < waterLevel + 0.02f)
+        {
+            transform.position = new Vector3(transform.position.x, waterLevel + 0.02f, transform.position.z);
+        }
+        waterSubmergeTimer = 0f;
+
         rb.linearVelocity = new Vector3(hDir.x * newHSpd, bounceForce, hDir.y * newHSpd);
 
         float newYaw = Mathf.Atan2(hDir.x, hDir.y) * Mathf.Rad2Deg;
@@ -1117,7 +1124,7 @@ namespace SkippingStones.Sandbox
         }
 
         // 2. Terrain 컴포넌트 검사로 지형/바위 감지
-        bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<Terrain>() != null || other.GetComponent<MeshCollider>() != null;
+        bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<UnityEngine.Terrain>() != null || other.GetComponent<MeshCollider>() != null;
         bool isRock = other.name.ToLower().Contains("rock") || other.name.ToLower().Contains("obstacle");
         bool isGround = other.name.ToLower().Contains("ground") || other.name.ToLower().Contains("bank");
 
