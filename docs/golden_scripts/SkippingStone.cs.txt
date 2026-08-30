@@ -604,17 +604,10 @@ public class SkippingStone : MonoBehaviour
         }
 
         float distToWater = transform.position.y - waterLevel;
-        bool hasWaterBelow = CheckWaterUnderneath();
 
         // 🌟 자동 바운스 (갓모드)
         if (isGodMode && distToWater <= 0.22f && rb.linearVelocity.y <= 0.5f)
         {
-            if (!hasWaterBelow)
-            {
-                CrashOnLand("물길 이탈 / 지형 착지");
-                return;
-            }
-
             TryRhythmBounce(0f, out _);
             return;
         }
@@ -627,27 +620,22 @@ public class SkippingStone : MonoBehaviour
             waterSubmergeTimer = 0f;
         }
 
-        // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했거나 발밑이 허공일 때)
-        // 🌟 모멘텀 스태미나 기반 자동 구제: 탭 입력을 놓치더라도 모멘텀이 남아있으면 BAD(-3.0)로 자동 바운스 회생!
+        // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했을 때)
+        // 🌟 모멘텀 스태미나 기반 자동 구제: 플레이어가 LATE(-20cm), TOO LATE(-32cm) 탭마저 놓쳐 심해(-34cm)에 도달했을 때 발동!
         if (distToWater <= -0.06f && rb.linearVelocity.y <= 0f)
         {
-            if (!hasWaterBelow)
-            {
-                CrashOnLand("물길 이탈 / 지형 착지");
-                return;
-            }
-
             if (waterSubmergeTimer <= 0f)
             {
                 waterSubmergeTimer = Time.time;
             }
 
-            // 착수 후 일정 깊이(-0.16m) 또는 0.15초 경과 시 모멘텀 스태미나 체크
-            if (distToWater <= -0.16f || (Time.time - waterSubmergeTimer > 0.15f))
+            // 플레이어가 수동 탭할 수 있는 시간(LATE/TOO LATE)을 충분히 보장한 후 심해(-0.34m) 또는 0.4초 경과 시 자동 구제
+            if (distToWater <= -0.34f || (Time.time - waterSubmergeTimer > 0.40f))
             {
-                // 모멘텀이 0보다 큰 경우: BAD 구제 바운스로 강제 회생!
+                // 모멘텀이 0보다 큰 경우: BAD(-3.0) 자동 회생 바운스 발동!
                 if (currentMomentum > 0.1f)
                 {
+                    hasTappedInCurrentBounce = false; // 자동 회생 강제 허용
                     TryRhythmBounce(0f, out _);
                     return;
                 }
@@ -741,25 +729,10 @@ public class SkippingStone : MonoBehaviour
             earlyRetryCount = 0;
         }
 
-        // 🌟 이미 침몰 중이거나 심해(-0.35m) 이하로 완전히 가라앉았을 때만 LATE MISS 차단
-        if (isSunk || distToWater < -0.35f)
-        {
-            timingGrade = $"❌ LATE MISS (수심: {distToWater:F2}m에 누름)";
-            TapDebugRecord lateRec = new TapDebugRecord
-            {
-                stoneWorldPos = transform.position,
-                distToWater = distToWater,
-                verticalSpeed = (rb != null) ? -rb.linearVelocity.y : 0f,
-                grade = timingGrade,
-                skipIndex = skipCount,
-                timeStamp = Time.time
-            };
-            tapDebugHistory.Add(lateRec);
-            SpawnTapDebugMarker(lateRec);
-            return false;
-        }
+        // 1. 이미 완전히 침몰 완료된 상태에서는 탭 무시
+        if (isSunk) return false;
 
-        // 1. 타이밍 윈도우 진입 전(높은 상공)이거나 상승 중일 때의 탭은 무시
+        // 2. 타이밍 윈도우 진입 전(높은 상공)이거나 상승 중일 때의 탭은 무시
         if (distToWater > dynWindowHeight || (rb != null && rb.linearVelocity.y > 0.4f))
         {
             timingGrade = "";
@@ -860,17 +833,24 @@ public class SkippingStone : MonoBehaviour
             // 💥 심해 잠수 (수면 아래 -32cm 이하): BAD (-3.0)
             timingGrade = "💥 BAD (-3.0)";
             momentumDelta = -3.0f;
-            bounceForce *= 0.50f;
-            speedMultiplier = 0.65f;
+            bounceForce = Mathf.Max(bounceForce * 0.50f, 2.8f); // 🌟 최소 2.8m/s 반발력을 보장하여 15스킵 이상에서도 안전 회생
+            speedMultiplier = 0.70f;
         }
 
         // 모멘텀 게이지 갱신
         currentMomentum = Mathf.Clamp(currentMomentum + momentumDelta, 0f, maxMomentum);
 
-        // 게이지가 완전히 바닥나면 구제 없이 침몰
+        // 게이지가 완전히 바닥났을 때: 5스킵 이상이면 도로록~ 스키밍 피니시, 미만이면 즉시 침몰
         if (currentMomentum <= 0.01f && (timingGrade.Contains("LATE") || timingGrade.Contains("BAD")))
         {
-            Sink($"모멘텀 소진 침몰 ({timingGrade})");
+            if (skipCount >= minSkimSkips && !isSkimming)
+            {
+                StartSkimmingFinish();
+            }
+            else
+            {
+                Sink($"모멘텀 소진 침몰 ({timingGrade})");
+            }
             return false;
         }
 
@@ -944,6 +924,13 @@ public class SkippingStone : MonoBehaviour
             if (steerAngleDegrees < 0f) timingGrade += $" ◀ LEFT {Mathf.Abs(steerAngleDegrees):F0}°";
             else timingGrade += $" RIGHT {steerAngleDegrees:F0}° ▶";
         }
+
+        // 🌟 수면 아래(LATE/TOO LATE/BAD)에서 바운스 시, 돌 위치를 즉시 수면 위로 올려서 침몰 재판정 원천 차단
+        if (transform.position.y < waterLevel + 0.02f)
+        {
+            transform.position = new Vector3(transform.position.x, waterLevel + 0.02f, transform.position.z);
+        }
+        waterSubmergeTimer = 0f;
 
         rb.linearVelocity = new Vector3(hDir.x * newHSpd, bounceForce, hDir.y * newHSpd);
 
@@ -1093,7 +1080,18 @@ public class SkippingStone : MonoBehaviour
     {
         if (!isThrown || isSunk || isCrashed) return;
 
+        // 🌟 수면 콜라이더(WaterSurface) 접촉은 물리 충돌(지형 충돌)에서 완전 무시
+        if (collision.gameObject.GetComponent<WaterSurface>() != null || collision.gameObject.GetComponentInParent<WaterSurface>() != null)
+        {
+            return;
+        }
+
         string hitName = collision.gameObject.name.ToLower();
+        if (hitName.Contains("water") || hitName.Contains("surface") || hitName.Contains("river") || hitName.Contains("lake") || hitName.Contains("stream"))
+        {
+            return;
+        }
+
         bool isRock = hitName.Contains("rock") || hitName.Contains("obstacle");
 
         // 🌟 갓모드: 강 한가운데 놓인 바위 장애물(Rock/Obstacle)은 무시하고 통과, 실제 육지 지형은 충돌 유지
@@ -1106,7 +1104,7 @@ public class SkippingStone : MonoBehaviour
     {
         if (!isThrown || isSunk || isCrashed) return;
 
-        // 1. WaterSurface 컴포넌트 감지 시 수면 높이만 동적으로 갱신 (물리 트리거 강제 침몰 완전 제거!)
+        // 1. WaterSurface 컴포넌트 감지 시 수면 높이만 동적으로 갱신하고 충돌 검사 종료
         WaterSurface ws = other.GetComponent<WaterSurface>() ?? other.GetComponentInParent<WaterSurface>();
         if (ws != null)
         {
@@ -1114,10 +1112,17 @@ public class SkippingStone : MonoBehaviour
             return;
         }
 
-        // 2. Terrain 컴포넌트 검사로 지형/바위 감지
-        bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<Terrain>() != null || other.GetComponent<MeshCollider>() != null;
-        bool isRock = other.name.ToLower().Contains("rock") || other.name.ToLower().Contains("obstacle");
-        bool isGround = other.name.ToLower().Contains("ground") || other.name.ToLower().Contains("bank");
+        string colName = other.name.ToLower();
+        if (colName.Contains("water") || colName.Contains("surface") || colName.Contains("river") || colName.Contains("lake") || colName.Contains("stream"))
+        {
+            waterLevel = other.bounds.max.y;
+            return;
+        }
+
+        // 2. Terrain 컴포넌트 검사로 지형/바위 감지 (돌이 실제 수면 위로 나와서 지형에 닿았을 때만)
+        bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<UnityEngine.Terrain>() != null || other.GetComponent<MeshCollider>() != null;
+        bool isRock = colName.Contains("rock") || colName.Contains("obstacle");
+        bool isGround = colName.Contains("ground") || colName.Contains("bank");
 
         // 🌟 갓모드: 강 한가운데 놓인 바위 장애물은 무시하고 통과
         if (isGodMode && isRock) return;

@@ -323,6 +323,7 @@ MonoBehaviour:
     snipedFishSpecies: []
   currentMode: 0
   currentState: 0
+  autoStartInGame: 1
   devGodMode: 0
   devGodModeTargetDistance: 1800
   _character: {fileID: 0}
@@ -859,6 +860,9 @@ MonoBehaviour:
   currentMode: 0
   mainCam: {fileID: 330585545}
   followSmoothSpeed: 8
+  defaultFOV: 60
+  flightFOV: 80
+  fovTransitionSpeed: 6
   topDownDistBack: 9
   topDownHeight: 5.6
   topDownLookForward: 10
@@ -867,10 +871,12 @@ MonoBehaviour:
   shoulderHeight: 2.2
   shoulderLookForward: 14
   shoulderLookHeight: 1.3
-  flightDistBack: 5.5
-  flightHeight: 2.4
-  flightLookForward: 7.5
-  flightLookHeight: -2.2
+  followBounceY: 1
+  flightPivotOffsetY: 0
+  flightDistBack: 2.2
+  flightHeight: 1.7
+  flightLookForward: 10
+  flightLookHeight: -1.3
   headingCatchupSpeed: 4.2
   enableGuideCamera: 0
   guideCam: {fileID: 568813967}

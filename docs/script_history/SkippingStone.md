@@ -6,59 +6,15 @@
 ## 🚫 2. 절대 금지 규칙 및 불변 표준 (Must NOT Do)
 - ❌ **수면 높이를 고정 상수로 하드코딩 금지** ➜ `WaterSurface` 및 지형 수면 높이를 동적 감지.
 - ❌ **연속 입력 시 중복 바운스 트리거 금지** ➜ 1바운스 1터치 판정 소모 구조 유지.
+- ❌ **수면 물리 콜라이더 접촉 시 지형 충돌(CrashOnLand) 오판정 금지** ➜ 수면과의 물리 접촉은 완전 무시.
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
-### [2026-08-30] 갓모드 스키밍(도로록) 피니시 완료 후 정상 침몰/정지 지원
-- **수정 목적**: 갓모드 완주 시 스키밍(도로록)이 끝난 후 `Sink()`가 `isGodMode`에 막혀 영구히 팽이처럼 제자리 회전하던 버그 해결.
-- **핵심 구조**:
-  - `Sink()`에서 `if (isGodMode && !isSkimming) return;`으로 개선하여 비행 중 실수 착수는 막되, 스키밍 완주 후에는 정상 침몰/완주 루틴(`WaterSinkRoutine`)으로 진입하도록 보장.
-  - `godModeTargetDistance <= 0`일 경우 맵 끝(엔딩)까지 무한 비행 완주 지원.
-- **컴파일 검증**: 0 Errors.
 
-### [2026-08-30] 갓모드 Pure Pursuit (전방 15m Look-Ahead 타겟팅) 자율주행 유도 탑재
-- **수정 목적**: 기존 단순 중심선 복원 시 오버슈트로 인해 발생하던 좌우 와리가리(진동) 및 강둑 충돌 이탈 현상을 원천 해결.
-- **핵심 구조**:
-  - `GetClosestPointOnRiver`로 현재 위치 기준 최근접 스플라인 호 거리(`distAlongRiver`) 산출.
-  - 전방 15m 지점의 목표점(`Look-Ahead Target`)을 계산하여 자율주행차처럼 완만하고 부드럽게 선회 유도 (`Damped Lerp`).
-- **컴파일 검증**: 0 Errors.
-
-### [2026-08-23] 리듬 링 에디터 슬라이더 통합 및 Unlit 시인성 극대화
-- **수정 목적**: 리듬 링 테두리 자글거림 제거 및 수직 가이드 레이저 선(`dropLine`) 부활.
-- **핵심 구조**: `SkippingStoneEditor`를 통해 선 두께, 링 반경, 수축 배율 원스톱 조절 지원.
-
-### [2026-08-25] 단 1회 입력 소비(Single-Shot) 및 Time-to-Impact 리듬 판정 개편 (방안 B)
-* **표준 리듬 게임 타이밍 판정 관용도 적용**:
-  * `perfectWindowTime`: 75ms ➔ **100ms** (0.10s)
-  * `greatWindowTime`: 160ms ➔ **220ms** (0.22s)
-  * `goodWindowTime`: 280ms ➔ **380ms** (0.38s)
-  * `timingWindowHeight`: 2.4m ➔ **2.8m** (인디케이터 인지 시간 확보)
-  * **목적**: Single-Shot 1회 탭 기회 소모 규칙 하에서 모바일/캐주얼 표준 리듬 액션 게임의 쾌적하고 쫀득한 손맛 제공.
-* **단 1회 탭 소비 (Single-Shot) & Time-to-Impact 기반 판정 개편**:
-  * `남은높이 / 하강속도` 기반의 물리 시간 판정 적용.
-  * 윈도우 진입 후 첫 탭 즉시 1회 기회 소모하여 연타 꼼수 차단 및 바운스 상승 시 리셋.
-* **물리 보간(`Interpolate`) 활성화**:
-  * 50Hz 물리 주기와 고주사율 모니터 간의 떨림 제거.
-  - **물리 렌더링 보간 영구 고정**: `rb.interpolation = RigidbodyInterpolation.Interpolate;`를 `Awake()` 및 라이프사이클 전반에 영구 고정하여 고주사율 모니터 상의 링 미세 떨림/고스팅 잔상 원천 차단.
-
-### [2026-08-30] 물수제비 모멘텀(스태미나) 게이지 & ± 양방향 대칭 PERFECT 및 수면 반사 그림자 도입
-- **수정 목적**: 수면(0점) 도달 시 칼같이 침몰하거나 착수 높이감이 읽히지 않던 문제 해결. 리듬게임의 라이프 게이지 및 수면 대칭 반사 상을 결합하여 쾌적한 아케이드 손맛 제공.
-- **핵심 구조**:
-  1. `currentMomentum / maxMomentum` (기본 6.0/10.0) 시스템 탑재:
-     - `PERFECT (+2.0)`: 수면 아래 -9cm ~ 수면 위 18cm (수면 0점 착수 코어)
-     - `GREAT (+1.0)`: 수면 위 18cm ~ 48cm
-     - `GOOD (+0.5)`: 수면 위 48cm ~ 85cm
-     - `LATE (-1.0)`: 수면 아래 -9cm ~ -20cm (구제 바운스)
-     - `TOO LATE (-1.5)`: 수면 아래 -20cm ~ -32cm (슈퍼세이브 바운스)
-     - `BAD (-3.0)`: 수면 아래 -32cm 이하 (심해 잠수, 모멘텀 0 이하 시 침몰)
-  2. `UpdateWaterReflectionShadow()`: 돌이 수면 위 3m 이내 진입 시 수면에 딥블루 반투명 반사 그림자를 생성하여, 본체와 그림자가 포개지는 찰나에 100% PERFECT를 시각적으로 직관화.
-  3. `OnTriggerEnter`에서 수면 접촉 시 강제 침몰시키던 레거시 코드 완전 삭제.
-  4. `ClearAllTapDebugMarkers()`: 재투구 시 이전 탭 디버그 마커 일괄 정리.
-- **컴파일 검증**: 0 Errors.
-
-### [2026-08-31] 무입력/지각 시 모멘텀 스태미나 기반 자동 구제(Auto BAD Bounce) 탑재
-- **수정 목적**: 플레이어가 탭을 놓치거나 입력을 전혀 하지 않더라도, 모멘텀(스태미나)이 남아있다면 `BAD (-3.0)` 판정으로 강제 구제 바운스를 일으켜 회생하도록 개편.
-- **핵심 구조**:
-  1. `FixedUpdate`에서 돌이 수면에 도달했을 때(`distToWater <= -0.16m`), `currentMomentum > 0.1f`이면 `TryRhythmBounce`를 통해 `BAD (-3.0)` 판정으로 바운스 유도.
-  2. 모멘텀이 `0` 이하로 고갈되었을 때만 최종 침몰/스키밍 피니시 처리.
-  3. `rb.linearVelocity.y > 0.1f`(상승 궤적) 진입 시 `hasTappedInCurrentBounce = false`, `earlyRetryCount = 0`, `waterSubmergeTimer = 0f` 자동 초기화.
-- **컴파일 검증**: Assembly-CSharp, Assembly-CSharp-Editor 모두 0 Errors, 0 Warnings.
+### [2026-08-31] 순수 모멘텀 생존 체계 확립, 수면 콜라이더 분리 및 도로록 스키밍 연동 완료
+- **수정 목적**: 
+  1. 수면 아래(-고도)에서 일어나는 모든 바운스(LATE, TOO LATE, BAD) 시 즉시 수면 위(`waterLevel + 0.02m`)로 탈출(Elevation Snap)시켜 다음 프레임 침몰 차단.
+  2. 과거 원스트라이크 시절의 레거시 조기 차단문(`distToWater < -0.35f LATE MISS` 등) 및 가짜 지형 충돌(`CheckWaterUnderneath`)을 100% 완전 삭제하고, 순수하게 `currentMomentum > 0` 여부로만 생사를 판정하는 단일 진실 공급원 확립.
+  3. `OnCollisionEnter` / `OnTriggerEnter`에서 `WaterSurface` 및 수면 관련 콜라이더는 물리 충돌(지형 충돌)에서 완전히 배제하여, 물속에서 솟구칠 때 수면 아랫면에 부딪혀 자폭하던 현상 원천 박멸.
+  4. 15스킵 이상 고스킵 상태에서 `BAD (-3.0)` 구제 시에도 최소 반발력 `2.8m/s`를 보장하여 안전 회생.
+  5. 5스킵 이상 달성 후 모멘텀 고갈 시 즉시 침몰하지 않고 '도로록~' 스키밍 피니시(`StartSkimmingFinish`)로 직결되도록 수동 탭 침몰 분기 완비.
+- **컴파일 검증**: Assembly-CSharp 0 Errors, 0 Warnings (Clean Build).

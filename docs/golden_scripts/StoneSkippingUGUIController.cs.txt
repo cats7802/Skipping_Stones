@@ -546,7 +546,10 @@ public class StoneSkippingUGUIController : MonoBehaviour
             if (resultSkipScoreText != null && gameController.stone != null)
                 resultSkipScoreText.text = $"2. 튕긴 횟수 ({gameController.stone.skipCount} 회)  +{gameController.skipScore:N0} 점";
             if (resultSpecialScoreText != null)
-                resultSpecialScoreText.text = $"3. 보너스 [P:{gameController.perfectTimingCount} 저격:{gameController.fishSnipeCount}]  +{gameController.specialScore:N0} 점";
+            {
+                string skimInfo = (gameController.lastSkimBonusDist > 0.1f) ? $" 도로록:+{gameController.lastSkimBonusDist:F1}m" : "";
+                resultSpecialScoreText.text = $"3. 보너스 [P:{gameController.perfectTimingCount} 저격:{gameController.fishSnipeCount}{skimInfo}]  +{gameController.specialScore:N0} 점";
+            }
             if (resultTotalScoreText != null)
                 resultTotalScoreText.text = $"최종 점수 : {gameController.totalScore:N0} PTS";
             if (resultCoinText != null)
