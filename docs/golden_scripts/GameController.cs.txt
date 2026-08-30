@@ -174,15 +174,9 @@ public class GameController : MonoBehaviour
             _topDownReplay = FindAnyObjectByType<TopDownReplayManager>() ?? GetComponent<TopDownReplayManager>() ?? gameObject.AddComponent<TopDownReplayManager>();
         }
 
-        if (_currentLaunchPlatform == null)
-        {
-            _currentLaunchPlatform = FindPlatformInScene();
-        }
-
-        if (_playerPositionRoot == null)
-        {
-            _playerPositionRoot = FindPlayerPositionRootInScene();
-        }
+        // 🌟 맵 재스폰 시 항상 최신 유효 발판으로 재바인딩
+        _currentLaunchPlatform = FindPlatformInScene();
+        _playerPositionRoot = FindPlayerPositionRootInScene();
     }
 
     /// <summary>
@@ -192,12 +186,33 @@ public class GameController : MonoBehaviour
     {
         string[] candidateKeywords = { "woodenpier_platform", "lakeside_woodenpier", "lakeside_platform", "platform", "pier" };
 
+        // 1순위: LakeEnvironmentManager가 스폰한 0번 청크 하위에서 직속 탐색
+        var lem = LakeEnvironmentManager.Instance != null ? LakeEnvironmentManager.Instance : FindAnyObjectByType<LakeEnvironmentManager>();
+        if (lem != null)
+        {
+            var chunkTransforms = lem.GetComponentsInChildren<Transform>(true);
+            foreach (var t in chunkTransforms)
+            {
+                if (t == null) continue;
+                string lName = t.name.ToLower();
+                if (lName.Contains("camera") || lName.Contains("canvas") || lName.Contains("ui") || lName.Contains("guide") || lName.Contains("showcase")) continue;
+                foreach (var kw in candidateKeywords)
+                {
+                    if (lName.Contains(kw))
+                    {
+                        return t;
+                    }
+                }
+            }
+        }
+
+        // 2순위: 씬 전체 활성/비활성 오브젝트 중 탐색 (쇼케이스 더미 제외)
         var allObjs = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var obj in allObjs)
         {
             if (obj == null) continue;
             string lowerName = obj.name.ToLower();
-            if (lowerName.Contains("camera") || lowerName.Contains("canvas") || lowerName.Contains("ui") || lowerName.Contains("guide")) continue;
+            if (lowerName.Contains("camera") || lowerName.Contains("canvas") || lowerName.Contains("ui") || lowerName.Contains("guide") || lowerName.Contains("showcase")) continue;
 
             foreach (var kw in candidateKeywords)
             {
@@ -386,7 +401,7 @@ public class GameController : MonoBehaviour
 
         if (currentLaunchPier != null)
         {
-            currentLaunchPier.gameObject.SetActive(currentMode == GameMode.LongDistance);
+            currentLaunchPier.gameObject.SetActive(true);
         }
 
         if (_playerPositionRoot != null)
@@ -481,7 +496,7 @@ public class GameController : MonoBehaviour
         if (character == null) return;
         ResolveSceneReferences();
 
-        if (currentMode == GameMode.TargetAccuracy)
+        if (currentMode == GameMode.TargetAccuracy && _playerPositionRoot != null)
         {
             character.RefreshPlayerPositionGuide();
             int total = character.GetTotalWaypointsCount();
@@ -497,15 +512,14 @@ public class GameController : MonoBehaviour
             return;
         }
 
-        // 장거리 모드: 발판 콜라이더의 실제 월드 중심 상단에 정확히 배치
+        // 장거리 모드: 발판 콜라이더(루트 또는 자식)의 실제 월드 중심 상단에 정확히 배치
         if (currentLaunchPier != null)
         {
-            BoxCollider pierCol = currentLaunchPier.GetComponent<BoxCollider>();
+            BoxCollider pierCol = currentLaunchPier.GetComponent<BoxCollider>() ?? currentLaunchPier.GetComponentInChildren<BoxCollider>();
             Vector3 spawnPos;
 
             if (pierCol != null)
             {
-                // 콜라이더의 월드 기준 정중앙 X, Z와 최상단 Y 좌표 사용
                 spawnPos = new Vector3(pierCol.bounds.center.x, pierCol.bounds.max.y, pierCol.bounds.center.z);
             }
             else

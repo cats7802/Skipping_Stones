@@ -61,38 +61,6 @@ MonoBehaviour:
   friendFlagPrefab: {fileID: 0}
   jumpingFishPrefab: {fileID: 0}
   lilyPadClusterPrefab: {fileID: 0}
---- !u!1 &4240197471155047835
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 5732291807072659115}
-  m_Layer: 0
-  m_Name: Player_Position
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &5732291807072659115
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 4240197471155047835}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 6.65, y: -0.94, z: 247.74}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children:
-  - {fileID: 1965869478480151004}
-  m_Father: {fileID: 2525627650363447296}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &6708703547746336420
 GameObject:
   m_ObjectHideFlags: 0
@@ -127,7 +95,6 @@ Transform:
   - {fileID: 832279807598128568}
   - {fileID: 8755495969398479832}
   - {fileID: 5255938260200252598}
-  - {fileID: 5732291807072659115}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!114 &3547769664368683426
@@ -760,37 +727,6 @@ MonoBehaviour:
   showGizmos: 1
   centerlineColor: {r: 0, g: 0.9, b: 1, a: 0.9}
   bankBoundaryColor: {r: 1, g: 0.85, b: 0.2, a: 0.45}
---- !u!1 &8536840286774177859
-GameObject:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  serializedVersion: 6
-  m_Component:
-  - component: {fileID: 1965869478480151004}
-  m_Layer: 0
-  m_Name: PP01
-  m_TagString: Untagged
-  m_Icon: {fileID: 0}
-  m_NavMeshLayer: 0
-  m_StaticEditorFlags: 0
-  m_IsActive: 1
---- !u!4 &1965869478480151004
-Transform:
-  m_ObjectHideFlags: 0
-  m_CorrespondingSourceObject: {fileID: 0}
-  m_PrefabInstance: {fileID: 0}
-  m_PrefabAsset: {fileID: 0}
-  m_GameObject: {fileID: 8536840286774177859}
-  serializedVersion: 2
-  m_LocalRotation: {x: -0, y: -0, z: -0, w: 1}
-  m_LocalPosition: {x: 6.01, y: 0.813, z: -13.28}
-  m_LocalScale: {x: 1, y: 1, z: 1}
-  m_ConstrainProportionsScale: 0
-  m_Children: []
-  m_Father: {fileID: 5732291807072659115}
-  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1001 &866489303270722131
 PrefabInstance:
   m_ObjectHideFlags: 0

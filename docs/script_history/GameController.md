@@ -13,9 +13,14 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-30] 타이틀 화면(Start) 인게임 맵 사전 스폰 꼼수 완전 삭제 및 수명주기 정석화
-- **수정 목적**: 타이틀/모드선택 화면에서 500m 인게임 맵이 강제 생성되어 리소스 및 씬 라이프사이클을 파괴하던 임시 코드를 완전 제거.
-- **핵심 구조**: `GameController.Start()`에서 `SetupMapEnvironment()` 호출을 제거하고 오직 `currentState = GameState.ModeSelect;`만 수행. 맵은 오직 맵 선택 후 `StartGameSession()` 시점에만 정상 인스턴스화됨.
+### [2026-08-30] 0번 청크(Brook_Start) 직속 발판(WoodenPier_Platform) 우선 바인딩 및 캐릭터 자동 스냅
+- **수정 목적**: 새 맵 스폰 시 이전 캐시나 씬의 다른 비활성 더미를 발판으로 오인하여 발판이 꺼지고 캐릭터가 엉뚱한 위치로 밀려나던 문제를 완전 해결.
+- **핵심 구조**:
+  - `FindPlatformInScene()`: `LakeEnvironmentManager`의 0번 청크 하위에서 `WoodenPier_Platform` / `Lakeside_WoodenPier`를 1순위로 직속 탐색.
+  - `ResolveSceneReferences()`: 맵 스폰 시마다 항상 최신 발판을 강제 재바인딩.
+  - `SetupMapEnvironment()`: 발판 100% `SetActive(true)` 보장.
+  - `PositionCharacterForMode()`: 발판 루트 및 자식 `BoxCollider`의 바운드를 정밀 측정하여 캐릭터를 발판 월드 상단 정중앙에 정확히 스냅.
 - **컴파일 검증**: 0 Warnings, 0 Errors.
+
 
 
