@@ -445,24 +445,33 @@ public class GameController : MonoBehaviour
         foreach (var c in allCharacters)
         {
             if (c == null) continue;
-            if (c.gameObject.name.Contains("[Showcase") || c.gameObject.name.Contains("Showcase_Ctrl")) continue;
+            // 쇼케이스/로비 전용 더미 캐릭터는 제외
+            if (c.gameObject.name.Contains("[Showcase") || c.gameObject.name.Contains("Showcase_Ctrl") ||
+                c.transform.root.name.Contains("[Lobby") || c.transform.root.name.Contains("[Showcase")) continue;
             inGameCharacters.Add(c);
         }
 
         StoneThrowerCharacter matchedCharacter = null;
 
-        // 2. 이미 요청된 프리팹과 일치하는 유효한 인게임 캐릭터가 씬에 있는지 검사
+        // 2. 이미 요청된 프리팹과 일치하는 유효한 인게임 캐릭터가 씬에 있는지 루트(Root) 이름 기준으로 정밀 검사
         foreach (var c in inGameCharacters)
         {
-            if (matchedCharacter == null && c.gameObject.name.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase))
+            GameObject rootObj = c.transform.root.gameObject;
+            string rootName = rootObj.name;
+            string childName = c.gameObject.name;
+
+            bool isMatch = rootName.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase) ||
+                           childName.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase);
+
+            if (matchedCharacter == null && isMatch)
             {
                 matchedCharacter = c; // 일치하는 기존 캐릭터는 그대로 재사용!
             }
             else
             {
-                // 불일치하거나 중복 생성된 찌꺼기 캐릭터들은 모조리 깔끔하게 파괴
-                if (Application.isPlaying) Destroy(c.gameObject);
-                else DestroyImmediate(c.gameObject);
+                // 불일치하거나 중복 생성된 찌꺼기 캐릭터는 루트 오브젝트 전체를 완전히 파괴하여 0점 누적 방지!
+                if (Application.isPlaying) Destroy(rootObj);
+                else DestroyImmediate(rootObj);
             }
         }
 
