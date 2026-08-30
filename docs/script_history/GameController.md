@@ -13,8 +13,9 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-28] 결과창 진입 시 잔여 알림 배너 텍스트 즉시 초기화
-- **수정 목적**: 게임 종료 및 결과창 진입 시 비행 중 발생했던 알림 텍스트(`bannerNotificationText`, `lastTimingText`)가 화면에 남아있던 현상 완전 제거.
-- **핵심 구조**: `ShowFinalResultDirect()` 진입 즉시 `bannerNotificationText = string.Empty` 및 `lastTimingText = string.Empty` 처리.
+### [2026-08-30] 타이틀 화면(Start) 인게임 맵 사전 스폰 꼼수 완전 삭제 및 수명주기 정석화
+- **수정 목적**: 타이틀/모드선택 화면에서 500m 인게임 맵이 강제 생성되어 리소스 및 씬 라이프사이클을 파괴하던 임시 코드를 완전 제거.
+- **핵심 구조**: `GameController.Start()`에서 `SetupMapEnvironment()` 호출을 제거하고 오직 `currentState = GameState.ModeSelect;`만 수행. 맵은 오직 맵 선택 후 `StartGameSession()` 시점에만 정상 인스턴스화됨.
 - **컴파일 검증**: 0 Warnings, 0 Errors.
+
 

@@ -128,11 +128,6 @@ public class LakeEnvironmentManager : MonoBehaviour
     public void InitReferences()
     {
         EnsureDirectionalLight();
-
-        if (GetComponent<EnvironmentTestHelper>() == null)
-        {
-            gameObject.AddComponent<EnvironmentTestHelper>();
-        }
     }
 
     private void InitializeFirstChunk()

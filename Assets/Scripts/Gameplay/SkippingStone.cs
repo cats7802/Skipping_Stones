@@ -1,6 +1,7 @@
 using UnityEngine;
 using System;
 using System.Collections;
+using SkippingStones.Terrain;
 
 [RequireComponent(typeof(Rigidbody))]
 public class SkippingStone : MonoBehaviour
@@ -507,6 +508,29 @@ public class SkippingStone : MonoBehaviour
 
         totalDistance = Vector2.Distance(new Vector2(startPosition.x, startPosition.z), new Vector2(transform.position.x, transform.position.z));
 
+        // 🌟 갓모드 곡선 추적: 베이크된 강줄기 스플라인(GlobalRiverPath)을 따라 부드럽게 진행 방향 유도
+        if (isGodMode && GlobalRiverPath.Instance != null)
+        {
+            if (GlobalRiverPath.Instance.EvaluateAtDistance(totalDistance, out Vector3 riverCenterPos, out Vector3 riverTangent, out _, out float riverWaterY))
+            {
+                waterLevel = riverWaterY;
+
+                Vector2 currentHVel = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z);
+                float speed = Mathf.Max(forwardPower * 0.8f, currentHVel.magnitude);
+
+                // 강 중심선으로부터의 X/Z 오프셋을 중심선 쪽으로 부드럽게 복원 유도
+                Vector3 toCenter = riverCenterPos - transform.position;
+                Vector3 desiredHDir = (riverTangent + (toCenter * 0.18f)).normalized;
+                Vector2 targetHDir = new Vector2(desiredHDir.x, desiredHDir.z).normalized;
+
+                Vector2 newHDir = Vector2.Lerp(currentHVel.normalized, targetHDir, Time.fixedDeltaTime * 6.5f).normalized;
+                rb.linearVelocity = new Vector3(newHDir.x * speed, rb.linearVelocity.y, newHDir.y * speed);
+
+                float targetYaw = Mathf.Atan2(newHDir.x, newHDir.y) * Mathf.Rad2Deg;
+                transform.rotation = Quaternion.Euler(0f, targetYaw, 0f);
+            }
+        }
+
         // 🌟 [수정] 수면 높이(waterLevel)를 기준으로 한 상대 높이 계산
         float distToWater = transform.position.y - waterLevel;
         float dynWindowHeight = Mathf.Lerp(timingWindowHeight, 1.4f, Mathf.Clamp01(skipCount / 30f));
@@ -698,6 +722,16 @@ public class SkippingStone : MonoBehaviour
         float newHSpd = Mathf.Min(maxHorizontalSpeed, currentHSpd * speedMultiplier);
         Vector2 hDir = hVel.normalized;
         if (hDir == Vector2.zero) hDir = Vector2.up;
+
+        if (isGodMode && GlobalRiverPath.Instance != null)
+        {
+            if (GlobalRiverPath.Instance.EvaluateAtDistance(totalDistance, out Vector3 riverCenterPos, out Vector3 riverTangent, out _, out _))
+            {
+                Vector3 toCenter = riverCenterPos - transform.position;
+                Vector3 desired = (riverTangent + (toCenter * 0.20f)).normalized;
+                hDir = new Vector2(desired.x, desired.z).normalized;
+            }
+        }
 
         if (Mathf.Abs(steerAngleDegrees) > 0.01f)
         {

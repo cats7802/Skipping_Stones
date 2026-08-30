@@ -26,9 +26,11 @@
   * 50Hz 물리 주기와 고주사율 모니터 간의 떨림 제거.
   - **물리 렌더링 보간 영구 고정**: `rb.interpolation = RigidbodyInterpolation.Interpolate;`를 `Awake()` 및 라이프사이클 전반에 영구 고정하여 고주사율 모니터 상의 링 미세 떨림/고스팅 잔상 원천 차단.
 
-### [2026-08-30] 오토 바운스(isGodMode) 지형 충돌 및 물길 이탈 착지 정상 피니시 처리
-- **수정 목적**: `Dev God Mode` 또는 물리 비행 중 돌이 물길을 벗어나 지형/강둑/바위에 닿았을 때 충돌이 무시되어 무한 멈춤이 발생하던 문제를 해결하고 즉시 착지 피니시(Crash/Landing)로 결과창에 정상 연결.
+### [2026-08-30] 갓모드(isGodMode) 베이크된 강줄기 스플라인(GlobalRiverPath) 곡선 추적 비행 연동
+- **수정 목적**: 갓모드 실행 시 직선 관성 비행을 탈피하고, 어제 베이크해 둔 맵의 S자 강줄기 중심 곡선(`GlobalRiverPath`)을 따라 물길 한가운데로 자연스럽게 진행 방향(Velocity/Heading)을 유도하도록 정석 연동.
 - **핵심 구조**:
-  - `OnCollisionEnter`, `OnTriggerEnter`: `isGodMode` 상태에서도 땅/바위 충돌 시 무시하지 않고 `CrashOnLand()`를 정상 호출.
-  - `FixedUpdate`: `!hasWaterBelow` 상태에서 지면에 닿았을 때 `CrashOnLand("물길 이탈 / 지형 착지")`로 최종 비거리를 확정하고 정상 종료.
-  - 빌드 및 컴파일 0 Warnings, 0 Errors 완료.
+  - `FixedUpdate`: `isGodMode`일 때 `GlobalRiverPath.Instance.EvaluateAtDistance`로 물길 중심선 좌표 및 접선 방향(Tangent)을 실시간 조회하여, 속도 크기를 유지한 채 부드럽게 S자 물길 궤적을 그리도록 속도 벡터와 회전 보간.
+  - `TryRhythmBounce`: 갓모드 바운스 반발 시에도 강 중심 및 물길 접선 방향으로 반사 각도를 정렬하여 곡선 코스 100% 완주 지원.
+  - 플레이어가 선택한 실제 조약돌 모델/스케일/트레일/물리 그대로 유지.
+- **컴파일 검증**: 0 Warnings, 0 Errors.
+
