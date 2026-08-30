@@ -476,22 +476,41 @@ namespace SkippingStones.UI
 
             pointerDownConsumedThisFrame = false;
 
-            switch (currentScreen)
-            {
-                case MetaScreen.Title:
-                    DrawTitleScreen();
-                    break;
-                case MetaScreen.Lobby:
-                    DrawLobbyScreen();
-                    break;
-                case MetaScreen.MapSelect:
-                    DrawMapSelectScreen();
-                    break;
-            }
-
+            // 🌟 [핵심] 모달(설정창, 도감 등)이 열려있을 때는 모달 입력을 최우선 처리하고 배경 버튼 관통 차단
             if (currentModal != MetaModal.None)
             {
                 DrawModalOverlay();
+
+                // 모달이 떠 있는 동안 배경 버튼(로비/타이틀 등)의 터치 이벤트 소비 원천 차단
+                pointerDownConsumedThisFrame = true;
+
+                switch (currentScreen)
+                {
+                    case MetaScreen.Title:
+                        DrawTitleScreen();
+                        break;
+                    case MetaScreen.Lobby:
+                        DrawLobbyScreen();
+                        break;
+                    case MetaScreen.MapSelect:
+                        DrawMapSelectScreen();
+                        break;
+                }
+            }
+            else
+            {
+                switch (currentScreen)
+                {
+                    case MetaScreen.Title:
+                        DrawTitleScreen();
+                        break;
+                    case MetaScreen.Lobby:
+                        DrawLobbyScreen();
+                        break;
+                    case MetaScreen.MapSelect:
+                        DrawMapSelectScreen();
+                        break;
+                }
             }
 
             GUI.matrix = origMatrix;

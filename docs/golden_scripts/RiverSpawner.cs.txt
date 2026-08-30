@@ -120,6 +120,12 @@ public class RiverSpawner : MonoBehaviour
     {
         ClearExistingEntities();
 
+        // 🌟 [핵심] 청크가 로드/재구성된 상태에서 글로벌 스플라인 체인 최신화 보장 (갓모드 및 엔티티 스폰 100% 동기화)
+        if (SkippingStones.Terrain.GlobalRiverPath.Instance != null)
+        {
+            SkippingStones.Terrain.GlobalRiverPath.Instance.RebuildPath();
+        }
+
         GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float curWaterY);
         float activeChunkSize = (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 10f) 
             ? LakeEnvironmentManager.Instance.autoChunkSize 
@@ -342,6 +348,11 @@ public class RiverSpawner : MonoBehaviour
     private void GenerateTargetAccuracyRiver()
     {
         ClearExistingEntities();
+
+        if (SkippingStones.Terrain.GlobalRiverPath.Instance != null)
+        {
+            SkippingStones.Terrain.GlobalRiverPath.Instance.RebuildPath();
+        }
 
         GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float curWaterY);
         float endZ = maxZ;
