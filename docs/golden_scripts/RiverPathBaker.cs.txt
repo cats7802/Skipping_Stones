@@ -149,48 +149,6 @@ namespace SkippingStones.Terrain
             data.totalLength = accumulatedDist;
             data.averageWidth = (bakedNodes.Count > 0) ? bakedNodes[0].totalWidth : 50f;
 
-            // 🌟 Unity 공식 SplineContainer 생성 및 베지어 Knot 주입 (패키지 임포트 시 씬 뷰 시각화 및 직관적 편집 지원)
-            System.Type splineContainerType = System.Type.GetType("UnityEngine.Splines.SplineContainer, Unity.Splines");
-            if (splineContainerType != null)
-            {
-                Component splineContainer = chunkRoot.GetComponentInChildren(splineContainerType, true);
-                if (splineContainer == null)
-                {
-                    Transform splineChild = chunkRoot.transform.Find("[River_Spline]");
-                    if (splineChild == null)
-                    {
-                        GameObject splineObj = new GameObject("[River_Spline]");
-                        splineObj.transform.SetParent(chunkRoot.transform, false);
-                        splineChild = splineObj.transform;
-                    }
-                    splineContainer = splineChild.gameObject.GetComponent(splineContainerType) ?? splineChild.gameObject.AddComponent(splineContainerType);
-                }
-
-                // Spline 프로퍼티 및 BezierKnot 주입 (리플렉션)
-                var splineProp = splineContainerType.GetProperty("Spline");
-                if (splineProp != null)
-                {
-                    object splineObj = splineProp.GetValue(splineContainer);
-                    if (splineObj != null)
-                    {
-                        var clearMethod = splineObj.GetType().GetMethod("Clear");
-                        var addMethod = splineObj.GetType().GetMethod("Add");
-                        System.Type knotType = System.Type.GetType("UnityEngine.Splines.BezierKnot, Unity.Splines");
-
-                        if (clearMethod != null && addMethod != null && knotType != null)
-                        {
-                            clearMethod.Invoke(splineObj, null);
-                            for (int i = 0; i < bakedNodes.Count; i++)
-                            {
-                                var n = bakedNodes[i];
-                                object knotObj = System.Activator.CreateInstance(knotType, new object[] { (Unity.Mathematics.float3)n.localPosition });
-                                addMethod.Invoke(splineObj, new object[] { knotObj });
-                            }
-                        }
-                    }
-                }
-            }
-
             EditorUtility.SetDirty(chunkRoot);
             Debug.Log($"[RiverPathBaker] ✅ '{chunkRoot.name}' 강줄기 베이킹 완료! (노드 {bakedNodes.Count}개, 총 길이 {accumulatedDist:F1}m, 평균 강폭 {data.averageWidth:F1}m)");
 
