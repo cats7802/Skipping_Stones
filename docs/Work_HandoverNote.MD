@@ -1,18 +1,17 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & Current Code Status)
 
-**작성 일시**: 2026-08-30 11:32  
-**상태 요약**: Unity 6 버전과 충돌을 일으킨 외부 `com.unity.splines` 패키지 안전 롤백 완료. 내부 초경량 `GlobalRiverPath` + `RiverSpawner` 적응형 스폰 시스템 유지. 0 오류 검증 완료.
+**작성 일시**: 2026-08-30 11:47  
+**상태 요약**: `GameController.SetupCharacter`에서 일치하는 캐릭터는 재사용하고, 씬에 남은 중복 찌꺼기 캐릭터는 모조리 CleanUp하도록 단일화 완료. 0 오류 검증 완료.
 
 ---
 
 ## 1. 🛠️ 최근 핵심 조치 내역
 
-### ✅ [완료] 외부 `com.unity.splines` 패키지 충돌 해결 및 롤백
-- Unity 6(6000.5.8f1) 엔진의 `GetInstanceID()` Obsolete 폐기와 외부 `com.unity.splines` 패키지 내부 코드(`SplineInstantiate.cs`) 간의 충돌 에러(CS0619) 발생 확인.
-- `Packages/manifest.json`에서 외부 `com.unity.splines` 의존성을 깨끗하게 제거하여 엔진 PackageCache 컴파일 에러 완전 해소.
-
-### ✅ [완료] 프로젝트 자체 초경량 스플라인 시스템 (`GlobalRiverPath`) 유지
-- 외부 무거운 패키지 없이도 100% 정상 작동하는 자체 `RiverPathChunkData` 및 `GlobalRiverPath`로 갓모드 궤적 및 강폭 적응형 스폰 유지.
+### ✅ [완료] 캐릭터 단일 인스턴스 보장 및 중복 캐릭터 100% CleanUp
+- **원인 해결**: 로비에서 캐릭터를 바꿀 때 이전 캐릭터를 파괴하지 않고 새 캐릭터를 추가 생성하여 씬 원점(0,0,0)에 +1씩 유령처럼 쌓이던 버그 해결.
+- **적용 내용**:
+  1. 동일한 캐릭터인 경우: 기존 인게임 캐릭터를 즉시 재사용(`matchedCharacter`)하여 발판 위치로 리셋.
+  2. 다른 캐릭터로 전환 시: 쇼케이스(`[Showcase_Chr]`)를 제외한 기존 인게임 캐릭터들을 씬에서 모조리 `Destroy`한 후 새 캐릭터 단 1개만 인스턴스화.
 
 ---
 
@@ -21,9 +20,9 @@
 - `dotnet build Assembly-CSharp.csproj`: **오류 0개 (Pass)**
 - `dotnet build Assembly-CSharp-Editor.csproj`: **오류 0개 (Pass)**
 - 골든 스크립트(`docs/golden_scripts/`) 및 히스토리 동기화 완료:
+  - `GameController.cs.txt`
   - `RiverSpawner.cs.txt`
   - `RiverPathBaker.cs.txt`
-  - `GameController.cs.txt`
   - `EnvironmentTestHelper.cs.txt`
   - `LakeEnvironmentManager.cs.txt`
   - `SkippingStone.cs.txt`

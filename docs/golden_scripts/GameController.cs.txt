@@ -436,42 +436,49 @@ public class GameController : MonoBehaviour
     private void SetupCharacter(GameObject charPrefab)
     {
         if (charPrefab == null) charPrefab = defaultCharacterPrefab;
+        if (charPrefab == null) return;
 
-        // 1. 기존 유효 캐릭터 탐색 (쇼케이스 더미 제외)
-        StoneThrowerCharacter validCharacter = character;
-        if (validCharacter == null)
+        // 1. 씬 내의 모든 기존 인게임 캐릭터 수집 (쇼케이스 더미 제외)
+        StoneThrowerCharacter[] allCharacters = FindObjectsByType<StoneThrowerCharacter>(FindObjectsInactive.Include);
+        System.Collections.Generic.List<StoneThrowerCharacter> inGameCharacters = new System.Collections.Generic.List<StoneThrowerCharacter>();
+
+        foreach (var c in allCharacters)
         {
-            StoneThrowerCharacter[] allCharacters = FindObjectsByType<StoneThrowerCharacter>(FindObjectsInactive.Include);
-            foreach (var c in allCharacters)
+            if (c == null) continue;
+            if (c.gameObject.name.Contains("[Showcase") || c.gameObject.name.Contains("Showcase_Ctrl")) continue;
+            inGameCharacters.Add(c);
+        }
+
+        StoneThrowerCharacter matchedCharacter = null;
+
+        // 2. 이미 요청된 프리팹과 일치하는 유효한 인게임 캐릭터가 씬에 있는지 검사
+        foreach (var c in inGameCharacters)
+        {
+            if (matchedCharacter == null && c.gameObject.name.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase))
             {
-                if (c == null) continue;
-                if (c.gameObject.name.Contains("[Showcase") || c.gameObject.name.Contains("Showcase_Ctrl")) continue;
-                validCharacter = c;
-                break;
+                matchedCharacter = c; // 일치하는 기존 캐릭터는 그대로 재사용!
+            }
+            else
+            {
+                // 불일치하거나 중복 생성된 찌꺼기 캐릭터들은 모조리 깔끔하게 파괴
+                if (Application.isPlaying) Destroy(c.gameObject);
+                else DestroyImmediate(c.gameObject);
             }
         }
 
-        // 2. 다른 프리팹이 요청되었고 기존 캐릭터가 있다면 교체
-        if (validCharacter != null && charPrefab != null && !validCharacter.gameObject.name.StartsWith(charPrefab.name, System.StringComparison.OrdinalIgnoreCase))
-        {
-            if (Application.isPlaying) Destroy(validCharacter.gameObject);
-            else DestroyImmediate(validCharacter.gameObject);
-            validCharacter = null;
-        }
-
-        // 3. 캐릭터가 없으면 새로 1개 생성
-        if (validCharacter == null && charPrefab != null)
+        // 3. 일치하는 캐릭터가 없으면 딱 1개 새로 인스턴스화
+        if (matchedCharacter == null)
         {
             GameObject spawnedObj = Instantiate(charPrefab);
             spawnedObj.name = charPrefab.name;
-            validCharacter = spawnedObj.GetComponentInChildren<StoneThrowerCharacter>(true);
-            if (validCharacter == null)
+            matchedCharacter = spawnedObj.GetComponentInChildren<StoneThrowerCharacter>(true);
+            if (matchedCharacter == null)
             {
-                validCharacter = spawnedObj.AddComponent<StoneThrowerCharacter>();
+                matchedCharacter = spawnedObj.AddComponent<StoneThrowerCharacter>();
             }
         }
 
-        character = validCharacter;
+        character = matchedCharacter;
 
         if (character != null)
         {

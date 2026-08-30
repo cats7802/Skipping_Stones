@@ -13,14 +13,13 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-30] 0번 청크(Brook_Start) 직속 발판(WoodenPier_Platform) 우선 바인딩 및 캐릭터 자동 스냅
-- **수정 목적**: 새 맵 스폰 시 이전 캐시나 씬의 다른 비활성 더미를 발판으로 오인하여 발판이 꺼지고 캐릭터가 엉뚱한 위치로 밀려나던 문제를 완전 해결.
+### [2026-08-30] 캐릭터 단일 인스턴스 보장 및 중복 인게임 찌꺼기 캐릭터 CleanUp 적용
+- **수정 목적**: 로비에서 캐릭터를 변경하거나 새 매치를 시작할 때 이전 캐릭터가 파괴되지 않고 씬 원점(0,0,0)에 누적되어 +1씩 쌓이던 버그를 완전 해결.
 - **핵심 구조**:
-  - `FindPlatformInScene()`: `LakeEnvironmentManager`의 0번 청크 하위에서 `WoodenPier_Platform` / `Lakeside_WoodenPier`를 1순위로 직속 탐색.
-  - `ResolveSceneReferences()`: 맵 스폰 시마다 항상 최신 발판을 강제 재바인딩.
-  - `SetupMapEnvironment()`: 발판 100% `SetActive(true)` 보장.
-  - `PositionCharacterForMode()`: 발판 루트 및 자식 `BoxCollider`의 바운드를 정밀 측정하여 캐릭터를 발판 월드 상단 정중앙에 정확히 스냅.
-- **컴파일 검증**: 0 Warnings, 0 Errors.
+  - `SetupCharacter`: 동일한 캐릭터인 경우 기존 오브젝트를 재사용(`matchedCharacter`)하여 씬 부하 방지.
+  - 다른 캐릭터로 전환 시 쇼케이스 더미를 제외한 모든 기존 인게임 캐릭터를 100% 파괴(`Destroy`) 후 단 1개만 인스턴스화.
+- **컴파일 검증**: 0 Errors.
+
 
 
 
