@@ -840,10 +840,17 @@ public class SkippingStone : MonoBehaviour
         // 모멘텀 게이지 갱신
         currentMomentum = Mathf.Clamp(currentMomentum + momentumDelta, 0f, maxMomentum);
 
-        // 게이지가 완전히 바닥나면 구제 없이 침몰
+        // 게이지가 완전히 바닥났을 때: 5스킵 이상이면 도로록~ 스키밍 피니시, 미만이면 즉시 침몰
         if (currentMomentum <= 0.01f && (timingGrade.Contains("LATE") || timingGrade.Contains("BAD")))
         {
-            Sink($"모멘텀 소진 침몰 ({timingGrade})");
+            if (skipCount >= minSkimSkips && !isSkimming)
+            {
+                StartSkimmingFinish();
+            }
+            else
+            {
+                Sink($"모멘텀 소진 침몰 ({timingGrade})");
+            }
             return false;
         }
 
