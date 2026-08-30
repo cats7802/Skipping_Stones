@@ -37,6 +37,9 @@ public class GameController : MonoBehaviour
     public GameState currentState = GameState.ModeSelect;
 
     [Header("🛠️ 개발자 테스트 설정")]
+    [Tooltip("체크 시 로비/맵선택창을 건너뛰고 시작하자마자 곧바로 인게임 투척 대기(Positioning) 상태로 직행합니다.")]
+    public bool autoStartInGame = false;
+
     [Tooltip("체크 시 물수제비 탭 없이도 착수 시 자동으로 PERFECT 바운스되어 스트리밍 맵을 끝까지 날아갑니다.")]
     public bool devGodMode = false;
 
@@ -163,7 +166,18 @@ public class GameController : MonoBehaviour
 
     private void Start()
     {
-        currentState = GameState.ModeSelect;
+        if (autoStartInGame)
+        {
+            if (SkippingStones.UI.MetaUIManager.Instance != null)
+            {
+                SkippingStones.UI.MetaUIManager.Instance.ShowScreen(SkippingStones.UI.MetaScreen.InGame);
+            }
+            SelectGameMode(currentMode);
+        }
+        else
+        {
+            currentState = GameState.ModeSelect;
+        }
     }
 
     private void ResolveSceneReferences()
@@ -597,6 +611,12 @@ public class GameController : MonoBehaviour
                 UpdateFlying();
                 break;
             case GameState.Result:
+                // 🌟 침몰 직후 결과 화면으로 넘어가는 1.5초 지연 구간에서도 늦게 누른 스페이스바 마커 포착!
+                if (IsKeyTriggered(KeyCode.Space) && stone != null)
+                {
+                    EvaluateRhythmTiming(0f);
+                }
+
                 if (Time.time - lastStateChangeTime > 0.7f && (IsKeyTriggered(KeyCode.R) || IsKeyTriggered(KeyCode.Space)))
                 {
                     RestartGame();
@@ -1019,7 +1039,7 @@ public class GameController : MonoBehaviour
 
     public void EvaluateRhythmTiming(float steerAngleDegrees = 0f)
     {
-        if (stone == null || stone.isSunk || stone.isCrashed) return;
+        if (stone == null || stone.isCrashed) return;
 
         bool bounced = stone.TryRhythmBounce(steerAngleDegrees, out string timingGrade);
         if (bounced)
@@ -1028,7 +1048,11 @@ public class GameController : MonoBehaviour
         }
         else
         {
-            if (timingGrade == "💦 TOO EARLY")
+            if (timingGrade.Contains("LATE MISS"))
+            {
+                lastTimingText = "❌ 이미 입수됨 (지각 입력 마커 기록)";
+            }
+            else if (timingGrade == "💦 TOO EARLY")
             {
                 lastTimingText = "💦 너무 이름! (착수 직전 1회 재도전 가능)";
             }

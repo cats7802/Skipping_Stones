@@ -15,7 +15,7 @@ public class SkippingStone : MonoBehaviour
     public float forwardPower = 13.0f;
 
     [Tooltip("초기 발사 시 위쪽으로 솟구치는 상승력")]
-    public float initialUpwardForce = 4.2f;
+    public float initialUpwardForce = 2.5f;
 
     [Tooltip("수면 바운스 시 위로 튀어오르는 기본 반사력 기준값")]
     public float baseBounceUpForce = 4.0f;
@@ -71,11 +71,11 @@ public class SkippingStone : MonoBehaviour
 
     [Header("🎯 리듬 링 비주얼 세부 설정")]
     [Tooltip("수면 링의 선 두께")]
-    public float ringLineWidth = 0.032f;
+    public float ringLineWidth = 0.022f;
     [Tooltip("퍼펙트 타깃 링의 기본 반경(m)")]
-    public float ringTargetRadius = 0.29f;
+    public float ringTargetRadius = 0.15f;
     [Tooltip("바깥 수축 링의 시작 최대 배율")]
-    public float ringMaxMultiplier = 5.2f;
+    public float ringMaxMultiplier = 8.5f;
     [Tooltip("돌-수면 수직 가이드 레이저 선 두께")]
     public float dropLineWidth = 0.006f;
 
@@ -90,6 +90,16 @@ public class SkippingStone : MonoBehaviour
     public float totalDistance = 0f;
     public float skimDistance = 0f;
     public bool isInTimingWindow = false;
+
+    [Header("🌊 물수제비 모멘텀 (스태미나/라이프) 시스템")]
+    [Tooltip("현재 모멘텀 게이지 (0 이하 시 침몰)")]
+    public float currentMomentum = 5.0f;
+    public float maxMomentum = 10.0f;
+
+    [Header("🌊 수면 대칭 반사 그림자 (Water Reflection Shadow)")]
+    private GameObject waterReflectionObj;
+    private MeshRenderer waterReflectionRenderer;
+    private Material waterReflectionMat;
 
     private bool hasTappedInCurrentBounce = false;
     private int earlyRetryCount = 0; // 하강 1회당 TOO EARLY 실수 만회 허용 횟수 (최대 1회)
@@ -108,6 +118,19 @@ public class SkippingStone : MonoBehaviour
         public float distance;
     }
     public System.Collections.Generic.List<BounceRecord> bounceHistory = new System.Collections.Generic.List<BounceRecord>();
+
+    [System.Serializable]
+    public struct TapDebugRecord
+    {
+        public Vector3 stoneWorldPos;
+        public float distToWater;
+        public float verticalSpeed;
+        public string grade;
+        public int skipIndex;
+        public float timeStamp;
+    }
+    [Header("🔍 입력 렉 및 타이밍 분석용 디버그 기록")]
+    public System.Collections.Generic.List<TapDebugRecord> tapDebugHistory = new System.Collections.Generic.List<TapDebugRecord>();
 
     public event Action<int, string> OnSkipBounced;
     public event Action<float> OnStoneSunk;
@@ -137,8 +160,69 @@ public class SkippingStone : MonoBehaviour
 
         SetupVisualModel();
         SetupTrail();
+        SetupWaterReflectionShadow();
         EnsureRhythmRing();
         UpdateWaterLevel();
+    }
+
+    private void SetupWaterReflectionShadow()
+    {
+        if (waterReflectionObj != null) Destroy(waterReflectionObj);
+
+        // 🌟 1. 평면 메쉬 생성 (물결 표면에 납작하게 밀착)
+        waterReflectionObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        waterReflectionObj.name = "[Water_Reflection_Shadow]";
+        Destroy(waterReflectionObj.GetComponent<Collider>());
+        waterReflectionObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+
+        waterReflectionRenderer = waterReflectionObj.GetComponent<MeshRenderer>();
+        Shader unlit = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
+        waterReflectionMat = (unlit != null) ? new Material(unlit) : new Material(Shader.Find("Standard"));
+
+        // URP Unlit 머티리얼을 투명(Transparent Alpha Blended) 모드로 정식 세팅
+        if (waterReflectionMat.HasProperty("_Surface"))
+        {
+            waterReflectionMat.SetFloat("_Surface", 1.0f); // 1 = Transparent
+            waterReflectionMat.SetFloat("_Blend", 0.0f);   // 0 = Alpha
+            waterReflectionMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
+            waterReflectionMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
+            waterReflectionMat.SetInt("_ZWrite", 0);
+            waterReflectionMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 10;
+        }
+
+        // 🌟 2. 가장자리가 부드럽게 페이드아웃되는 원형 알파 텍스처 동적 생성
+        Texture2D softShadowTex = new Texture2D(64, 64, TextureFormat.RGBA32, false);
+        softShadowTex.wrapMode = TextureWrapMode.Clamp;
+        Vector2 center = new Vector2(31.5f, 31.5f);
+        float radius = 31.5f;
+
+        for (int y = 0; y < 64; y++)
+        {
+            for (int x = 0; x < 64; x++)
+            {
+                float dist = Vector2.Distance(new Vector2(x, y), center);
+                float normDist = Mathf.Clamp01(dist / radius);
+                // 코사인/스무스스텝으로 가장자리가 물안개처럼 사르르 빠지는 소프트 페이드
+                float alpha = Mathf.SmoothStep(1.0f, 0.0f, normDist);
+                alpha = Mathf.Pow(alpha, 1.8f); // 중심부는 진하고 외곽은 은은함
+                softShadowTex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
+            }
+        }
+        softShadowTex.Apply();
+
+        waterReflectionMat.mainTexture = softShadowTex;
+        waterReflectionMat.color = new Color(0.02f, 0.08f, 0.16f, 0.35f);
+        if (waterReflectionMat.HasProperty("_BaseColor"))
+        {
+            waterReflectionMat.SetColor("_BaseColor", new Color(0.02f, 0.08f, 0.16f, 0.35f));
+        }
+
+        waterReflectionRenderer.material = waterReflectionMat;
+        waterReflectionRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
+        waterReflectionRenderer.receiveShadows = false;
+
+        waterReflectionObj.transform.localScale = new Vector3(0.25f, 0.25f, 1.0f);
+        waterReflectionObj.SetActive(false);
     }
 
     public void UpdateWaterLevel()
@@ -387,6 +471,7 @@ public class SkippingStone : MonoBehaviour
         waterSubmergeTimer = 0f;
         currentPitchAngle = 0f;
         currentSpinAngle = 0f;
+        currentMomentum = 6.0f; // 기본 시작 모멘텀 게이지 (6.0 / 10.0)
 
         rb.isKinematic = false;
         rb.useGravity = true;
@@ -406,6 +491,10 @@ public class SkippingStone : MonoBehaviour
 
         bounceHistory.Clear();
         bounceHistory.Add(new BounceRecord { position = transform.position, skipIndex = 0, grade = "START", distance = 0f });
+
+        // 🌟 다시 던지기 시 이전 투구의 모든 디버그 마커 오브젝트 및 기록 초기화
+        tapDebugHistory.Clear();
+        ClearAllTapDebugMarkers();
 
         if (trail != null) trail.Clear();
         StartVisualGrowth();
@@ -472,26 +561,8 @@ public class SkippingStone : MonoBehaviour
         return baseBounceUpForce * decayFactor;
     }
 
-    public float GetCurrentPerfectDistance()
-    {
-        float p = Mathf.Clamp01(skipCount / 30f);
-        return Mathf.Lerp(perfectDistance, 0.36f, p);
-    }
-
-    public float GetCurrentGreatDistance()
-    {
-        float p = Mathf.Clamp01(skipCount / 30f);
-        return Mathf.Lerp(greatDistance, 0.78f, p);
-    }
-
-    public float GetCurrentGoodDistance()
-    {
-        float p = Mathf.Clamp01(skipCount / 30f);
-        return Mathf.Lerp(goodDistance, 1.35f, p);
-    }
-
     private float waterSubmergeTimer = 0f;
-    private const float LATE_GRACE_WINDOW = 0.010f;
+    private const float LATE_GRACE_WINDOW = 0.120f; // 수면에 닿은 직후 120ms 동안 LATE 판정 구제 윈도우
 
     private void FixedUpdate()
     {
@@ -513,7 +584,6 @@ public class SkippingStone : MonoBehaviour
         {
             if (GlobalRiverPath.Instance.GetClosestPointOnRiver(transform.position, out Vector3 riverCenterPos, out _, out float distAlongRiver))
             {
-                // 돌 앞쪽 15m 지점(Look-Ahead Target)의 스플라인 점을 계산하여 부드러운 선회 유도
                 float lookAheadDist = distAlongRiver + 15f;
                 if (GlobalRiverPath.Instance.EvaluateAtDistance(lookAheadDist, out Vector3 lookAheadPos, out Vector3 lookAheadTangent, out _, out float riverWaterY))
                 {
@@ -522,60 +592,26 @@ public class SkippingStone : MonoBehaviour
                     Vector2 currentHVel = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z);
                     float speed = Mathf.Max(forwardPower * 0.8f, currentHVel.magnitude);
 
-                    // 앞쪽 15m 목표점을 향한 조향 벡터 (진동 방지)
                     Vector3 toTarget = lookAheadPos - transform.position;
                     toTarget.y = 0f;
                     Vector2 targetHDir = new Vector2(toTarget.x, toTarget.z).normalized;
                     if (targetHDir == Vector2.zero) targetHDir = new Vector2(lookAheadTangent.x, lookAheadTangent.z).normalized;
 
-                    Vector2 newHDir = Vector2.Lerp(currentHVel.normalized, targetHDir, Time.fixedDeltaTime * 3.5f).normalized;
-                    rb.linearVelocity = new Vector3(newHDir.x * speed, rb.linearVelocity.y, newHDir.y * speed);
-
-                    float targetYaw = Mathf.Atan2(newHDir.x, newHDir.y) * Mathf.Rad2Deg;
-                    transform.rotation = Quaternion.Euler(0f, targetYaw, 0f);
+                    Vector2 smoothedHDir = Vector2.Lerp(currentHVel.normalized, targetHDir, Time.fixedDeltaTime * 6.5f).normalized;
+                    rb.linearVelocity = new Vector3(smoothedHDir.x * speed, rb.linearVelocity.y, smoothedHDir.y * speed);
                 }
             }
         }
 
-        // 🌟 [수정] 수면 높이(waterLevel)를 기준으로 한 상대 높이 계산
         float distToWater = transform.position.y - waterLevel;
-        float dynWindowHeight = Mathf.Lerp(timingWindowHeight, 1.4f, Mathf.Clamp01(skipCount / 30f));
-
-        // 🌟 [핵심] 실제 돌 발밑에 WaterSurface가 존재하는지 검증 (허공 튕김 원천 차단)
         bool hasWaterBelow = CheckWaterUnderneath();
 
-        // 수면 위 dynWindowHeight 이내로 접근하고 하강 중일 때 타이밍 윈도우 활성화
-        if (hasWaterBelow && distToWater <= dynWindowHeight && distToWater >= -0.1f && rb.linearVelocity.y < 0.5f)
+        // 🌟 자동 바운스 (갓모드)
+        if (isGodMode && distToWater <= 0.22f && rb.linearVelocity.y <= 0.5f)
         {
-            isInTimingWindow = true;
-        }
-        else
-        {
-            isInTimingWindow = false;
-        }
-
-        // 🌟 돌이 바운스되어 상승 중일 때 다음 하강을 위해 탭 상태 안전 리셋
-        if (rb.linearVelocity.y > 0.5f)
-        {
-            hasTappedInCurrentBounce = false;
-            earlyRetryCount = 0;
-            waterSubmergeTimer = 0f;
-        }
-
-        // 🌟 갓모드 / 오토 바운스: 실제 물 위에서만 완벽한 퍼펙트 바운스 발동
-        if (isGodMode && hasWaterBelow && distToWater <= 0.15f && rb.linearVelocity.y <= 0f)
-        {
-            // 목표 테스트 거리에 도달한 경우 바운스를 멈추고 스키밍 피니시 / 착수
-            if (godModeTargetDistance > 0f && totalDistance >= godModeTargetDistance)
+            if (!hasWaterBelow)
             {
-                if (skipCount >= minSkimSkips && !isSkimming)
-                {
-                    StartSkimmingFinish();
-                }
-                else
-                {
-                    Sink($"테스트 목표 거리 ({godModeTargetDistance:F0}m) 도달 완료");
-                }
+                CrashOnLand("물길 이탈 / 지형 착지");
                 return;
             }
 
@@ -584,11 +620,10 @@ public class SkippingStone : MonoBehaviour
         }
 
         // 수면 착수 체크 (바운스 성공하지 못하고 수면에 도달했거나 발밑이 허공일 때)
-        if (distToWater <= -0.04f && rb.linearVelocity.y <= 0f)
+        if (distToWater <= -0.06f && rb.linearVelocity.y <= 0f)
         {
             if (!hasWaterBelow)
             {
-                // 물길 밖(강둑/지형)으로 날아가 착지한 경우 즉시 착지 피니시
                 CrashOnLand("물길 이탈 / 지형 착지");
                 return;
             }
@@ -598,6 +633,7 @@ public class SkippingStone : MonoBehaviour
                 waterSubmergeTimer = Time.time;
             }
 
+            // 120ms 유예 윈도우 초과 시 최종 침몰/피니시
             if (Time.time - waterSubmergeTimer > LATE_GRACE_WINDOW)
             {
                 if (skipCount >= minSkimSkips && !isSkimming)
@@ -621,6 +657,51 @@ public class SkippingStone : MonoBehaviour
         }
     }
 
+    private void LateUpdate()
+    {
+        UpdateWaterReflectionShadow();
+    }
+
+    private void UpdateWaterReflectionShadow()
+    {
+        if (waterReflectionObj == null) return;
+
+        if (!isThrown || isSunk || isCrashed)
+        {
+            if (waterReflectionObj.activeSelf) waterReflectionObj.SetActive(false);
+            return;
+        }
+
+        float dist = transform.position.y - waterLevel;
+
+        // 돌이 수면 위 3.5m 이내로 진입했을 때 그림자 추적 활성화
+        if (dist >= -0.35f && dist <= 3.5f)
+        {
+            if (!waterReflectionObj.activeSelf) waterReflectionObj.SetActive(true);
+
+            // 수면 높이에 납작하게 밀착 배치
+            waterReflectionObj.transform.position = new Vector3(transform.position.x, waterLevel + 0.008f, transform.position.z);
+            waterReflectionObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+
+            // 🌟 디렉터님 지정: 
+            // 1. 공중 높이 있을 때: 크고(0.28m) 은은하게 퍼짐(알파 0.10)
+            // 2. 수면에 가까워질수록: 돌 크기(0.14m)로 사르르 좁혀지며 짙고 선명해짐(알파 0.35)
+            float closeness = Mathf.Clamp01(1f - (dist / 2.8f)); // 0(상공) -> 1(착수)
+            float shadowScale = Mathf.Lerp(0.30f, 0.14f, closeness);
+            waterReflectionObj.transform.localScale = new Vector3(shadowScale, shadowScale, 1.0f);
+
+            if (waterReflectionMat != null)
+            {
+                float shadowAlpha = Mathf.Lerp(0.08f, 0.35f, closeness);
+                waterReflectionMat.color = new Color(0.03f, 0.10f, 0.20f, shadowAlpha);
+            }
+        }
+        else
+        {
+            if (waterReflectionObj.activeSelf) waterReflectionObj.SetActive(false);
+        }
+    }
+
     public bool TryRhythmBounce(out string timingGrade)
     {
         return TryRhythmBounce(0f, out timingGrade);
@@ -629,13 +710,31 @@ public class SkippingStone : MonoBehaviour
     public bool TryRhythmBounce(float steerAngleDegrees, out string timingGrade)
     {
         timingGrade = "";
-        if (!isThrown || isSunk || isCrashed || isSkimming) return false;
+        if (!isThrown || isCrashed || isSkimming) return false;
 
         float distToWater = transform.position.y - waterLevel;
         float dynWindowHeight = Mathf.Lerp(timingWindowHeight, 1.4f, Mathf.Clamp01(skipCount / 30f));
 
-        // 1. 방안 B: 타이밍 윈도우 진입 전(높은 상공)이거나 상승 중일 때의 탭은 무시 (소모하지 않음)
-        if (distToWater > dynWindowHeight || rb.linearVelocity.y > 0.4f)
+        // 🌟 이미 침몰 중이거나 수면에 너무 깊이 빠진 상태에서 늦게 누른 경우에도 [지각 입력 마커] 100% 무조건 기록!
+        if (isSunk || distToWater < -0.05f)
+        {
+            timingGrade = $"❌ LATE MISS (수심: {distToWater:F2}m에 누름)";
+            TapDebugRecord lateRec = new TapDebugRecord
+            {
+                stoneWorldPos = transform.position,
+                distToWater = distToWater,
+                verticalSpeed = (rb != null) ? -rb.linearVelocity.y : 0f,
+                grade = timingGrade,
+                skipIndex = skipCount,
+                timeStamp = Time.time
+            };
+            tapDebugHistory.Add(lateRec);
+            SpawnTapDebugMarker(lateRec);
+            return false;
+        }
+
+        // 1. 타이밍 윈도우 진입 전(높은 상공)이거나 상승 중일 때의 탭은 무시
+        if (distToWater > dynWindowHeight || (rb != null && rb.linearVelocity.y > 0.4f))
         {
             timingGrade = "";
             return false;
@@ -648,67 +747,130 @@ public class SkippingStone : MonoBehaviour
             return false;
         }
 
-        // 2. 이미 이번 하강에서 탭을 소모한 경우 연타 차단
+        // 2. 이미 이번 하강에서 탭을 소모한 경우: 마커는 기록하고 튕김만 차단
         if (hasTappedInCurrentBounce)
         {
-            timingGrade = "ALREADY TAPPED";
+            timingGrade = "⚠️ ALREADY TAPPED (연타 입력)";
+            TapDebugRecord spamRec = new TapDebugRecord
+            {
+                stoneWorldPos = transform.position,
+                distToWater = distToWater,
+                verticalSpeed = (rb != null) ? -rb.linearVelocity.y : 0f,
+                grade = timingGrade,
+                skipIndex = skipCount,
+                timeStamp = Time.time
+            };
+            tapDebugHistory.Add(spamRec);
+            SpawnTapDebugMarker(spamRec);
             return false;
         }
 
         // 3. 타이밍 윈도우 진입 후 첫 탭 -> 즉시 이번 하강 1회 기회 소모!
         hasTappedInCurrentBounce = true;
 
-        float verticalSpeed = Mathf.Max(0.5f, -rb.linearVelocity.y);
-        float timeToImpact = Mathf.Max(0f, distToWater) / verticalSpeed;
-
         float bounceForce = GetDynamicBounceForce(skipCount + 1);
         float speedMultiplier = 1.0f;
+        float momentumDelta = 0f;
 
-        if (distToWater <= 0.02f)
+        // 🌟 [디렉터님 확정] + / - 양방향 리듬 판정 및 모멘텀 게이지 시스템 (0점 수면 밀착 대칭 PERFECT!)
+        if (distToWater > 0.85f)
         {
-            timingGrade = "⚠️ LATE";
-            bounceForce *= 0.85f;
-            speedMultiplier = 0.90f;
-        }
-        else if (timeToImpact <= perfectWindowTime)
-        {
-            timingGrade = "🔥 PERFECT! 🔥";
-            bounceForce *= 1.25f;
-            speedMultiplier = 1.08f;
-        }
-        else if (timeToImpact <= greatWindowTime)
-        {
-            timingGrade = "⚡ GREAT! ⚡";
-            bounceForce *= 1.10f;
-            speedMultiplier = 1.02f;
-        }
-        else if (timeToImpact <= goodWindowTime)
-        {
-            timingGrade = "✨ GOOD";
-            bounceForce *= 0.92f;
-            speedMultiplier = 0.95f;
-        }
-        else
-        {
-            // 타이밍 윈도우 내이지만 착수까지 너무 많이 남음 (Too Early)
+            // + 구간 상공: 너무 일찍 누름 (Too Early - 1회 재도전 기회)
             earlyRetryCount++;
             if (earlyRetryCount <= 1)
             {
-                // 1회차 Too Early 실수: 착수 타이밍에 맞춰 다시 제대로 누를 수 있도록 구제 (1회 재도전 기회 부여)
                 hasTappedInCurrentBounce = false;
                 timingGrade = "💦 TOO EARLY";
             }
             else
             {
-                // 2회차 이상 막누름: 탭 기회 영구 소모 (연타 차단 및 침몰 유도)
                 hasTappedInCurrentBounce = true;
                 timingGrade = "💦 TOO EARLY (기회 소모!)";
             }
             return false;
         }
+        else if (distToWater > 0.48f)
+        {
+            // + 구간 (수면 위 0.48m ~ 0.85m): GOOD
+            timingGrade = "✨ GOOD (+0.5)";
+            momentumDelta = +0.5f;
+            bounceForce *= 0.95f;
+            speedMultiplier = 0.98f;
+        }
+        else if (distToWater > 0.18f)
+        {
+            // + 구간 (수면 위 0.18m ~ 0.48m): GREAT
+            timingGrade = "⚡ GREAT! ⚡ (+1.0)";
+            momentumDelta = +1.0f;
+            bounceForce *= 1.10f;
+            speedMultiplier = 1.02f;
+        }
+        else if (distToWater >= -0.09f)
+        {
+            // 🎯 0점 수면 착수 핵심 코어 (수면 아래 -9cm ~ 수면 위 18cm): PERFECT!
+            timingGrade = "🔥 PERFECT! 🔥 (+2.0)";
+            momentumDelta = +2.0f;
+            bounceForce *= 1.25f;
+            speedMultiplier = 1.08f;
+        }
+        else if (distToWater >= -0.20f)
+        {
+            // ⚠️ - 1단계 유예 구간 (수면 아래 -9cm ~ -20cm): LATE (구제 바운스)
+            timingGrade = "⚠️ LATE (-1.0)";
+            momentumDelta = -1.0f;
+            bounceForce *= 0.82f;
+            speedMultiplier = 0.88f;
+        }
+        else if (distToWater >= -0.32f)
+        {
+            // 🚨 - 2단계 슈퍼세이브 구간 (수면 아래 -20cm ~ -32cm): TOO LATE
+            timingGrade = "🚨 TOO LATE (-1.5)";
+            momentumDelta = -1.5f;
+            bounceForce *= 0.65f;
+            speedMultiplier = 0.78f;
+        }
+        else
+        {
+            // 💥 심해 잠수 (수면 아래 -32cm 이하): BAD (-3.0)
+            timingGrade = "💥 BAD (-3.0)";
+            momentumDelta = -3.0f;
+            bounceForce *= 0.50f;
+            speedMultiplier = 0.65f;
+        }
+
+        // 모멘텀 게이지 갱신
+        currentMomentum = Mathf.Clamp(currentMomentum + momentumDelta, 0f, maxMomentum);
+
+        // 게이지가 완전히 바닥나면 구제 없이 침몰
+        if (currentMomentum <= 0.01f && (timingGrade.Contains("LATE") || timingGrade.Contains("BAD")))
+        {
+            Sink($"모멘텀 소진 침몰 ({timingGrade})");
+            return false;
+        }
+
+        // 🔍 입력 렉 및 탭 지점 정밀 디버그 기록
+        float currentVSpeed = (rb != null) ? -rb.linearVelocity.y : 0f;
+        TapDebugRecord debugRec = new TapDebugRecord
+        {
+            stoneWorldPos = transform.position,
+            distToWater = distToWater,
+            verticalSpeed = currentVSpeed,
+            grade = timingGrade,
+            skipIndex = skipCount,
+            timeStamp = Time.time
+        };
+        tapDebugHistory.Add(debugRec);
+
+        // 🌟 씬에 지워지지 않는 3D 디버그 마커 생성
+        SpawnTapDebugMarker(debugRec);
 
         waterSubmergeTimer = 0f;
         skipCount++;
+
+        if (SkippingStones.UI.InGameMomentumHUD.Instance != null)
+        {
+            SkippingStones.UI.InGameMomentumHUD.Instance.TriggerGradePopup(timingGrade);
+        }
 
         int comboTier = Mathf.Min(3, skipCount / 5);
         if (comboTier > 0)
@@ -758,7 +920,6 @@ public class SkippingStone : MonoBehaviour
         }
 
         rb.linearVelocity = new Vector3(hDir.x * newHSpd, bounceForce, hDir.y * newHSpd);
-        transform.position = new Vector3(transform.position.x, waterLevel + 0.10f, transform.position.z);
 
         float newYaw = Mathf.Atan2(hDir.x, hDir.y) * Mathf.Rad2Deg;
         transform.rotation = Quaternion.Euler(0f, newYaw, 0f);
@@ -919,22 +1080,11 @@ public class SkippingStone : MonoBehaviour
     {
         if (!isThrown || isSunk || isCrashed) return;
 
-        // 1. WaterSurface 컴포넌트 검사로 수면 감지
+        // 1. WaterSurface 컴포넌트 감지 시 수면 높이만 동적으로 갱신 (물리 트리거 강제 침몰 완전 제거!)
         WaterSurface ws = other.GetComponent<WaterSurface>() ?? other.GetComponentInParent<WaterSurface>();
         if (ws != null)
         {
             waterLevel = other.bounds.max.y;
-            if (!hasTappedInCurrentBounce && rb.linearVelocity.y <= 0f)
-            {
-                if (isGodMode)
-                {
-                    TryRhythmBounce(0f, out _);
-                    return;
-                }
-
-                if (skipCount >= minSkimSkips && !isSkimming) StartSkimmingFinish();
-                else Sink("수면 착수 - 탭 미입력");
-            }
             return;
         }
 
@@ -1139,5 +1289,101 @@ public class SkippingStone : MonoBehaviour
 
         // 수면 컴포넌트가 하나도 없는 특수 상황 폴백 (기본 수면 높이 기준)
         return true;
+    }
+
+    /// <summary>
+    /// 🌟 이전 투구의 모든 디버그 마커 오브젝트들을 씬에서 완전히 정리
+    /// </summary>
+    public static void ClearAllTapDebugMarkers()
+    {
+        var markers = GameObject.FindObjectsByType<GameObject>(FindObjectsInactive.Include);
+        foreach (var obj in markers)
+        {
+            if (obj != null && obj.name.StartsWith("[TAP_DEBUG]"))
+            {
+                Destroy(obj);
+            }
+        }
+    }
+
+    /// <summary>
+    /// 🌟 스페이스바(탭) 입력 순간 씬에 영구 3D 디버그 마커 생성 (일시정지 후 씬 뷰에서 정밀 확인 가능)
+    /// </summary>
+    private void SpawnTapDebugMarker(TapDebugRecord record)
+    {
+        GameObject markerRoot = new GameObject($"[TAP_DEBUG] Skip#{record.skipIndex + 1}_{record.grade}_H={record.distToWater:F2}m");
+        
+        // 1. 공중 돌 위치 구체 (Sphere)
+        GameObject sphere = GameObject.CreatePrimitive(PrimitiveType.Sphere);
+        sphere.name = "StonePos_AtTap";
+        sphere.transform.SetParent(markerRoot.transform);
+        sphere.transform.position = record.stoneWorldPos;
+        sphere.transform.localScale = Vector3.one * 0.16f;
+
+        Color markCol = record.grade.Contains("PERFECT") ? Color.green :
+                        record.grade.Contains("GREAT") ? Color.cyan :
+                        record.grade.Contains("GOOD") ? Color.yellow :
+                        record.grade.Contains("TOO EARLY") ? new Color(1.0f, 0.55f, 0.15f, 1.0f) :
+                        record.grade.Contains("LATE") ? Color.magenta : Color.red;
+
+        Renderer sphereRend = sphere.GetComponent<Renderer>();
+        if (sphereRend != null)
+        {
+            sphereRend.material = new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default"));
+            sphereRend.material.color = markCol;
+        }
+
+        // 2. 수직 레이저 기준선 (돌 -> 수면)
+        GameObject lineObj = new GameObject("VerticalDropLine");
+        lineObj.transform.SetParent(markerRoot.transform);
+        LineRenderer lr = lineObj.AddComponent<LineRenderer>();
+        lr.useWorldSpace = true;
+        lr.positionCount = 2;
+        lr.startWidth = 0.015f;
+        lr.endWidth = 0.015f;
+        lr.material = sphereRend != null ? sphereRend.material : new Material(Shader.Find("Sprites/Default"));
+        lr.startColor = markCol;
+        lr.endColor = markCol;
+        lr.SetPosition(0, record.stoneWorldPos);
+        lr.SetPosition(1, new Vector3(record.stoneWorldPos.x, waterLevel, record.stoneWorldPos.z));
+
+        // 3. 수면 기준 십자 마커 (착수 수면)
+        GameObject waterCross = GameObject.CreatePrimitive(PrimitiveType.Quad);
+        waterCross.name = "WaterImpact_Plane";
+        waterCross.transform.SetParent(markerRoot.transform);
+        waterCross.transform.position = new Vector3(record.stoneWorldPos.x, waterLevel + 0.01f, record.stoneWorldPos.z);
+        waterCross.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        waterCross.transform.localScale = Vector3.one * 0.35f;
+        Renderer quadRend = waterCross.GetComponent<Renderer>();
+        if (quadRend != null)
+        {
+            quadRend.material = sphereRend != null ? sphereRend.material : new Material(Shader.Find("Sprites/Default"));
+            Color c = markCol;
+            c.a = 0.5f;
+            quadRend.material.color = c;
+        }
+
+        // 충돌 방지 콜라이더 제거
+        foreach (var col in markerRoot.GetComponentsInChildren<Collider>())
+        {
+            Destroy(col);
+        }
+
+        Debug.Log($"<color=#{ColorUtility.ToHtmlStringRGB(markCol)}><b>[TAP TELEMETRY]</b> Skip #{record.skipIndex + 1} | 판정: {record.grade} | 수면고도차: {record.distToWater:F3}m | 하강속도: {record.verticalSpeed:F2}m/s</color>", markerRoot);
+    }
+
+    private void OnDrawGizmos()
+    {
+        if (tapDebugHistory == null || tapDebugHistory.Count == 0) return;
+
+        foreach (var rec in tapDebugHistory)
+        {
+            Gizmos.color = rec.grade.Contains("PERFECT") ? Color.green :
+                           rec.grade.Contains("GREAT") ? Color.cyan :
+                           rec.grade.Contains("LATE") ? Color.magenta : Color.red;
+
+            Gizmos.DrawWireSphere(rec.stoneWorldPos, 0.12f);
+            Gizmos.DrawLine(rec.stoneWorldPos, new Vector3(rec.stoneWorldPos.x, waterLevel, rec.stoneWorldPos.z));
+        }
     }
 }

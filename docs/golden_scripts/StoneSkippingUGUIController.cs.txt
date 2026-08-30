@@ -425,7 +425,9 @@ public class StoneSkippingUGUIController : MonoBehaviour
         if (gameController == null) return;
 
         // 🌟 MetaUIManager가 메타 화면(타이틀, 로비, 맵선택, 결과) 제어 중일 때의 인게임 UGUI 처리
-        if (SkippingStones.UI.MetaUIManager.Instance != null && SkippingStones.UI.MetaUIManager.Instance.currentScreen != SkippingStones.UI.MetaScreen.InGame)
+        if (SkippingStones.UI.MetaUIManager.Instance != null &&
+            SkippingStones.UI.MetaUIManager.Instance.gameObject.activeInHierarchy &&
+            SkippingStones.UI.MetaUIManager.Instance.currentScreen != SkippingStones.UI.MetaScreen.InGame)
         {
             if (topBarObj != null) topBarObj.SetActive(false);
             if (modeSelectObj != null) modeSelectObj.SetActive(false);

@@ -13,12 +13,13 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-30] 캐릭터 루트(Root) 오브젝트 기반 완전 파괴 및 0점 누적 버그 원천 해결
-- **수정 목적**: 맵 선택 후 재진입 시 `StoneThrowerCharacter`가 자식에 붙어있어 프리팹 이름 매칭에 실패하고, 이전 캐릭터가 원점(0,0,0)에 방치되어 +1씩 무한 누적되던 버그 완전 해결.
-- **핵심 구조**:
-  - `SetupCharacter`: 캐릭터 비교 및 파괴 단위를 `c.transform.root.gameObject` 기준으로 정밀화.
-  - 일치하지 않거나 중복 생성된 찌꺼기 캐릭터의 최상위 루트 오브젝트를 100% 파괴(`Destroy(rootObj)`)하여 0점에 잔존하는 캐릭터를 완벽히 제거.
+### [2026-08-30] 로비/맵선택 패스 인게임 즉시 시작(autoStartInGame) 개발자 모드 추가
+- **수정 목적**: 핵심 조작/물리 메카닉 집중 테스트(샌드박스 씬 등) 시 로비와 맵선택 과정을 건너뛰고 실행 즉시 투척 대기(`Positioning`) 상태로 진입할 수 있는 개발자 토글 옵션 추가.
+- **적용 내용**:
+  - `GameController.cs` 인스펙터에 `autoStartInGame` 옵션 추가.
+  - `Start()`에서 `autoStartInGame == true`일 때 `MetaUIManager` 비활성화 및 기본 세션으로 `SelectGameMode(currentMode)`를 자동 트리거하여 즉시 인게임 시작.
 - **컴파일 검증**: 0 Errors.
+
 
 
 

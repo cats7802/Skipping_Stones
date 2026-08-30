@@ -46,7 +46,8 @@ public class DualCameraSetup : MonoBehaviour
     public void StartLaunchLeadIn(Vector3 anchorPos, Vector3 forwardDir)
     {
         leadInAnchorPos = anchorPos;
-        leadInForwardDir = forwardDir;
+        leadInForwardDir = (forwardDir.sqrMagnitude > 0.01f) ? forwardDir.normalized : Vector3.forward;
+        smoothedFlightHeading = leadInForwardDir; // 🌟 55프레임 발사 방향과 100% 일치시켜 좌우 요동침 원천 차단
         currentMode = CameraMode.LaunchLeadIn;
     }
 
@@ -56,6 +57,12 @@ public class DualCameraSetup : MonoBehaviour
     [Header("1번 메인 카메라 (3D)")]
     public Camera mainCam;
     public float followSmoothSpeed = 8f;
+    [Tooltip("기본/조준 시 FOV")]
+    public float defaultFOV = 60f;
+    [Tooltip("비행 중 광각 FOV (배경 전경 확장 및 원근감 극대화)")]
+    public float flightFOV = 80f;
+    [Tooltip("FOV 전환 보간 속도")]
+    public float fovTransitionSpeed = 6.0f;
 
     [Header("모드별 카메라 오프셋 (세로 9:16 최적화)")]
     public float topDownDistBack = 9.0f;
@@ -68,11 +75,16 @@ public class DualCameraSetup : MonoBehaviour
     public float shoulderLookForward = 14.0f;
     public float shoulderLookHeight = 1.3f;
 
-    [Header("3단계: 비행 추적 카메라 (돌과 리듬 링 세로 9:16 위에서 3번째 3/6 구간 배치)")]
-    public float flightDistBack = 5.5f;
-    public float flightHeight = 2.4f;
-    public float flightLookForward = 7.5f;
-    public float flightLookHeight = -2.2f;
+    [Header("3단계: 비행 추적 카메라 (초근접 광각 뷰)")]
+    [Tooltip("체크 시 돌의 포물선/바운스에 따라 카메라가 위아래로 같이 움직입니다.")]
+    public bool followBounceY = true;
+    [Tooltip("카메라 리그 전체 높이 오프셋")]
+    public float flightPivotOffsetY = 0f;
+    public float flightDistBack = 1.8f;
+    public float flightHeight = 1.2f;
+    public float flightLookForward = 8.0f;
+    [Tooltip("카메라 자체의 상하 피치 각도 조절용 시선 높이 (음수일수록 아래를 내려다봄)")]
+    public float flightLookHeight = -1.5f;
     [Tooltip("조작 직후 돌이 먼저 꺾인 뒤 다음 바운스까지 카메라가 정후방으로 돌아오는 보간 속도")]
     public float headingCatchupSpeed = 4.2f;
     private Vector3 smoothedFlightHeading = Vector3.forward;
@@ -89,10 +101,12 @@ public class DualCameraSetup : MonoBehaviour
 
     private void Awake()
     {
-        flightDistBack = 5.5f;
-        flightHeight = 2.4f;
-        flightLookForward = 7.5f;
-        flightLookHeight = -2.2f;
+        followBounceY = true;
+        flightPivotOffsetY = 0f;
+        flightDistBack = 1.8f;
+        flightHeight = 1.2f;
+        flightLookForward = 8.0f;
+        flightLookHeight = -1.5f;
         EnsureReferences();
     }
 
@@ -201,12 +215,15 @@ public class DualCameraSetup : MonoBehaviour
                 break;
 
             case CameraMode.LaunchLeadIn:
-                // 🌟 [수정] 0f 하드코딩 제거: anchorPos의 실제 월드 Y값 기준으로 오프셋 계산
+                // 🌟 55프레임 발사 예정 고정 앵커 위치(leadInAnchorPos) 및 발사각(leadInForwardDir) 기준
                 Vector3 leadInDir = (leadInForwardDir.sqrMagnitude > 0.01f) ? leadInForwardDir.normalized : forwardDir;
-                float baseAnchorY = Mathf.Max(leadInAnchorPos.y, waterLevel);
+                float relativeLeadInY = Mathf.Max(0f, leadInAnchorPos.y - waterLevel);
+                float leadInCamY = waterLevel + (relativeLeadInY * 0.75f) + flightHeight + flightPivotOffsetY;
+                float leadInLookY = waterLevel + (relativeLeadInY * 0.35f) + flightLookHeight + flightPivotOffsetY;
 
-                targetOffset = leadInAnchorPos - (leadInDir * flightDistBack) + (Vector3.up * flightHeight);
-                targetLookOffset = leadInAnchorPos + (leadInDir * flightLookForward) + (Vector3.up * flightLookHeight);
+                Vector3 leadInAnchorXZ = new Vector3(leadInAnchorPos.x, 0f, leadInAnchorPos.z);
+                targetOffset = leadInAnchorXZ - (leadInDir * flightDistBack) + (Vector3.up * leadInCamY);
+                targetLookOffset = leadInAnchorXZ + (leadInDir * flightLookForward) + (Vector3.up * leadInLookY);
                 break;
 
             case CameraMode.DynamicFlight:
@@ -247,10 +264,10 @@ public class DualCameraSetup : MonoBehaviour
                 smoothedFlightHeading = Vector3.Slerp(smoothedFlightHeading, targetHeading, Time.deltaTime * catchupRate);
                 Vector3 moveDir = smoothedFlightHeading.normalized;
 
-                // 🌟 과거의 다이내믹 Y축 바운스 추적 공식 보존 (수면 상대 높이 100% 연동)
-                float relativeStoneY = Mathf.Max(0f, stonePos.y - waterLevel);
-                float dynamicCamY = waterLevel + (relativeStoneY * 0.75f) + flightHeight;
-                float dynamicLookY = waterLevel + (relativeStoneY * 0.35f) + flightLookHeight;
+                // 🌟 Y축 고정/연동 제어 & 가상 피벗 높이(flightPivotOffsetY) 평행 오프셋
+                float relativeStoneY = followBounceY ? Mathf.Max(0f, stonePos.y - waterLevel) : 0f;
+                float dynamicCamY = waterLevel + (relativeStoneY * 0.75f) + flightHeight + flightPivotOffsetY;
+                float dynamicLookY = waterLevel + (relativeStoneY * 0.35f) + flightLookHeight + flightPivotOffsetY;
 
                 Vector3 stoneXZ = new Vector3(stonePos.x, 0f, stonePos.z);
                 targetOffset = stoneXZ - (moveDir * flightDistBack) + (Vector3.up * dynamicCamY);
@@ -276,10 +293,24 @@ public class DualCameraSetup : MonoBehaviour
         {
             if (mainCam.orthographic) mainCam.orthographic = false;
 
+            // 🌟 FOV 다이내믹 전환: 비행 중에는 광각(flightFOV), 그 외에는 defaultFOV
+            float targetFOV = (currentMode == CameraMode.DynamicFlight || currentMode == CameraMode.LaunchLeadIn) ? flightFOV : defaultFOV;
+            if (Mathf.Abs(mainCam.fieldOfView - targetFOV) > 0.05f)
+            {
+                mainCam.fieldOfView = Mathf.Lerp(mainCam.fieldOfView, targetFOV, Time.deltaTime * fovTransitionSpeed);
+            }
+
             if (currentMode == CameraMode.TopDownPosition)
             {
                 mainCam.transform.position = targetOffset;
                 mainCam.transform.rotation = Quaternion.LookRotation((targetLookOffset - mainCam.transform.position).normalized);
+            }
+            else if (currentMode == CameraMode.LaunchLeadIn)
+            {
+                // 🌟 45~55프레임 리드인: 숄더뷰에서 55프레임 발사 대기 위치로 부드럽게 쑥 빨려 들어가며 대기
+                mainCam.transform.position = Vector3.Lerp(mainCam.transform.position, targetOffset, Time.deltaTime * 18f);
+                Quaternion desiredRot = Quaternion.LookRotation((targetLookOffset - mainCam.transform.position).normalized);
+                mainCam.transform.rotation = Quaternion.Slerp(mainCam.transform.rotation, desiredRot, Time.deltaTime * 18f);
             }
             else if (targetStone != null && (targetStone.GetComponent<SkippingStone>()?.isGodMode ?? false))
             {
