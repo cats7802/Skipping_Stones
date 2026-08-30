@@ -13,10 +13,12 @@
 - ❌ **로비 프리팹 런타임 강제 AddComponent 금지** ➜ 프리팹 원본에 컴포넌트를 명시적으로 부착/직렬화하여 관리.
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
-### [2026-08-30] 모달(설정창/도감) 입력 최우선 처리 및 배경 화면 터치 관통 차단
-- **수정 목적**: 설정창 등 모달 창이 열렸을 때 배경 로비 버튼이 클릭을 가로채거나 관통되어 X 닫기 버튼이 씹히던 버그 해결.
+### [2026-08-30] 모달(설정창/도감) 렌더링 최상단 보장 및 배경 화면 터치 관통 차단
+- **수정 목적**: 설정창 등 모달 창이 열렸을 때 배경 화면(로비, 맵 선택창) 뒤로 가려지던 Z-Order 렌더링 역전 버그 및 터치 관통 동시 해결.
 - **핵심 구조**:
-  - `currentModal != MetaModal.None`일 때 `DrawModalOverlay()`를 최우선 실행하고 `pointerDownConsumedThisFrame = true`를 선점하여 배경 버튼의 터치 이벤트를 100% 차단.
+  1. `OnGUI()`에서 모달 활성 시 배경 화면 드로잉 전 `pointerDownConsumedThisFrame = true`로 배경 버튼 클릭 차단.
+  2. 배경 스크린(Title/Lobby/MapSelect)을 먼저 렌더링한 후, **맨 마지막에 `DrawModalOverlay()`를 호출**하여 시각적으로 항상 모달이 최상단에 오도록 Z-Order 확정.
+  3. 모달 드로잉 직전 `pointerDownConsumedThisFrame = false`로 모달 버튼/X버튼에만 정상 입력 권한 부여.
 - **컴파일 검증**: 0 Errors.
 
 ### [2026-08-25] 로비 UI 대폭 단순화 및 3D 쇼케이스 안내 인디케이터 정렬

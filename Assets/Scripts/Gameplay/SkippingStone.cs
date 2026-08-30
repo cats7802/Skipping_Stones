@@ -908,6 +908,10 @@ public class SkippingStone : MonoBehaviour
 
         string hitName = collision.gameObject.name.ToLower();
         bool isRock = hitName.Contains("rock") || hitName.Contains("obstacle");
+
+        // 🌟 갓모드: 강 한가운데 놓인 바위 장애물(Rock/Obstacle)은 무시하고 통과, 실제 육지 지형은 충돌 유지
+        if (isGodMode && isRock) return;
+
         CrashOnLand(isRock ? "바위 장애물 충돌" : "지형 착지", isRockObstacle: isRock);
     }
 
@@ -936,9 +940,13 @@ public class SkippingStone : MonoBehaviour
 
         // 2. Terrain 컴포넌트 검사로 지형/바위 감지
         bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<Terrain>() != null || other.GetComponent<MeshCollider>() != null;
-        bool isRock = other.name.ToLower().Contains("rock") || other.name.ToLower().Contains("obstacle") || other.name.ToLower().Contains("ground") || other.name.ToLower().Contains("bank");
+        bool isRock = other.name.ToLower().Contains("rock") || other.name.ToLower().Contains("obstacle");
+        bool isGround = other.name.ToLower().Contains("ground") || other.name.ToLower().Contains("bank");
 
-        if (isTerrain || isRock)
+        // 🌟 갓모드: 강 한가운데 놓인 바위 장애물은 무시하고 통과
+        if (isGodMode && isRock) return;
+
+        if (isTerrain || isRock || isGround)
         {
             CrashOnLand(isRock ? "바위 장애물 충돌" : "지형 착지", isRockObstacle: isRock);
         }
@@ -947,6 +955,7 @@ public class SkippingStone : MonoBehaviour
     public void CrashOnLand(string reason = "땅에 충돌 - 게임 오버", bool isRockObstacle = false)
     {
         if (isSunk || isCrashed) return;
+        if (isGodMode && isRockObstacle) return; // 갓모드 바위 장애물 충돌 방어
         isCrashed = true;
         isThrown = false;
         isInTimingWindow = false;

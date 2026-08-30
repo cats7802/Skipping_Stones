@@ -476,41 +476,31 @@ namespace SkippingStones.UI
 
             pointerDownConsumedThisFrame = false;
 
-            // 🌟 [핵심] 모달(설정창, 도감 등)이 열려있을 때는 모달 입력을 최우선 처리하고 배경 버튼 관통 차단
+            // 1. 모달이 열려있다면 배경 화면 버튼들이 입력을 가로채지 못하도록 선제 차단
             if (currentModal != MetaModal.None)
             {
-                DrawModalOverlay();
-
-                // 모달이 떠 있는 동안 배경 버튼(로비/타이틀 등)의 터치 이벤트 소비 원천 차단
                 pointerDownConsumedThisFrame = true;
-
-                switch (currentScreen)
-                {
-                    case MetaScreen.Title:
-                        DrawTitleScreen();
-                        break;
-                    case MetaScreen.Lobby:
-                        DrawLobbyScreen();
-                        break;
-                    case MetaScreen.MapSelect:
-                        DrawMapSelectScreen();
-                        break;
-                }
             }
-            else
+
+            // 2. 배경 스크린 렌더링
+            switch (currentScreen)
             {
-                switch (currentScreen)
-                {
-                    case MetaScreen.Title:
-                        DrawTitleScreen();
-                        break;
-                    case MetaScreen.Lobby:
-                        DrawLobbyScreen();
-                        break;
-                    case MetaScreen.MapSelect:
-                        DrawMapSelectScreen();
-                        break;
-                }
+                case MetaScreen.Title:
+                    DrawTitleScreen();
+                    break;
+                case MetaScreen.Lobby:
+                    DrawLobbyScreen();
+                    break;
+                case MetaScreen.MapSelect:
+                    DrawMapSelectScreen();
+                    break;
+            }
+
+            // 3. 모달 오버레이를 맨 위에 렌더링 (시각적으로 항상 최상단) 및 모달 입력 허용
+            if (currentModal != MetaModal.None)
+            {
+                pointerDownConsumedThisFrame = false; // 모달 컨트롤에 정상 입력 전달
+                DrawModalOverlay();
             }
 
             GUI.matrix = origMatrix;

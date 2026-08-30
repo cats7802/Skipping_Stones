@@ -154,11 +154,13 @@ public class LakeEnvironmentManager : MonoBehaviour
             if (startMapPrefab != null)
             {
                 ValidatePrefabPlatform(startMapPrefab, "StartMapPrefab (SM)");
+                ValidatePrefabWaterSurface(startMapPrefab, "StartMapPrefab (SM)");
                 return startMapPrefab;
             }
             if (loopSlots != null && loopSlots.Count > 0 && loopSlots[0].baseMapPrefab != null)
             {
                 ValidatePrefabPlatform(loopSlots[0].baseMapPrefab, "LoopSlot [1] BaseMap");
+                ValidatePrefabWaterSurface(loopSlots[0].baseMapPrefab, "LoopSlot [1] BaseMap");
                 return loopSlots[0].baseMapPrefab;
             }
             return baseBGChunk0;
@@ -173,17 +175,20 @@ public class LakeEnvironmentManager : MonoBehaviour
                 int totalLoopChunks = loopRepeatCount * loopSlots.Count;
                 if (chunkIndex == totalLoopChunks + 1)
                 {
+                    ValidatePrefabWaterSurface(endingMapPrefab, "EndingMapPrefab (EM)");
                     return endingMapPrefab; // 엔딩 맵 스폰
                 }
                 if (chunkIndex > totalLoopChunks + 1)
                 {
                     if (stopSpawningOnEnding) return null; // 완주 완료 - 스폰 정지
+                    ValidatePrefabWaterSurface(endingMapPrefab, "EndingMapPrefab (EM)");
                     return endingMapPrefab;
                 }
             }
             // 2) 거리 기준 엔딩 판정 (ByDistance)
             else if (endingTriggerMode == EndingTriggerMode.ByDistance && targetClearDistance > 0f && targetZ >= targetClearDistance && endingMapPrefab != null)
             {
+                ValidatePrefabWaterSurface(endingMapPrefab, "EndingMapPrefab (EM)");
                 return endingMapPrefab;
             }
 
@@ -208,16 +213,20 @@ public class LakeEnvironmentManager : MonoBehaviour
                 if (candidates.Count > 0)
                 {
                     int rand = UnityEngine.Random.Range(0, candidates.Count);
-                    return candidates[rand];
+                    GameObject chosen = candidates[rand];
+                    ValidatePrefabWaterSurface(chosen, $"LoopSlot [{slotIdx + 1}] Variation");
+                    return chosen;
                 }
             }
 
+            ValidatePrefabWaterSurface(slot.baseMapPrefab, $"LoopSlot [{slotIdx + 1}] BaseMap");
             return slot.baseMapPrefab;
         }
 
         // 엔딩 목표 거리 도달 및 엔딩 맵 지정 시: EM 반환 (슬롯 없는 경우)
         if (targetClearDistance > 0f && targetZ >= targetClearDistance && endingMapPrefab != null)
         {
+            ValidatePrefabWaterSurface(endingMapPrefab, "EndingMapPrefab (EM)");
             return endingMapPrefab;
         }
 
@@ -285,12 +294,27 @@ public class LakeEnvironmentManager : MonoBehaviour
     }
 
     /// <summary>
-    /// 🌟 시작 맵 프리팹 내부에 투척 발판(Platform)이 존재하는지 엄격 검증
+    /// 🌟 모든 맵 프리팹(시작/루프/엔딩) 내부에 필수 수면(WaterSurface & Collider)이 존재하는지 엄격 검증
+    /// </summary>
+    private void ValidatePrefabWaterSurface(GameObject prefab, string slotDescription)
+    {
+        if (prefab == null) return;
+
+        WaterSurface ws = prefab.GetComponentInChildren<WaterSurface>(true);
+        Collider col = ws != null ? ws.GetComponent<Collider>() : null;
+
+        if (ws == null || col == null)
+        {
+            Debug.LogError($"[LakeEnvironmentManager] ❌ <b>[{slotDescription}]</b> 프리팹('{prefab.name}')에 <b>WaterSurface 컴포넌트 또는 수면 Collider</b>가 누락되어 있습니다! (돌이 수면을 감지하지 못하고 추락합니다)");
+        }
+    }
+
+    /// <summary>
+    /// 🌟 시작 맵 프리팹(0번 청크) 전용: 투척 발판(Platform)이 존재하는지 검증
     /// </summary>
     private void ValidatePrefabPlatform(GameObject prefab, string slotDescription)
     {
         if (prefab == null) return;
-        // 발판 누락 시 EnsureLaunchPier가 런타임에 자동 도킹하므로 Warning 수준으로 로깅
         string[] platformNames = { "Lakeside_Platform", "Platform", "Lakeside_WoodenPier", "Pier" };
         bool hasPlatform = false;
         foreach (var pName in platformNames)
@@ -474,7 +498,7 @@ public class LakeEnvironmentManager : MonoBehaviour
         float spawnZ = currAnchorS != null ? currAnchorS.position.z : newChunk.transform.position.z;
         newChunk.name = $"{sourcePrefab.name}_Section_{chunkIndex}_{spawnZ:F0}m";
 
-        // 🌟 복제 청크 내 발판 및 타깃 위치 그룹(PP) 자동 제거
+        // 🌟 복제 청크 내 발판 및 타깃 위치 그룹(PP) 자동 제거 (발판은 0번 시작 맵에만 존재해야 함)
         string[] cleanNames = { "Lakeside_Platform", "Platform", "Lakeside_WoodenPier", "Pier", "Player_Position", "PlayerPosition", "Player_Positions" };
         foreach (var cleanName in cleanNames)
         {
@@ -486,15 +510,14 @@ public class LakeEnvironmentManager : MonoBehaviour
             }
         }
 
-        Transform ws = newChunk.transform.Find("Water_Surface");
-        if (ws != null)
-        {
-            WaterSurface wsc = ws.GetComponent<WaterSurface>();
-            if (wsc != null) Destroy(wsc);
-        }
-
         dynamicChunks.Add(newChunk);
         spawnedChunkIndices.Add(chunkIndex);
+
+        // 🌟 [핵심] 새 청크가 도킹/생성되었으므로 글로벌 연속 스플라인 경로 즉시 재연결 (500m/1000m 경계 끊김 원천 차단)
+        if (GlobalRiverPath.Instance != null)
+        {
+            GlobalRiverPath.Instance.RebuildPath();
+        }
 
         OnChunkRelayed?.Invoke(spawnZ);
 

@@ -103,7 +103,24 @@ namespace SkippingStones.Terrain
             if (segments.Count == 0) RebuildPath();
             if (segments.Count == 0) return false;
 
-            totalDistance = Mathf.Clamp(totalDistance, 0f, totalRiverLength);
+            // 🌟 만약 요청 거리가 현재 생성된 강 총 길이를 초과했을 때(청크 생성 경계 순간)
+            // 뒤로 묶지(Clamp) 않고 마지막 청크의 끝 접선 방향으로 직진 외삽(Extrapolate)하여 와리가리 유턴 방지
+            if (totalDistance > totalRiverLength)
+            {
+                ChunkSegment lastSeg = segments[segments.Count - 1];
+                float overDist = totalDistance - totalRiverLength;
+                float localLastDist = lastSeg.length;
+                if (lastSeg.chunkData != null && lastSeg.chunkData.EvaluateLocal(localLastDist, out Vector3 lEndPos, out Vector3 lEndTan, out width, out float lastWaterY))
+                {
+                    Vector3 worldEndPos = lastSeg.chunkTransform.TransformPoint(lEndPos);
+                    worldTangent = lastSeg.chunkTransform.TransformDirection(lEndTan).normalized;
+                    worldPos = worldEndPos + worldTangent * overDist;
+                    waterY = worldEndPos.y;
+                    return true;
+                }
+            }
+
+            totalDistance = Mathf.Max(0f, totalDistance);
 
             // 해당 거리를 포함하는 청크 세그먼트 탐색
             ChunkSegment targetSeg = segments[0];
