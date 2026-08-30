@@ -129,25 +129,46 @@ public class RiverSpawner : MonoBehaviour
         startBankPos = Vector3.zero;
         spawnDirection = Vector3.forward;
 
-        // 1. 🚀 가속 부스트 패드 (강물 곡선 중심선 및 법선 기준 정렬 스폰)
+        // 1. 🚀 가속 부스트 패드 (강폭 비례 적응형 밀도 스폰)
         for (float bDist = startZ + 40f; bDist < endZ - 40f; bDist += Random.Range(35f, 65f))
         {
             if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(bDist, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
                 Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.4f, 5f, 35f);
+                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
+                float effectiveWidth = halfW * 2f;
 
-                Vector3 leftPos = cPos - normal * (halfW * 0.65f);
-                Vector3 midPos = cPos + normal * Random.Range(-halfW * 0.25f, halfW * 0.25f);
-                Vector3 rightPos = cPos + normal * (halfW * 0.65f);
+                if (effectiveWidth < 15f)
+                {
+                    // 좁은 협곡 (< 15m): 중앙 1개만 안전 스폰 (겹침 방지)
+                    Vector3 midPos = cPos + normal * Random.Range(-1.5f, 1.5f);
+                    midPos.y = wY + 0.05f;
+                    TrySpawnBoostPad(midPos, startZ, endZ);
+                }
+                else if (effectiveWidth < 25f)
+                {
+                    // 보통 강 (15m ~ 25m): 1~2개 분산 스폰
+                    Vector3 p1 = cPos - normal * (halfW * 0.5f);
+                    Vector3 p2 = cPos + normal * (halfW * 0.5f);
+                    p1.y = wY + 0.05f;
+                    p2.y = wY + 0.05f;
+                    TrySpawnBoostPad(p1, startZ, endZ);
+                    if (Random.value < 0.7f) TrySpawnBoostPad(p2, startZ, endZ);
+                }
+                else
+                {
+                    // 넓은 강 (>= 25m): 좌/중/우 3개 분산 스폰
+                    Vector3 leftPos = cPos - normal * (halfW * 0.65f);
+                    Vector3 midPos = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
+                    Vector3 rightPos = cPos + normal * (halfW * 0.65f);
+                    leftPos.y = wY + 0.05f;
+                    midPos.y = wY + 0.05f;
+                    rightPos.y = wY + 0.05f;
 
-                leftPos.y = wY + 0.05f;
-                midPos.y = wY + 0.05f;
-                rightPos.y = wY + 0.05f;
-
-                TrySpawnBoostPad(leftPos, startZ, endZ);
-                TrySpawnBoostPad(midPos, startZ, endZ);
-                TrySpawnBoostPad(rightPos, startZ, endZ);
+                    TrySpawnBoostPad(leftPos, startZ, endZ);
+                    TrySpawnBoostPad(midPos, startZ, endZ);
+                    TrySpawnBoostPad(rightPos, startZ, endZ);
+                }
             }
             else
             {
@@ -161,17 +182,33 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        // 2. 🪨 강 장애물(바위)
+        // 2. 🪨 강 장애물(바위) (강폭 비례 통로 확보 스폰)
         for (float d = startZ + 45f; d < endZ - 30f; d += Random.Range(25f, 42f))
         {
             if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(d, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
                 Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.4f, 5f, 35f);
-                float offset = Random.Range(-halfW * 0.8f, halfW * 0.8f);
-                Vector3 rockPos = cPos + normal * offset;
-                rockPos.y = wY;
-                TrySpawnObstacleRock(rockPos, startZ, endZ);
+                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
+                float effectiveWidth = halfW * 2f;
+
+                if (effectiveWidth < 15f)
+                {
+                    // 좁은 협곡: 길을 막지 않도록 가장자리에만 50% 확률로 1개 배치
+                    if (Random.value < 0.5f)
+                    {
+                        float side = (Random.value < 0.5f) ? -halfW * 0.75f : halfW * 0.75f;
+                        Vector3 rockPos = cPos + normal * side;
+                        rockPos.y = wY;
+                        TrySpawnObstacleRock(rockPos, startZ, endZ);
+                    }
+                }
+                else
+                {
+                    float offset = Random.Range(-halfW * 0.75f, halfW * 0.75f);
+                    Vector3 rockPos = cPos + normal * offset;
+                    rockPos.y = wY;
+                    TrySpawnObstacleRock(rockPos, startZ, endZ);
+                }
             }
             else
             {
@@ -180,24 +217,34 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        // 3. 🐟 튀어오르는 물고기
+        // 3. 🐟 튀어오르는 물고기 (강폭 적응형 스폰)
         for (float fDist = startZ + 40f; fDist < endZ - 40f; fDist += Random.Range(45f, 85f))
         {
             if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(fDist, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
                 Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.4f, 5f, 35f);
+                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
+                float effectiveWidth = halfW * 2f;
 
-                Vector3 fPos1 = cPos - normal * (halfW * 0.6f);
-                Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
-                Vector3 fPos3 = cPos + normal * (halfW * 0.6f);
-                fPos1.y = wY;
-                fPos2.y = wY;
-                fPos3.y = wY;
+                if (effectiveWidth < 15f)
+                {
+                    Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.4f, halfW * 0.4f);
+                    fPos.y = wY;
+                    TrySpawnFish(fPos, fDist, startZ, endZ);
+                }
+                else
+                {
+                    Vector3 fPos1 = cPos - normal * (halfW * 0.6f);
+                    Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
+                    Vector3 fPos3 = cPos + normal * (halfW * 0.6f);
+                    fPos1.y = wY;
+                    fPos2.y = wY;
+                    fPos3.y = wY;
 
-                TrySpawnFish(fPos1, fDist, startZ, endZ);
-                TrySpawnFish(fPos2, fDist + Random.Range(6f, 16f), startZ, endZ);
-                TrySpawnFish(fPos3, fDist + Random.Range(12f, 24f), startZ, endZ);
+                    TrySpawnFish(fPos1, fDist, startZ, endZ);
+                    TrySpawnFish(fPos2, fDist + Random.Range(6f, 16f), startZ, endZ);
+                    TrySpawnFish(fPos3, fDist + Random.Range(12f, 24f), startZ, endZ);
+                }
             }
             else
             {
@@ -544,34 +591,128 @@ public class RiverSpawner : MonoBehaviour
         // Water_Surface BoxCollider로부터 실제 수면 가로폭 및 높이 동적 획득
         GetWaterColliderBounds(out float minX, out float maxX, out curWaterY);
 
-        // 1. 🚀 가속 부스트 패드 (새로 생성된 청크 지형 경계 내부 엄격 준수)
+        // 1. 🚀 가속 부스트 패드 (새로 생성된 청크 지형 경계 및 강폭 비례 적응형 스폰)
         for (float z = chunkStartZ + 35f; z < chunkEndZ - 35f; z += Random.Range(35f, 65f))
         {
-            float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-            float centerX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-            float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            {
+                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
+                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
+                float effectiveWidth = halfW * 2f;
 
-            TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
-            TrySpawnBoostPad(new Vector3(centerX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
-            TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
+                if (effectiveWidth < 15f)
+                {
+                    Vector3 midPos = cPos + normal * Random.Range(-1.5f, 1.5f);
+                    midPos.y = wY + 0.05f;
+                    TrySpawnBoostPad(midPos, chunkStartZ, chunkEndZ);
+                }
+                else if (effectiveWidth < 25f)
+                {
+                    Vector3 p1 = cPos - normal * (halfW * 0.5f);
+                    Vector3 p2 = cPos + normal * (halfW * 0.5f);
+                    p1.y = wY + 0.05f;
+                    p2.y = wY + 0.05f;
+                    TrySpawnBoostPad(p1, chunkStartZ, chunkEndZ);
+                    if (Random.value < 0.7f) TrySpawnBoostPad(p2, chunkStartZ, chunkEndZ);
+                }
+                else
+                {
+                    Vector3 leftPos = cPos - normal * (halfW * 0.65f);
+                    Vector3 midPos = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
+                    Vector3 rightPos = cPos + normal * (halfW * 0.65f);
+                    leftPos.y = wY + 0.05f;
+                    midPos.y = wY + 0.05f;
+                    rightPos.y = wY + 0.05f;
+
+                    TrySpawnBoostPad(leftPos, chunkStartZ, chunkEndZ);
+                    TrySpawnBoostPad(midPos, chunkStartZ, chunkEndZ);
+                    TrySpawnBoostPad(rightPos, chunkStartZ, chunkEndZ);
+                }
+            }
+            else
+            {
+                float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
+                float centerX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
+                float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
+
+                TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
+                TrySpawnBoostPad(new Vector3(centerX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
+                TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
+            }
         }
 
-        // 2. 🪨 장애물 바위
+        // 2. 🪨 장애물 바위 (강폭 비례 통로 확보 스폰)
         for (float z = chunkStartZ + 40f; z < chunkEndZ - 30f; z += Random.Range(25f, 42f))
         {
-            float x = Random.Range(minX, maxX);
-            TrySpawnObstacleRock(new Vector3(x, curWaterY, z + Random.Range(-4f, 4f)), chunkStartZ, chunkEndZ);
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            {
+                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
+                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
+                float effectiveWidth = halfW * 2f;
+
+                if (effectiveWidth < 15f)
+                {
+                    if (Random.value < 0.5f)
+                    {
+                        float side = (Random.value < 0.5f) ? -halfW * 0.75f : halfW * 0.75f;
+                        Vector3 rockPos = cPos + normal * side;
+                        rockPos.y = wY;
+                        TrySpawnObstacleRock(rockPos, chunkStartZ, chunkEndZ);
+                    }
+                }
+                else
+                {
+                    float offset = Random.Range(-halfW * 0.75f, halfW * 0.75f);
+                    Vector3 rockPos = cPos + normal * offset;
+                    rockPos.y = wY;
+                    TrySpawnObstacleRock(rockPos, chunkStartZ, chunkEndZ);
+                }
+            }
+            else
+            {
+                float x = Random.Range(minX, maxX);
+                TrySpawnObstacleRock(new Vector3(x, curWaterY, z + Random.Range(-4f, 4f)), chunkStartZ, chunkEndZ);
+            }
         }
 
-        // 3. 🐟 물고기
+        // 3. 🐟 물고기 (강폭 적응형 스폰)
         for (float z = chunkStartZ + 35f; z < chunkEndZ - 35f; z += Random.Range(45f, 85f))
         {
-            float x1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-            float x2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-            float x3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-            TrySpawnFish(new Vector3(x1, curWaterY, z), z, chunkStartZ, chunkEndZ);
-            TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(6f, 16f)), z, chunkStartZ, chunkEndZ);
-            TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(12f, 24f)), z, chunkStartZ, chunkEndZ);
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            {
+                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
+                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
+                float effectiveWidth = halfW * 2f;
+
+                if (effectiveWidth < 15f)
+                {
+                    Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.4f, halfW * 0.4f);
+                    fPos.y = wY;
+                    TrySpawnFish(fPos, z, chunkStartZ, chunkEndZ);
+                }
+                else
+                {
+                    Vector3 fPos1 = cPos - normal * (halfW * 0.6f);
+                    Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
+                    Vector3 fPos3 = cPos + normal * (halfW * 0.6f);
+                    fPos1.y = wY;
+                    fPos2.y = wY;
+                    fPos3.y = wY;
+
+                    TrySpawnFish(fPos1, z, chunkStartZ, chunkEndZ);
+                    TrySpawnFish(fPos2, z + Random.Range(6f, 16f), chunkStartZ, chunkEndZ);
+                    TrySpawnFish(fPos3, z + Random.Range(12f, 24f), chunkStartZ, chunkEndZ);
+                }
+            }
+            else
+            {
+                float x1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
+                float x2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
+                float x3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
+                TrySpawnFish(new Vector3(x1, curWaterY, z), z, chunkStartZ, chunkEndZ);
+                TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(6f, 16f)), z, chunkStartZ, chunkEndZ);
+                TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(12f, 24f)), z, chunkStartZ, chunkEndZ);
+            }
         }
 
         // 4. 🪷 연잎 군락 (새 청크 지형 경계 내부 엄격 준수)
@@ -651,21 +792,44 @@ public class RiverSpawner : MonoBehaviour
         return true;
     }
 
+    /// <summary>
+    /// 🌟 오브젝트 간 겹침 방지 (최소 3.8m 이격 거리 검사)
+    /// </summary>
+    private bool HasNearbySpawnedEntity(Vector3 pos, float minRadius = 3.8f)
+    {
+        float minSq = minRadius * minRadius;
+        for (int i = 0; i < transform.childCount; i++)
+        {
+            Transform child = transform.GetChild(i);
+            if (child == null) continue;
+            Vector3 diff = child.position - pos;
+            diff.y = 0f; // 수평 거리 기준
+            if (diff.sqrMagnitude < minSq)
+            {
+                return true; // 너무 가까운 위치에 이미 다른 오브젝트가 존재함
+            }
+        }
+        return false;
+    }
+
     private void TrySpawnBoostPad(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
         if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
+        if (HasNearbySpawnedEntity(pos, 3.8f)) return;
         CreateBoostPad(pos, Quaternion.identity);
     }
 
     private void TrySpawnObstacleRock(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
         if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
+        if (HasNearbySpawnedEntity(pos, 4.2f)) return;
         CreateObstacleRock(pos);
     }
 
     private void TrySpawnFish(Vector3 pos, float dist, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
         if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
+        if (HasNearbySpawnedEntity(pos, 3.5f)) return;
         SpawnSingleFish(pos, dist);
     }
 
