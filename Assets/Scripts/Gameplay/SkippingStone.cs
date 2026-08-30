@@ -742,25 +742,10 @@ public class SkippingStone : MonoBehaviour
             earlyRetryCount = 0;
         }
 
-        // 🌟 이미 침몰 중이거나 심해(-0.35m) 이하로 완전히 가라앉았을 때만 LATE MISS 차단
-        if (isSunk || distToWater < -0.35f)
-        {
-            timingGrade = $"❌ LATE MISS (수심: {distToWater:F2}m에 누름)";
-            TapDebugRecord lateRec = new TapDebugRecord
-            {
-                stoneWorldPos = transform.position,
-                distToWater = distToWater,
-                verticalSpeed = (rb != null) ? -rb.linearVelocity.y : 0f,
-                grade = timingGrade,
-                skipIndex = skipCount,
-                timeStamp = Time.time
-            };
-            tapDebugHistory.Add(lateRec);
-            SpawnTapDebugMarker(lateRec);
-            return false;
-        }
+        // 1. 이미 완전히 침몰 완료된 상태에서는 탭 무시
+        if (isSunk) return false;
 
-        // 1. 타이밍 윈도우 진입 전(높은 상공)이거나 상승 중일 때의 탭은 무시
+        // 2. 타이밍 윈도우 진입 전(높은 상공)이거나 상승 중일 때의 탭은 무시
         if (distToWater > dynWindowHeight || (rb != null && rb.linearVelocity.y > 0.4f))
         {
             timingGrade = "";
