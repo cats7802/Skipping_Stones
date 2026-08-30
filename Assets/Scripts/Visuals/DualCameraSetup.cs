@@ -80,11 +80,11 @@ public class DualCameraSetup : MonoBehaviour
     public bool followBounceY = true;
     [Tooltip("카메라 리그 전체 높이 오프셋")]
     public float flightPivotOffsetY = 0f;
-    public float flightDistBack = 2.6f;
-    public float flightHeight = 2.2f;
-    public float flightLookForward = 12.0f;
+    public float flightDistBack = 2.2f;
+    public float flightHeight = 1.7f;
+    public float flightLookForward = 10.0f;
     [Tooltip("카메라 자체의 상하 피치 각도 조절용 시선 높이 (음수일수록 아래를 내려다봄)")]
-    public float flightLookHeight = -0.5f;
+    public float flightLookHeight = -1.3f;
     [Tooltip("조작 직후 돌이 먼저 꺾인 뒤 다음 바운스까지 카메라가 정후방으로 돌아오는 보간 속도")]
     public float headingCatchupSpeed = 4.2f;
     private Vector3 smoothedFlightHeading = Vector3.forward;
@@ -103,10 +103,10 @@ public class DualCameraSetup : MonoBehaviour
     {
         followBounceY = true;
         flightPivotOffsetY = 0f;
-        flightDistBack = 2.6f;
-        flightHeight = 2.2f;
-        flightLookForward = 12.0f;
-        flightLookHeight = -0.5f;
+        flightDistBack = 2.2f;
+        flightHeight = 1.7f;
+        flightLookForward = 10.0f;
+        flightLookHeight = -1.3f;
         EnsureReferences();
     }
 
