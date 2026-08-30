@@ -328,11 +328,37 @@ namespace SkippingStones.Terrain
             return nearestHeight;
         }
 
+        /// <summary>
+        /// 고속도로 램프(Highway Ramp) 완화 곡선 스무딩:
+        /// - 갈림길 진입/합류점의 급격한 꺾임을 20~30m에 걸쳐 완만하게 분산
+        /// - 인접 노드 간 급격한 비틀림을 완화하여 카메라/돌 비행 안정성 극대화
+        /// </summary>
         private static void SmoothPathCenterline(List<RiverPathNode> nodes)
         {
-            if (nodes.Count < 3) return;
+            if (nodes.Count < 5) return;
 
-            for (int iter = 0; iter < 2; iter++)
+            // 1. 가우시안 5점 가중 이동평균 (Multi-Pass Gaussian Relax)
+            for (int pass = 0; pass < 5; pass++)
+            {
+                for (int i = 2; i < nodes.Count - 2; i++)
+                {
+                    Vector3 pPrev2 = nodes[i - 2].localPosition;
+                    Vector3 pPrev1 = nodes[i - 1].localPosition;
+                    Vector3 pCurr = nodes[i].localPosition;
+                    Vector3 pNext1 = nodes[i + 1].localPosition;
+                    Vector3 pNext2 = nodes[i + 2].localPosition;
+
+                    // 1:4:6:4:1 가중치로 완만하게 스무딩
+                    Vector3 smoothPos = (pPrev2 * 1f + pPrev1 * 4f + pCurr * 6f + pNext1 * 4f + pNext2 * 1f) / 16f;
+
+                    RiverPathNode n = nodes[i];
+                    n.localPosition = smoothPos;
+                    nodes[i] = n;
+                }
+            }
+
+            // 2. 강폭(Width) 급변 완화 블렌딩
+            for (int pass = 0; pass < 3; pass++)
             {
                 for (int i = 1; i < nodes.Count - 1; i++)
                 {
@@ -340,8 +366,8 @@ namespace SkippingStones.Terrain
                     RiverPathNode curr = nodes[i];
                     RiverPathNode next = nodes[i + 1];
 
-                    Vector3 smoothPos = (prev.localPosition * 0.25f) + (curr.localPosition * 0.5f) + (next.localPosition * 0.25f);
-                    curr.localPosition = smoothPos;
+                    curr.leftWidth = (prev.leftWidth * 0.25f) + (curr.leftWidth * 0.5f) + (next.leftWidth * 0.25f);
+                    curr.rightWidth = (prev.rightWidth * 0.25f) + (curr.rightWidth * 0.5f) + (next.rightWidth * 0.25f);
                     nodes[i] = curr;
                 }
             }
