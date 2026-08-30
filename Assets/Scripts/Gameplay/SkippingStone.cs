@@ -833,8 +833,8 @@ public class SkippingStone : MonoBehaviour
             // 💥 심해 잠수 (수면 아래 -32cm 이하): BAD (-3.0)
             timingGrade = "💥 BAD (-3.0)";
             momentumDelta = -3.0f;
-            bounceForce *= 0.50f;
-            speedMultiplier = 0.65f;
+            bounceForce = Mathf.Max(bounceForce * 0.50f, 2.8f); // 🌟 최소 2.8m/s 반발력을 보장하여 15스킵 이상에서도 안전 회생
+            speedMultiplier = 0.70f;
         }
 
         // 모멘텀 게이지 갱신
@@ -1073,7 +1073,18 @@ public class SkippingStone : MonoBehaviour
     {
         if (!isThrown || isSunk || isCrashed) return;
 
+        // 🌟 수면 콜라이더(WaterSurface) 접촉은 물리 충돌(지형 충돌)에서 완전 무시
+        if (collision.gameObject.GetComponent<WaterSurface>() != null || collision.gameObject.GetComponentInParent<WaterSurface>() != null)
+        {
+            return;
+        }
+
         string hitName = collision.gameObject.name.ToLower();
+        if (hitName.Contains("water") || hitName.Contains("surface") || hitName.Contains("river") || hitName.Contains("lake") || hitName.Contains("stream"))
+        {
+            return;
+        }
+
         bool isRock = hitName.Contains("rock") || hitName.Contains("obstacle");
 
         // 🌟 갓모드: 강 한가운데 놓인 바위 장애물(Rock/Obstacle)은 무시하고 통과, 실제 육지 지형은 충돌 유지
@@ -1086,7 +1097,7 @@ public class SkippingStone : MonoBehaviour
     {
         if (!isThrown || isSunk || isCrashed) return;
 
-        // 1. WaterSurface 컴포넌트 감지 시 수면 높이만 동적으로 갱신 (물리 트리거 강제 침몰 완전 제거!)
+        // 1. WaterSurface 컴포넌트 감지 시 수면 높이만 동적으로 갱신하고 충돌 검사 종료
         WaterSurface ws = other.GetComponent<WaterSurface>() ?? other.GetComponentInParent<WaterSurface>();
         if (ws != null)
         {
@@ -1094,10 +1105,17 @@ public class SkippingStone : MonoBehaviour
             return;
         }
 
-        // 2. Terrain 컴포넌트 검사로 지형/바위 감지
-        bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<Terrain>() != null || other.GetComponent<MeshCollider>() != null;
-        bool isRock = other.name.ToLower().Contains("rock") || other.name.ToLower().Contains("obstacle");
-        bool isGround = other.name.ToLower().Contains("ground") || other.name.ToLower().Contains("bank");
+        string colName = other.name.ToLower();
+        if (colName.Contains("water") || colName.Contains("surface") || colName.Contains("river") || colName.Contains("lake") || colName.Contains("stream"))
+        {
+            waterLevel = other.bounds.max.y;
+            return;
+        }
+
+        // 2. Terrain 컴포넌트 검사로 지형/바위 감지 (돌이 실제 수면 위로 나와서 지형에 닿았을 때만)
+        bool isTerrain = other.GetComponent<TerrainCollider>() != null || other.GetComponent<UnityEngine.Terrain>() != null || other.GetComponent<MeshCollider>() != null;
+        bool isRock = colName.Contains("rock") || colName.Contains("obstacle");
+        bool isGround = colName.Contains("ground") || colName.Contains("bank");
 
         // 🌟 갓모드: 강 한가운데 놓인 바위 장애물은 무시하고 통과
         if (isGodMode && isRock) return;
