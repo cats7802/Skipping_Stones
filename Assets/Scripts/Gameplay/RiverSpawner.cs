@@ -129,34 +129,85 @@ public class RiverSpawner : MonoBehaviour
         startBankPos = Vector3.zero;
         spawnDirection = Vector3.forward;
 
-        // 1. 🚀 가속 부스트 패드 (청크 내 지형 범위 100% 엄격 준수)
+        // 1. 🚀 가속 부스트 패드 (강물 곡선 중심선 및 법선 기준 정렬 스폰)
         for (float bDist = startZ + 40f; bDist < endZ - 40f; bDist += Random.Range(35f, 65f))
         {
-            float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-            float midX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-            float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(bDist, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            {
+                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
+                float halfW = Mathf.Clamp(rWidth * 0.4f, 5f, 35f);
 
-            TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
-            TrySpawnBoostPad(new Vector3(midX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
-            TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
+                Vector3 leftPos = cPos - normal * (halfW * 0.65f);
+                Vector3 midPos = cPos + normal * Random.Range(-halfW * 0.25f, halfW * 0.25f);
+                Vector3 rightPos = cPos + normal * (halfW * 0.65f);
+
+                leftPos.y = wY + 0.05f;
+                midPos.y = wY + 0.05f;
+                rightPos.y = wY + 0.05f;
+
+                TrySpawnBoostPad(leftPos, startZ, endZ);
+                TrySpawnBoostPad(midPos, startZ, endZ);
+                TrySpawnBoostPad(rightPos, startZ, endZ);
+            }
+            else
+            {
+                float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
+                float midX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
+                float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
+
+                TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
+                TrySpawnBoostPad(new Vector3(midX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
+                TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
+            }
         }
 
         // 2. 🪨 강 장애물(바위)
         for (float d = startZ + 45f; d < endZ - 30f; d += Random.Range(25f, 42f))
         {
-            float rockX = Random.Range(minX, maxX);
-            TrySpawnObstacleRock(new Vector3(rockX, curWaterY, d + Random.Range(-4f, 4f)), startZ, endZ);
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(d, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            {
+                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
+                float halfW = Mathf.Clamp(rWidth * 0.4f, 5f, 35f);
+                float offset = Random.Range(-halfW * 0.8f, halfW * 0.8f);
+                Vector3 rockPos = cPos + normal * offset;
+                rockPos.y = wY;
+                TrySpawnObstacleRock(rockPos, startZ, endZ);
+            }
+            else
+            {
+                float rockX = Random.Range(minX, maxX);
+                TrySpawnObstacleRock(new Vector3(rockX, curWaterY, d + Random.Range(-4f, 4f)), startZ, endZ);
+            }
         }
 
         // 3. 🐟 튀어오르는 물고기
         for (float fDist = startZ + 40f; fDist < endZ - 40f; fDist += Random.Range(45f, 85f))
         {
-            float fX1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-            float fX2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-            float fX3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-            TrySpawnFish(new Vector3(fX1, curWaterY, fDist), fDist, startZ, endZ);
-            TrySpawnFish(new Vector3(fX2, curWaterY, fDist + Random.Range(6f, 16f)), fDist, startZ, endZ);
-            TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(12f, 24f)), fDist, startZ, endZ);
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(fDist, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            {
+                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
+                float halfW = Mathf.Clamp(rWidth * 0.4f, 5f, 35f);
+
+                Vector3 fPos1 = cPos - normal * (halfW * 0.6f);
+                Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
+                Vector3 fPos3 = cPos + normal * (halfW * 0.6f);
+                fPos1.y = wY;
+                fPos2.y = wY;
+                fPos3.y = wY;
+
+                TrySpawnFish(fPos1, fDist, startZ, endZ);
+                TrySpawnFish(fPos2, fDist + Random.Range(6f, 16f), startZ, endZ);
+                TrySpawnFish(fPos3, fDist + Random.Range(12f, 24f), startZ, endZ);
+            }
+            else
+            {
+                float fX1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
+                float fX2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
+                float fX3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
+                TrySpawnFish(new Vector3(fX1, curWaterY, fDist), fDist, startZ, endZ);
+                TrySpawnFish(new Vector3(fX2, curWaterY, fDist + Random.Range(6f, 16f)), fDist, startZ, endZ);
+                TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(12f, 24f)), fDist, startZ, endZ);
+            }
         }
 
         // 4. 🚩 친구 거리 깃발 (현재 청크 지형 범위 내에 존재하는 깃발만 스폰)
@@ -166,8 +217,22 @@ public class RiverSpawner : MonoBehaviour
         {
             float zPos = friendDists[i];
             if (zPos < startZ + 30f || zPos > endZ - 30f) continue;
-            float flagX = (i % 2 == 0) ? Random.Range(minX, Mathf.Lerp(minX, maxX, 0.4f)) : Random.Range(Mathf.Lerp(minX, maxX, 0.6f), maxX);
-            Vector3 fPos = new Vector3(flagX, curWaterY, zPos);
+            
+            Vector3 fPos;
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(zPos, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            {
+                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
+                float halfW = Mathf.Clamp(rWidth * 0.4f, 5f, 35f);
+                float sideOffset = (i % 2 == 0) ? -halfW * 0.6f : halfW * 0.6f;
+                fPos = cPos + normal * sideOffset;
+                fPos.y = wY;
+            }
+            else
+            {
+                float flagX = (i % 2 == 0) ? Random.Range(minX, Mathf.Lerp(minX, maxX, 0.4f)) : Random.Range(Mathf.Lerp(minX, maxX, 0.6f), maxX);
+                fPos = new Vector3(flagX, curWaterY, zPos);
+            }
+
             if (IsValidWaterPosition(fPos, startZ, endZ))
             {
                 CreateFriendFlag(fPos, friends[i], $"{i + 1}위", zPos);
