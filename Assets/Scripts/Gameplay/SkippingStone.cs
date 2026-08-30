@@ -508,26 +508,32 @@ public class SkippingStone : MonoBehaviour
 
         totalDistance = Vector2.Distance(new Vector2(startPosition.x, startPosition.z), new Vector2(transform.position.x, transform.position.z));
 
-        // 🌟 갓모드 곡선 추적: 베이크된 강줄기 스플라인(GlobalRiverPath)을 따라 부드럽게 진행 방향 유도
+        // 🌟 갓모드 곡선 추적: Pure Pursuit (전방 15m Look-Ahead 타겟팅) 자율주행 유도로 좌우 진동 완전 차단
         if (isGodMode && GlobalRiverPath.Instance != null)
         {
-            if (GlobalRiverPath.Instance.EvaluateAtDistance(totalDistance, out Vector3 riverCenterPos, out Vector3 riverTangent, out _, out float riverWaterY))
+            if (GlobalRiverPath.Instance.GetClosestPointOnRiver(transform.position, out Vector3 riverCenterPos, out _, out float distAlongRiver))
             {
-                waterLevel = riverWaterY;
+                // 돌 앞쪽 15m 지점(Look-Ahead Target)의 스플라인 점을 계산하여 부드러운 선회 유도
+                float lookAheadDist = distAlongRiver + 15f;
+                if (GlobalRiverPath.Instance.EvaluateAtDistance(lookAheadDist, out Vector3 lookAheadPos, out Vector3 lookAheadTangent, out _, out float riverWaterY))
+                {
+                    waterLevel = riverWaterY;
 
-                Vector2 currentHVel = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z);
-                float speed = Mathf.Max(forwardPower * 0.8f, currentHVel.magnitude);
+                    Vector2 currentHVel = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z);
+                    float speed = Mathf.Max(forwardPower * 0.8f, currentHVel.magnitude);
 
-                // 강 중심선으로부터의 X/Z 오프셋을 중심선 쪽으로 부드럽게 복원 유도
-                Vector3 toCenter = riverCenterPos - transform.position;
-                Vector3 desiredHDir = (riverTangent + (toCenter * 0.18f)).normalized;
-                Vector2 targetHDir = new Vector2(desiredHDir.x, desiredHDir.z).normalized;
+                    // 앞쪽 15m 목표점을 향한 조향 벡터 (진동 방지)
+                    Vector3 toTarget = lookAheadPos - transform.position;
+                    toTarget.y = 0f;
+                    Vector2 targetHDir = new Vector2(toTarget.x, toTarget.z).normalized;
+                    if (targetHDir == Vector2.zero) targetHDir = new Vector2(lookAheadTangent.x, lookAheadTangent.z).normalized;
 
-                Vector2 newHDir = Vector2.Lerp(currentHVel.normalized, targetHDir, Time.fixedDeltaTime * 6.5f).normalized;
-                rb.linearVelocity = new Vector3(newHDir.x * speed, rb.linearVelocity.y, newHDir.y * speed);
+                    Vector2 newHDir = Vector2.Lerp(currentHVel.normalized, targetHDir, Time.fixedDeltaTime * 3.5f).normalized;
+                    rb.linearVelocity = new Vector3(newHDir.x * speed, rb.linearVelocity.y, newHDir.y * speed);
 
-                float targetYaw = Mathf.Atan2(newHDir.x, newHDir.y) * Mathf.Rad2Deg;
-                transform.rotation = Quaternion.Euler(0f, targetYaw, 0f);
+                    float targetYaw = Mathf.Atan2(newHDir.x, newHDir.y) * Mathf.Rad2Deg;
+                    transform.rotation = Quaternion.Euler(0f, targetYaw, 0f);
+                }
             }
         }
 
@@ -725,11 +731,19 @@ public class SkippingStone : MonoBehaviour
 
         if (isGodMode && GlobalRiverPath.Instance != null)
         {
-            if (GlobalRiverPath.Instance.EvaluateAtDistance(totalDistance, out Vector3 riverCenterPos, out Vector3 riverTangent, out _, out _))
+            if (GlobalRiverPath.Instance.GetClosestPointOnRiver(transform.position, out _, out _, out float distAlongRiver))
             {
-                Vector3 toCenter = riverCenterPos - transform.position;
-                Vector3 desired = (riverTangent + (toCenter * 0.20f)).normalized;
-                hDir = new Vector2(desired.x, desired.z).normalized;
+                float lookAheadDist = distAlongRiver + 15f;
+                if (GlobalRiverPath.Instance.EvaluateAtDistance(lookAheadDist, out Vector3 lookAheadPos, out Vector3 lookAheadTan, out _, out _))
+                {
+                    Vector3 toTarget = lookAheadPos - transform.position;
+                    toTarget.y = 0f;
+                    Vector2 targetHDir = new Vector2(toTarget.x, toTarget.z).normalized;
+                    if (targetHDir != Vector2.zero)
+                    {
+                        hDir = targetHDir;
+                    }
+                }
             }
         }
 
