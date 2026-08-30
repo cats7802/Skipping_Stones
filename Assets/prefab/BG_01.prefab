@@ -143,6 +143,37 @@ Transform:
   m_Children: []
   m_Father: {fileID: 7887066034393771312}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &625300631003703622
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 6229958253822101677}
+  m_Layer: 0
+  m_Name: Anchor_E
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &6229958253822101677
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 625300631003703622}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 1500}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8601006980209141712}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
 --- !u!1 &1524671869808921693
 GameObject:
   m_ObjectHideFlags: 0
@@ -618,6 +649,7 @@ GameObject:
   serializedVersion: 6
   m_Component:
   - component: {fileID: 8601006980209141712}
+  - component: {fileID: 7392433395537471879}
   m_Layer: 0
   m_Name: BG_01
   m_TagString: Untagged
@@ -643,8 +675,1834 @@ Transform:
   - {fileID: 548674551578313818}
   - {fileID: 4878579671902702086}
   - {fileID: 7887066034393771312}
+  - {fileID: 2910254674135251822}
+  - {fileID: 6229958253822101677}
   m_Father: {fileID: 0}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &7392433395537471879
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6726142715302024581}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c32dcb654632acf4d88c93f61d45383b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Terrain.RiverPathChunkData
+  nodes:
+  - localPosition: {x: 0, y: 16, z: 0}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 0
+  - localPosition: {x: 0, y: 16, z: 5}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 5
+  - localPosition: {x: 0, y: 16, z: 10}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 10
+  - localPosition: {x: 0, y: 16, z: 15}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 15
+  - localPosition: {x: 0, y: 16, z: 20}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 20
+  - localPosition: {x: 0, y: 16, z: 25.000002}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 25.000002
+  - localPosition: {x: 0, y: 16, z: 30}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 30
+  - localPosition: {x: 0, y: 16, z: 35}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 35
+  - localPosition: {x: 0, y: 16, z: 40}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 40
+  - localPosition: {x: 0, y: 16, z: 45}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 45
+  - localPosition: {x: 0, y: 16, z: 50.000004}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 50.000004
+  - localPosition: {x: 0, y: 16, z: 54.999996}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 54.999996
+  - localPosition: {x: 0, y: 16, z: 60}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 60
+  - localPosition: {x: 0, y: 16, z: 65}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 65
+  - localPosition: {x: 0, y: 16, z: 70}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 70
+  - localPosition: {x: 0, y: 16, z: 75}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 75
+  - localPosition: {x: 0, y: 16, z: 80}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 80
+  - localPosition: {x: 0, y: 16, z: 85}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 85
+  - localPosition: {x: 0, y: 16, z: 90}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 90
+  - localPosition: {x: 0, y: 16, z: 95}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 95
+  - localPosition: {x: 0, y: 16, z: 100.00001}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 100.00001
+  - localPosition: {x: 0, y: 16, z: 105}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 105
+  - localPosition: {x: 0, y: 16, z: 109.99999}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 109.99999
+  - localPosition: {x: 0, y: 16, z: 115}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 115
+  - localPosition: {x: 0, y: 16, z: 120}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 120
+  - localPosition: {x: 0, y: 16, z: 125}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 125
+  - localPosition: {x: 0, y: 16, z: 130}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 130
+  - localPosition: {x: 0, y: 16, z: 135}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 135
+  - localPosition: {x: 0, y: 16, z: 140}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 140
+  - localPosition: {x: 0, y: 16, z: 145}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 145
+  - localPosition: {x: 0, y: 16, z: 150}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 150
+  - localPosition: {x: 0, y: 16, z: 155}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 155
+  - localPosition: {x: 0, y: 16, z: 160}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 160
+  - localPosition: {x: 0, y: 16, z: 165}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 165
+  - localPosition: {x: 0, y: 16, z: 170}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 170
+  - localPosition: {x: 0, y: 16, z: 175}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 175
+  - localPosition: {x: 0, y: 16, z: 180}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 180
+  - localPosition: {x: 0, y: 16, z: 185}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 185
+  - localPosition: {x: 0, y: 16, z: 190}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 190
+  - localPosition: {x: 0, y: 16, z: 195}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 195
+  - localPosition: {x: 0, y: 16, z: 200.00002}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 200.00002
+  - localPosition: {x: 0, y: 16, z: 205}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 205
+  - localPosition: {x: 0, y: 16, z: 210}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 210
+  - localPosition: {x: 0, y: 16, z: 215}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 215
+  - localPosition: {x: 0, y: 16, z: 219.99998}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 219.99998
+  - localPosition: {x: 0, y: 16, z: 225.00002}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 225.00002
+  - localPosition: {x: 0, y: 16, z: 230}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 230
+  - localPosition: {x: 0, y: 16, z: 235}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 235
+  - localPosition: {x: 0, y: 16, z: 240}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 240
+  - localPosition: {x: 0, y: 16, z: 244.99998}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 244.99998
+  - localPosition: {x: 0, y: 16, z: 250}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 250
+  - localPosition: {x: 0, y: 16, z: 255}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 255
+  - localPosition: {x: 0, y: 16, z: 260}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 260
+  - localPosition: {x: 0, y: 16, z: 265}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 265
+  - localPosition: {x: 0, y: 16, z: 270}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 270
+  - localPosition: {x: 0, y: 16, z: 275}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 275
+  - localPosition: {x: 0, y: 16, z: 280}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 280
+  - localPosition: {x: 0, y: 16, z: 285}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 285
+  - localPosition: {x: 0, y: 16, z: 290}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 290
+  - localPosition: {x: 0, y: 16, z: 295}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 295
+  - localPosition: {x: 0, y: 16, z: 300}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 300
+  - localPosition: {x: 0, y: 16, z: 305}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 305
+  - localPosition: {x: 0, y: 16, z: 310}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 310
+  - localPosition: {x: 0, y: 16, z: 315}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 315
+  - localPosition: {x: 0, y: 16, z: 320}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 320
+  - localPosition: {x: 0, y: 16, z: 325}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 325
+  - localPosition: {x: 0, y: 16, z: 330}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 330
+  - localPosition: {x: 0, y: 16, z: 335}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 335
+  - localPosition: {x: 0, y: 16, z: 340}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 340
+  - localPosition: {x: 0, y: 16, z: 345}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 345
+  - localPosition: {x: 0, y: 16, z: 350}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 350
+  - localPosition: {x: 0, y: 16, z: 355}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 355
+  - localPosition: {x: 0, y: 16, z: 360}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 360
+  - localPosition: {x: 0, y: 16, z: 365}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 365
+  - localPosition: {x: 0, y: 16, z: 370}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 370
+  - localPosition: {x: 0, y: 16, z: 375}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 375
+  - localPosition: {x: 0, y: 16, z: 380}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 380
+  - localPosition: {x: 0, y: 16, z: 385}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 385
+  - localPosition: {x: 0, y: 16, z: 390}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 390
+  - localPosition: {x: 0, y: 16, z: 394.99997}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 394.99997
+  - localPosition: {x: 0, y: 16, z: 400.00003}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 400.00003
+  - localPosition: {x: 0, y: 16, z: 405.00003}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 405.00003
+  - localPosition: {x: 0, y: 16, z: 410}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 410
+  - localPosition: {x: 0, y: 16, z: 415}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 415
+  - localPosition: {x: 0, y: 16, z: 420}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 420
+  - localPosition: {x: 0, y: 16, z: 425}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 425
+  - localPosition: {x: 0, y: 16, z: 430}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 430
+  - localPosition: {x: 0, y: 16, z: 435}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 435
+  - localPosition: {x: 0, y: 16, z: 439.99997}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 439.99997
+  - localPosition: {x: 0, y: 16, z: 444.99997}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 444.99997
+  - localPosition: {x: 0, y: 16, z: 450.00003}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 450.00003
+  - localPosition: {x: 0, y: 16, z: 455}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 455
+  - localPosition: {x: 0, y: 16, z: 460}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 460
+  - localPosition: {x: 0, y: 16, z: 465}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 465
+  - localPosition: {x: 0, y: 16, z: 470}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 470
+  - localPosition: {x: 0, y: 16, z: 475}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 475
+  - localPosition: {x: 0, y: 16, z: 480}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 480
+  - localPosition: {x: 0, y: 16, z: 484.99997}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 484.99997
+  - localPosition: {x: 0, y: 16, z: 489.99997}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 489.99997
+  - localPosition: {x: 0, y: 16, z: 495.00003}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 495.00003
+  - localPosition: {x: 0, y: 16, z: 500}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 500
+  - localPosition: {x: 0, y: 16, z: 505}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 505
+  - localPosition: {x: 0, y: 16, z: 510}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 510
+  - localPosition: {x: 0, y: 16, z: 515}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 515
+  - localPosition: {x: 0, y: 16, z: 520}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 520
+  - localPosition: {x: 0, y: 16, z: 525}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 525
+  - localPosition: {x: 0, y: 16, z: 530}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 530
+  - localPosition: {x: 0, y: 16, z: 535}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 535
+  - localPosition: {x: 0, y: 16, z: 540}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 540
+  - localPosition: {x: 0, y: 16, z: 545}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 545
+  - localPosition: {x: 0, y: 16, z: 550}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 550
+  - localPosition: {x: 0, y: 16, z: 555}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 555
+  - localPosition: {x: 0, y: 16, z: 560}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 560
+  - localPosition: {x: 0, y: 16, z: 565}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 565
+  - localPosition: {x: 0, y: 16, z: 570}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 570
+  - localPosition: {x: 0, y: 16, z: 575}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 575
+  - localPosition: {x: 0, y: 16, z: 580}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 580
+  - localPosition: {x: 0, y: 16, z: 585}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 585
+  - localPosition: {x: 0, y: 16, z: 590}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 590
+  - localPosition: {x: 0, y: 16, z: 595}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 595
+  - localPosition: {x: 0, y: 16, z: 600}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 600
+  - localPosition: {x: 0, y: 16, z: 605}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 605
+  - localPosition: {x: 0, y: 16, z: 610}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 610
+  - localPosition: {x: 0, y: 16, z: 615}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 615
+  - localPosition: {x: 0, y: 16, z: 620}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 620
+  - localPosition: {x: 0, y: 16, z: 625}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 625
+  - localPosition: {x: 0, y: 16, z: 630}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 630
+  - localPosition: {x: 0, y: 16, z: 635}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 635
+  - localPosition: {x: 0, y: 16, z: 640}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 640
+  - localPosition: {x: 0, y: 16, z: 645}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 645
+  - localPosition: {x: 0, y: 16, z: 650}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 650
+  - localPosition: {x: 0, y: 16, z: 655}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 655
+  - localPosition: {x: 0, y: 16, z: 660}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 660
+  - localPosition: {x: 0, y: 16, z: 665}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 665
+  - localPosition: {x: 0, y: 16, z: 670}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 670
+  - localPosition: {x: 0, y: 16, z: 675}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 675
+  - localPosition: {x: 0, y: 16, z: 680}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 680
+  - localPosition: {x: 0, y: 16, z: 685}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 685
+  - localPosition: {x: 0, y: 16, z: 690}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 690
+  - localPosition: {x: 0, y: 16, z: 695}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 695
+  - localPosition: {x: 0, y: 16, z: 700}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 700
+  - localPosition: {x: 0, y: 16, z: 705}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 705
+  - localPosition: {x: 0, y: 16, z: 710}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 710
+  - localPosition: {x: 0, y: 16, z: 715}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 715
+  - localPosition: {x: 0, y: 16, z: 720}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 720
+  - localPosition: {x: 0, y: 16, z: 725}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 725
+  - localPosition: {x: 0, y: 16, z: 730}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 730
+  - localPosition: {x: 0, y: 16, z: 735}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 735
+  - localPosition: {x: 0, y: 16, z: 740}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 740
+  - localPosition: {x: 0, y: 16, z: 745}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 745
+  - localPosition: {x: 0, y: 16, z: 750}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 750
+  - localPosition: {x: 0, y: 16, z: 755}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 755
+  - localPosition: {x: 0, y: 16, z: 760}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 760
+  - localPosition: {x: 0, y: 16, z: 765}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 765
+  - localPosition: {x: 0, y: 16, z: 770}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 770
+  - localPosition: {x: 0, y: 16, z: 775}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 775
+  - localPosition: {x: 0, y: 16, z: 780}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 780
+  - localPosition: {x: 0, y: 16, z: 784.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 784.99994
+  - localPosition: {x: 0, y: 16, z: 789.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 789.99994
+  - localPosition: {x: 0, y: 16, z: 794.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 794.99994
+  - localPosition: {x: 0, y: 16, z: 800.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 800.00006
+  - localPosition: {x: 0, y: 16, z: 805.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 805.00006
+  - localPosition: {x: 0, y: 16, z: 810.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 810.00006
+  - localPosition: {x: 0, y: 16, z: 815}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 815
+  - localPosition: {x: 0, y: 16, z: 820}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 820
+  - localPosition: {x: 0, y: 16, z: 825}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 825
+  - localPosition: {x: 0, y: 16, z: 830}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 830
+  - localPosition: {x: 0, y: 16, z: 835}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 835
+  - localPosition: {x: 0, y: 16, z: 840}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 840
+  - localPosition: {x: 0, y: 16, z: 845}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 845
+  - localPosition: {x: 0, y: 16, z: 850}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 850
+  - localPosition: {x: 0, y: 16, z: 855}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 855
+  - localPosition: {x: 0, y: 16, z: 860}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 860
+  - localPosition: {x: 0, y: 16, z: 865}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 865
+  - localPosition: {x: 0, y: 16, z: 870}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 870
+  - localPosition: {x: 0, y: 16, z: 875}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 875
+  - localPosition: {x: 0, y: 16, z: 879.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 879.99994
+  - localPosition: {x: 0, y: 16, z: 884.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 884.99994
+  - localPosition: {x: 0, y: 16, z: 889.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 889.99994
+  - localPosition: {x: 0, y: 16, z: 895.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 895.00006
+  - localPosition: {x: 0, y: 16, z: 900.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 900.00006
+  - localPosition: {x: 0, y: 16, z: 905.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 905.00006
+  - localPosition: {x: 0, y: 16, z: 910}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 910
+  - localPosition: {x: 0, y: 16, z: 915}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 915
+  - localPosition: {x: 0, y: 16, z: 920}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 920
+  - localPosition: {x: 0, y: 16, z: 925}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 925
+  - localPosition: {x: 0, y: 16, z: 930}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 930
+  - localPosition: {x: 0, y: 16, z: 935}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 935
+  - localPosition: {x: 0, y: 16, z: 940}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 940
+  - localPosition: {x: 0, y: 16, z: 945}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 945
+  - localPosition: {x: 0, y: 16, z: 950}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 950
+  - localPosition: {x: 0, y: 16, z: 955}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 955
+  - localPosition: {x: 0, y: 16, z: 960}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 960
+  - localPosition: {x: 0, y: 16, z: 965}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 965
+  - localPosition: {x: 0, y: 16, z: 969.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 969.99994
+  - localPosition: {x: 0, y: 16, z: 974.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 974.99994
+  - localPosition: {x: 0, y: 16, z: 979.99994}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 979.99994
+  - localPosition: {x: 0, y: 16, z: 985.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 985.00006
+  - localPosition: {x: 0, y: 16, z: 990.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 990.00006
+  - localPosition: {x: 0, y: 16, z: 995.00006}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 995.00006
+  - localPosition: {x: 0, y: 16, z: 1000}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1000
+  - localPosition: {x: 0, y: 16, z: 1005}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1005
+  - localPosition: {x: 0, y: 16, z: 1010}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1010
+  - localPosition: {x: 0, y: 16, z: 1015}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1015
+  - localPosition: {x: 0, y: 16, z: 1020}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1020
+  - localPosition: {x: 0, y: 16, z: 1025}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1025
+  - localPosition: {x: 0, y: 16, z: 1030}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1030
+  - localPosition: {x: 0, y: 16, z: 1035}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1035
+  - localPosition: {x: 0, y: 16, z: 1040}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1040
+  - localPosition: {x: 0, y: 16, z: 1045}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1045
+  - localPosition: {x: 0, y: 16, z: 1050}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1050
+  - localPosition: {x: 0, y: 16, z: 1055}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1055
+  - localPosition: {x: 0, y: 16, z: 1060}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1060
+  - localPosition: {x: 0, y: 16, z: 1065}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1065
+  - localPosition: {x: 0, y: 16, z: 1070}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1070
+  - localPosition: {x: 0, y: 16, z: 1075}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1075
+  - localPosition: {x: 0, y: 16, z: 1080}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1080
+  - localPosition: {x: 0, y: 16, z: 1085}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1085
+  - localPosition: {x: 0, y: 16, z: 1090}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1090
+  - localPosition: {x: 0, y: 16, z: 1095}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1095
+  - localPosition: {x: 0, y: 16, z: 1100}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1100
+  - localPosition: {x: 0, y: 16, z: 1105}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1105
+  - localPosition: {x: 0, y: 16, z: 1110}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1110
+  - localPosition: {x: 0, y: 16, z: 1115}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1115
+  - localPosition: {x: 0, y: 16, z: 1120}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1120
+  - localPosition: {x: 0, y: 16, z: 1125}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1125
+  - localPosition: {x: 0, y: 16, z: 1130}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1130
+  - localPosition: {x: 0, y: 16, z: 1135}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1135
+  - localPosition: {x: 0, y: 16, z: 1140}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1140
+  - localPosition: {x: 0, y: 16, z: 1145}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1145
+  - localPosition: {x: 0, y: 16, z: 1150}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1150
+  - localPosition: {x: 0, y: 16, z: 1155}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1155
+  - localPosition: {x: 0, y: 16, z: 1160}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1160
+  - localPosition: {x: 0, y: 16, z: 1165}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1165
+  - localPosition: {x: 0, y: 16, z: 1170}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1170
+  - localPosition: {x: 0, y: 16, z: 1175}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1175
+  - localPosition: {x: 0, y: 16, z: 1180}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1180
+  - localPosition: {x: 0, y: 16, z: 1185}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1185
+  - localPosition: {x: 0, y: 16, z: 1190}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1190
+  - localPosition: {x: 0, y: 16, z: 1195}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1195
+  - localPosition: {x: 0, y: 16, z: 1200}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1200
+  - localPosition: {x: 0, y: 16, z: 1205}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1205
+  - localPosition: {x: 0, y: 16, z: 1210}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1210
+  - localPosition: {x: 0, y: 16, z: 1215}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1215
+  - localPosition: {x: 0, y: 16, z: 1220}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1220
+  - localPosition: {x: 0, y: 16, z: 1225}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1225
+  - localPosition: {x: 0, y: 16, z: 1230}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1230
+  - localPosition: {x: 0, y: 16, z: 1235}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1235
+  - localPosition: {x: 0, y: 16, z: 1240}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1240
+  - localPosition: {x: 0, y: 16, z: 1245}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1245
+  - localPosition: {x: 0, y: 16, z: 1250}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1250
+  - localPosition: {x: 0, y: 16, z: 1255}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1255
+  - localPosition: {x: 0, y: 16, z: 1260}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1260
+  - localPosition: {x: 0, y: 16, z: 1265}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1265
+  - localPosition: {x: 0, y: 16, z: 1270}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1270
+  - localPosition: {x: 0, y: 16, z: 1275}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1275
+  - localPosition: {x: 0, y: 16, z: 1280}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1280
+  - localPosition: {x: 0, y: 16, z: 1285}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1285
+  - localPosition: {x: 0, y: 16, z: 1290}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1290
+  - localPosition: {x: 0, y: 16, z: 1295}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1295
+  - localPosition: {x: 0, y: 16, z: 1300}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1300
+  - localPosition: {x: 0, y: 16, z: 1305}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1305
+  - localPosition: {x: 0, y: 16, z: 1310}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1310
+  - localPosition: {x: 0, y: 16, z: 1315}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1315
+  - localPosition: {x: 0, y: 16, z: 1320}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1320
+  - localPosition: {x: 0, y: 16, z: 1325}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1325
+  - localPosition: {x: 0, y: 16, z: 1330}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1330
+  - localPosition: {x: 0, y: 16, z: 1335}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1335
+  - localPosition: {x: 0, y: 16, z: 1340}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1340
+  - localPosition: {x: 0, y: 16, z: 1345}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1345
+  - localPosition: {x: 0, y: 16, z: 1350}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1350
+  - localPosition: {x: 0, y: 16, z: 1355}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1355
+  - localPosition: {x: 0, y: 16, z: 1360}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1360
+  - localPosition: {x: 0, y: 16, z: 1365}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1365
+  - localPosition: {x: 0, y: 16, z: 1370}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1370
+  - localPosition: {x: 0, y: 16, z: 1375}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1375
+  - localPosition: {x: 0, y: 16, z: 1380}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1380
+  - localPosition: {x: 0, y: 16, z: 1385}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1385
+  - localPosition: {x: 0, y: 16, z: 1390}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1390
+  - localPosition: {x: 0, y: 16, z: 1395}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1395
+  - localPosition: {x: 0, y: 16, z: 1400}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1400
+  - localPosition: {x: 0, y: 16, z: 1405}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1405
+  - localPosition: {x: 0, y: 16, z: 1410}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1410
+  - localPosition: {x: 0, y: 16, z: 1415}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1415
+  - localPosition: {x: 0, y: 16, z: 1420}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1420
+  - localPosition: {x: 0, y: 16, z: 1425}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1425
+  - localPosition: {x: 0, y: 16, z: 1430}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1430
+  - localPosition: {x: 0, y: 16, z: 1435}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1435
+  - localPosition: {x: 0, y: 16, z: 1440}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1440
+  - localPosition: {x: 0, y: 16, z: 1445}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1445
+  - localPosition: {x: 0, y: 16, z: 1450}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1450
+  - localPosition: {x: 0, y: 16, z: 1455}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1455
+  - localPosition: {x: 0, y: 16, z: 1460}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1460
+  - localPosition: {x: 0, y: 16, z: 1465}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1465
+  - localPosition: {x: 0, y: 16, z: 1470}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1470
+  - localPosition: {x: 0, y: 16, z: 1475}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1475
+  - localPosition: {x: 0, y: 16, z: 1480}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1480
+  - localPosition: {x: 0, y: 16, z: 1485}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1485
+  - localPosition: {x: 0, y: 16, z: 1490}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1490
+  - localPosition: {x: 0, y: 16, z: 1495}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1495
+  - localPosition: {x: 0, y: 16, z: 1500}
+    localTangent: {x: 0, y: 0, z: 1}
+    waterHeight: 16
+    leftWidth: 120
+    rightWidth: 120
+    cumulativeDistance: 1500
+  totalLength: 1500
+  averageWidth: 240
+  showGizmos: 1
+  centerlineColor: {r: 0, g: 0.9, b: 1, a: 0.9}
+  bankBoundaryColor: {r: 1, g: 0.85, b: 0.2, a: 0.45}
 --- !u!1 &7445094075403479072
 GameObject:
   m_ObjectHideFlags: 0
@@ -778,4 +2636,35 @@ Transform:
   m_ConstrainProportionsScale: 0
   m_Children: []
   m_Father: {fileID: 7887066034393771312}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &9079806269437732840
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 2910254674135251822}
+  m_Layer: 0
+  m_Name: Anchor_S
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &2910254674135251822
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 9079806269437732840}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 8601006980209141712}
   m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
