@@ -706,9 +706,9 @@ public class StoneThrowerCharacter : MonoBehaviour
         if (isThrowing) return;
 
         var gc = FindAnyObjectByType<GameController>();
-        if (gc != null && gc.currentMode == GameController.GameMode.LongDistance)
+        if (gc != null && (gc.currentMode == GameController.GameMode.LongDistance || gc.currentMode == GameController.GameMode.RhythmArcade))
         {
-            // 🏆 장거리 모드: 발판 위에서 좌우 X 오프셋(offset) 반영 및 월드 +Z축 물줄기 방향(Euler 0, 0, 0) 정면 응시
+            // 🏆 장거리 및 아케이드 모드: 발판 위에서 좌우 X 오프셋(offset) 반영 및 월드 +Z축 물줄기 방향(Euler 0, 0, 0) 정면 응시
             baseRotation = Quaternion.Euler(0f, 0f, 0f);
             Vector3 targetPierPos = new Vector3(basePosition.x + offset, basePosition.y, basePosition.z);
             currentPosition = Vector3.Lerp(currentPosition, targetPierPos, Time.deltaTime * 15f);
