@@ -185,8 +185,9 @@ Think of it like running lint after a coding session—not after every keystroke
 - **룰 임의 우회 금지**: 하드코딩이나 임시 꼼수를 위해 룰을 임의 우회하지 말 것. 충돌 시 트레이드오프와 대안을 먼저 설명 후 승인 대기.
 - **객관적 기술 현실성 (NO YES-MAN)**: 영혼 없는 칭찬이나 무조건 동조를 지양하고, 엔진 한계나 병목 발생 시 기술적 위험과 대안을 솔직히 직언할 것.
 
-### 2. ⚡ Unity C# 표준 및 모바일 터치 안전 원칙
+### 2. ⚡ Unity C# 표준, 모바일 터치 안전 및 모듈화 원칙
 - **Zero-Warning & Zero-Error**: C# 코드 수정 즉시 `dotnet build Assembly-CSharp.csproj` 및 `Editor.csproj`로 컴파일 검증 (CS0618 등 경고 0개 필수).
+- **단일 파일 과밀 금지 및 객체화(Strategy/State Pattern) 필수**: 한 클래스/파일에 조건문(if-else)을 무분별하게 쑤셔넣는 스파게티 코딩을 절대 금지하고, 게임 모드나 기능별로 독립 객체/핸들러(`IGameModeHandler` 등)로 분리하여 간결하고 확장성 있게 설계.
 - **하드코딩 금지**: 수면 높이, 강 너비, 고정 오프셋 등은 단일 진실 공급원(`WaterSurface`, `Presets`)으로부터 동적 참조.
 - **모바일 버튼 `isPressed` 금지**: UI 버튼은 단일 프레임 다운(`wasPressedThisFrame`, `TouchPhase.Began`)만 사용.
 - **터치 관통 방지 & 디바운스**: 화면 전환 시 `requireTouchRelease = true` 및 최소 0.20s~0.25s 쿨다운 적용. UI 터치 시 `Event.current.Use()`로 이벤트 소비.
