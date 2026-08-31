@@ -664,9 +664,14 @@ namespace SkippingStones.UI
             }
 
             var dm = GameDataManager.Instance;
-            bool isLong = (dm != null && dm.UserData.selectedGameMode == GameController.GameMode.LongDistance);
+            GameController.GameMode curMode = (dm != null) ? dm.UserData.selectedGameMode : GameController.GameMode.LongDistance;
 
-            if (DrawResponsiveButton(new Rect(150, 140, 250, 60), isLong ? "🔘 1500m 원거리" : "⚪ 1500m 원거리", isLong ? _tabActiveStyle : _tabInactiveStyle))
+            bool isLong = (curMode == GameController.GameMode.LongDistance);
+            bool isTarget = (curMode == GameController.GameMode.TargetAccuracy);
+            bool isArcade = (curMode == GameController.GameMode.RhythmArcade);
+
+            // 1. 장거리 물리 모드
+            if (DrawResponsiveButton(new Rect(140, 140, 175, 60), isLong ? "🔘 1500m" : "⚪ 1500m", isLong ? _tabActiveStyle : _tabInactiveStyle))
             {
                 if (dm != null)
                 {
@@ -674,11 +679,21 @@ namespace SkippingStones.UI
                     dm.SaveUserData();
                 }
             }
-            if (DrawResponsiveButton(new Rect(410, 140, 270, 60), !isLong ? "🔘 🎯 강 건너기(타깃)" : "⚪ 🎯 강 건너기(타깃)", !isLong ? _tabActiveStyle : _tabInactiveStyle))
+            // 2. 타깃 정밀 모드
+            if (DrawResponsiveButton(new Rect(325, 140, 175, 60), isTarget ? "🔘 🎯타깃" : "⚪ 🎯타깃", isTarget ? _tabActiveStyle : _tabInactiveStyle))
             {
                 if (dm != null)
                 {
                     dm.UserData.selectedGameMode = GameController.GameMode.TargetAccuracy;
+                    dm.SaveUserData();
+                }
+            }
+            // 3. 리듬 아케이드 모드
+            if (DrawResponsiveButton(new Rect(510, 140, 175, 60), isArcade ? "🔘 🎵아케이드" : "⚪ 🎵아케이드", isArcade ? _tabActiveStyle : _tabInactiveStyle))
+            {
+                if (dm != null)
+                {
+                    dm.UserData.selectedGameMode = GameController.GameMode.RhythmArcade;
                     dm.SaveUserData();
                 }
             }

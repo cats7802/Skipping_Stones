@@ -278,7 +278,7 @@ namespace SkippingStones.Arcade
             {
                 currentState = ArcadeState.AimingAngle;
                 lastStateChangeTime = Time.time;
-                if (_dualCamera != null) _dualCamera.SetCameraMode(DualCameraSetup.CameraMode.AimBehind);
+                if (_dualCamera != null) _dualCamera.SetCameraMode(DualCameraSetup.CameraMode.ShoulderAim);
             }
         }
 
