@@ -94,11 +94,11 @@ namespace SkippingStones.Gameplay.Modes
                     controller.dualCamera.SetCameraMode(DualCameraSetup.CameraMode.DynamicFlight);
                 }
 
-                // 🎵 투구 발사 순간부터 60 BPM BGM 첫 비트 시작!
+                // 🎵 투구 발사 순간부터 원곡 100 BPM BGM 첫 비트 시작!
                 if (AudioManager.Instance != null)
                 {
-                    AudioManager.Instance.PlayBGM(null, 60f);
-                    AudioManager.Instance.SetBGMPitchByBPM(60f, 60f);
+                    AudioManager.Instance.PlayBGM(null, 100f);
+                    AudioManager.Instance.SetBGMPitchByBPM(100f, 100f);
                 }
             }
         }
@@ -185,7 +185,7 @@ namespace SkippingStones.Gameplay.Modes
                 else if (grade.Contains("GREAT") || grade.Contains("GOOD")) AudioManager.Instance.Play(SoundType.BounceGood);
                 else AudioManager.Instance.Play(SoundType.BounceWater);
 
-                AudioManager.Instance.SetBGMPitchByBPM(currentBPM, 60f);
+                AudioManager.Instance.SetBGMPitchByBPM(currentBPM, 100f);
             }
 
             // 다음 바운스 포물선 설정 (1회 착수 $\rightarrow$ 다음 점프 시작)
@@ -198,11 +198,12 @@ namespace SkippingStones.Gameplay.Modes
 
         private void UpdateBPM()
         {
-            if (currentCombo >= 20) currentBPM = 120f;
-            else if (currentCombo >= 15) currentBPM = 100f;
-            else if (currentCombo >= 10) currentBPM = 85f;
-            else if (currentCombo >= 5) currentBPM = 72f;
-            else currentBPM = 60f;
+            // 원곡 100 BPM(0.60초) 기준 콤보별 점진적 가속
+            if (currentCombo >= 20) currentBPM = 135f;      // FEVER (0.44s)
+            else if (currentCombo >= 15) currentBPM = 125f; // 0.48s
+            else if (currentCombo >= 10) currentBPM = 115f; // 0.52s
+            else if (currentCombo >= 5) currentBPM = 108f;  // 0.55s
+            else currentBPM = 100f;                         // 원곡 시작 (0.60s)
 
             currentCycleDuration = 60f / currentBPM;
         }
