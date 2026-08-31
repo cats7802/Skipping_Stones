@@ -1428,4 +1428,21 @@ public class SkippingStone : MonoBehaviour
             Gizmos.DrawLine(rec.stoneWorldPos, new Vector3(rec.stoneWorldPos.x, waterLevel, rec.stoneWorldPos.z));
         }
     }
+
+    private void OnDestroy()
+    {
+        if (waterReflectionObj != null)
+        {
+            if (waterReflectionMat != null)
+            {
+                if (waterReflectionMat.mainTexture != null)
+                {
+                    Destroy(waterReflectionMat.mainTexture);
+                }
+                Destroy(waterReflectionMat);
+            }
+            Destroy(waterReflectionObj);
+            waterReflectionObj = null;
+        }
+    }
 }

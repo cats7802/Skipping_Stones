@@ -27,6 +27,7 @@
 | 15 | **점핑 물고기 프리팹** | `Assets/prefab/JumpingFish.prefab` | `Assets/Resources/JumpingFish.prefab` | ✅ 등록 완료 |
 | 16 | **연잎 군락 프리팹** | `Assets/prefab/LilyPadCluster.prefab` | `Assets/Resources/LilyPadCluster.prefab` | ✅ 등록 완료 |
 | 17 | **스타일라이즈드 수면 머티리얼** | `Assets/Materials/M_StylizedWater.mat` | `Assets/Resources/M_StylizedWater.mat` | ✅ 동기화됨 |
+| 18 | **터치 버튼 스프라이트 (L/O/R)** | `Assets/2D/UI/Touch_Button_*.png` | `Assets/Resources/Touch_Button_*.png` | ✅ 동기화됨 |
 
 ---
 

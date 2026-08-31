@@ -45,6 +45,10 @@ public class StoneSkippingUGUIController : MonoBehaviour
     [SerializeField] private Text flightDistanceText;
     [SerializeField] private Text flightSkipText;
     [SerializeField] private Text flightTimingText;
+    [SerializeField] private GameObject flightTouchButtonsContainer;
+    [SerializeField] private Image flightTouchBtnLeft;
+    [SerializeField] private Image flightTouchBtnCenter;
+    [SerializeField] private Image flightTouchBtnRight;
 
     [Header("7. 리플레이 (Replay)")]
     [SerializeField] private GameObject replayObj;
@@ -353,10 +357,91 @@ public class StoneSkippingUGUIController : MonoBehaviour
                 EnvironmentTestHelper.Instance.ToggleAutoFlyGodMode();
             }
         });
-        if (devCloseBtn != null) devCloseBtn.onClick.AddListener(() =>
+        // 🎮 6. 비행 HUD 하단 3버튼 바인딩 (FlightHUD 하위 자동 탐색 및 생성 보완)
+        SetupFlightTouchButtons();
+    }
+
+    private void SetupFlightTouchButtons()
+    {
+        if (flightHudObj == null) return;
+
+        // 컨테이너 탐색/생성
+        if (flightTouchButtonsContainer == null)
         {
-            if (EnvironmentTestHelper.Instance != null) EnvironmentTestHelper.Instance.showTestUI = false;
-        });
+            Transform existing = flightHudObj.transform.Find("FlightTouchButtons_Container");
+            if (existing != null) flightTouchButtonsContainer = existing.gameObject;
+        }
+
+        if (flightTouchButtonsContainer == null)
+        {
+            flightTouchButtonsContainer = new GameObject("FlightTouchButtons_Container");
+            flightTouchButtonsContainer.transform.SetParent(flightHudObj.transform, false);
+
+            RectTransform rootRt = flightTouchButtonsContainer.AddComponent<RectTransform>();
+            rootRt.anchorMin = new Vector2(0.5f, 0f);
+            rootRt.anchorMax = new Vector2(0.5f, 0f);
+            rootRt.pivot = new Vector2(0.5f, 0f);
+            rootRt.anchoredPosition = new Vector2(0f, 60f);
+            rootRt.sizeDelta = new Vector2(560f, 120f);
+        }
+
+        // 스프라이트 로드
+        Sprite spL = Resources.Load<Sprite>("Touch_Button_L");
+        Sprite spO = Resources.Load<Sprite>("Touch_Button_O");
+        Sprite spR = Resources.Load<Sprite>("Touch_Button_R");
+
+#if UNITY_EDITOR
+        if (spL == null) spL = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/2D/UI/Touch_Button_L.png");
+        if (spO == null) spO = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/2D/UI/Touch_Button_O.png");
+        if (spR == null) spR = UnityEditor.AssetDatabase.LoadAssetAtPath<Sprite>("Assets/2D/UI/Touch_Button_R.png");
+#endif
+
+        Color normalTint = new Color(0.9f, 0.95f, 1.0f, 0.75f);
+        Color pressedTint = new Color(0.4f, 0.85f, 1.0f, 1.0f);
+
+        // 1. 좌측 버튼
+        if (flightTouchBtnLeft == null)
+        {
+            flightTouchBtnLeft = CreateOrGetTouchButton(flightTouchButtonsContainer.transform, "Btn_Left", new Vector2(-190f, 0f), spL, -5f, -8f, normalTint, pressedTint);
+        }
+        // 2. 중앙 버튼
+        if (flightTouchBtnCenter == null)
+        {
+            flightTouchBtnCenter = CreateOrGetTouchButton(flightTouchButtonsContainer.transform, "Btn_Center", new Vector2(0f, 0f), spO, 0f, 0f, normalTint, pressedTint);
+        }
+        // 3. 우측 버튼
+        if (flightTouchBtnRight == null)
+        {
+            flightTouchBtnRight = CreateOrGetTouchButton(flightTouchButtonsContainer.transform, "Btn_Right", new Vector2(190f, 0f), spR, 5f, 8f, normalTint, pressedTint);
+        }
+    }
+
+    private Image CreateOrGetTouchButton(Transform parent, string name, Vector2 pos, Sprite sprite, float baseAngle, float swipeAngle, Color normalColor, Color pressedColor)
+    {
+        Transform existing = parent.Find(name);
+        GameObject btnObj = (existing != null) ? existing.gameObject : new GameObject(name);
+        btnObj.transform.SetParent(parent, false);
+
+        RectTransform rt = btnObj.GetComponent<RectTransform>() ?? btnObj.AddComponent<RectTransform>();
+        rt.anchorMin = new Vector2(0.5f, 0.5f);
+        rt.anchorMax = new Vector2(0.5f, 0.5f);
+        rt.pivot = new Vector2(0.5f, 0.5f);
+        rt.anchoredPosition = pos;
+        rt.sizeDelta = new Vector2(120f, 120f);
+
+        Image img = btnObj.GetComponent<Image>() ?? btnObj.AddComponent<Image>();
+        if (sprite != null)
+        {
+            img.sprite = sprite;
+            img.type = Image.Type.Simple;
+            img.preserveAspect = true;
+        }
+        img.color = normalColor;
+
+        var handler = btnObj.GetComponent<SkippingStones.UI.FlightTouchButtonHandler>() ?? btnObj.AddComponent<SkippingStones.UI.FlightTouchButtonHandler>();
+        handler.Init(null, baseAngle, swipeAngle, img, normalColor, pressedColor);
+
+        return img;
     }
 
     private void InitializePanelStates()

@@ -10,11 +10,9 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-31] 순수 모멘텀 생존 체계 확립, 수면 콜라이더 분리 및 도로록 스키밍 연동 완료
-- **수정 목적**: 
-  1. 수면 아래(-고도)에서 일어나는 모든 바운스(LATE, TOO LATE, BAD) 시 즉시 수면 위(`waterLevel + 0.02m`)로 탈출(Elevation Snap)시켜 다음 프레임 침몰 차단.
-  2. 과거 원스트라이크 시절의 레거시 조기 차단문(`distToWater < -0.35f LATE MISS` 등) 및 가짜 지형 충돌(`CheckWaterUnderneath`)을 100% 완전 삭제하고, 순수하게 `currentMomentum > 0` 여부로만 생사를 판정하는 단일 진실 공급원 확립.
-  3. `OnCollisionEnter` / `OnTriggerEnter`에서 `WaterSurface` 및 수면 관련 콜라이더는 물리 충돌(지형 충돌)에서 완전히 배제하여, 물속에서 솟구칠 때 수면 아랫면에 부딪혀 자폭하던 현상 원천 박멸.
-  4. 15스킵 이상 고스킵 상태에서 `BAD (-3.0)` 구제 시에도 최소 반발력 `2.8m/s`를 보장하여 안전 회생.
-  5. 5스킵 이상 달성 후 모멘텀 고갈 시 즉시 침몰하지 않고 '도로록~' 스키밍 피니시(`StartSkimmingFinish`)로 직결되도록 수동 탭 침몰 분기 완비.
-- **컴파일 검증**: Assembly-CSharp 0 Errors, 0 Warnings (Clean Build).
+### [2026-08-31] 수면 반사 그림자(Water_Reflection_Shadow) OnDestroy 라이프사이클 파괴/누수 정리
+- **수정 목적**: 돌이 파괴되거나 게임 재시작 시 동적으로 씬 루트에 생성되었던 `[Water_Reflection_Shadow]` Quad 오브젝트 및 생성 텍스처/머티리얼이 하이어라키에 잔존/누적되던 문제 해결.
+- **적용 내용**:
+  - `SkippingStone.cs`: `OnDestroy()` 라이프사이클 메서드를 구현하여 `waterReflectionObj`, `waterReflectionMat`, `mainTexture`를 명시적으로 파괴/해제하도록 처리.
+- **컴파일 검증**: 0 Errors, 0 Warnings.
+

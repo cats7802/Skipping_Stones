@@ -942,6 +942,10 @@ public class GameController : MonoBehaviour
         stone.Launch(direction, finalPowerMultiplier);
     }
 
+    private float lastLeftKeyTime = -10f;
+    private float lastRightKeyTime = -10f;
+    private const float DOUBLE_TAP_THRESHOLD = 0.25f;
+
     private void UpdateFlying()
     {
         if (IsKeyTriggered(KeyCode.Escape))
@@ -949,14 +953,35 @@ public class GameController : MonoBehaviour
             Application.Quit();
         }
 
-        float hInput = GetHorizontalInput();
-        float keySteer = 0f;
-        if (hInput < -0.1f) keySteer = -3f;
-        else if (hInput > 0.1f) keySteer = 3f;
+        // ⌨️ 키보드 리듬 탭 및 조향 (A/D/S 및 방향키)
+        bool leftTriggered = IsKeyTriggered(KeyCode.A) || IsKeyTriggered(KeyCode.LeftArrow);
+        bool rightTriggered = IsKeyTriggered(KeyCode.D) || IsKeyTriggered(KeyCode.RightArrow);
+        bool centerTriggered = IsKeyTriggered(KeyCode.Space) || IsKeyTriggered(KeyCode.Return) || 
+                              IsKeyTriggered(KeyCode.S) || IsKeyTriggered(KeyCode.DownArrow);
 
-        if (IsKeyTriggered(KeyCode.Space) || IsKeyTriggered(KeyCode.Return))
+        if (leftTriggered)
         {
-            EvaluateRhythmTiming(keySteer);
+            float now = Time.unscaledTime;
+            bool isDoubleTap = (now - lastLeftKeyTime <= DOUBLE_TAP_THRESHOLD);
+            lastLeftKeyTime = now;
+
+            float steerAngle = isDoubleTap ? -8.0f : -5.0f;
+            EvaluateRhythmTiming(steerAngle);
+            return;
+        }
+        else if (rightTriggered)
+        {
+            float now = Time.unscaledTime;
+            bool isDoubleTap = (now - lastRightKeyTime <= DOUBLE_TAP_THRESHOLD);
+            lastRightKeyTime = now;
+
+            float steerAngle = isDoubleTap ? 8.0f : 5.0f;
+            EvaluateRhythmTiming(steerAngle);
+            return;
+        }
+        else if (centerTriggered)
+        {
+            EvaluateRhythmTiming(0f);
             return;
         }
 
@@ -1014,8 +1039,15 @@ public class GameController : MonoBehaviour
 
         if (isDown)
         {
+            // UI 버튼 영역 탭 시 화면 전체 제스처 중복 방지 (EventSystem 포인터 검사)
+            if (UnityEngine.EventSystems.EventSystem.current != null && 
+                UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
+            {
+                return;
+            }
+
             flightTouchStartPos = curPos;
-            flightTouchStartTime = Time.time;
+            flightTouchStartTime = Time.unscaledTime;
             isTrackingFlightTouch = true;
             EvaluateRhythmTiming(0f);
         }
@@ -1023,15 +1055,17 @@ public class GameController : MonoBehaviour
         {
             isTrackingFlightTouch = false;
             float deltaX = curPos.x - flightTouchStartPos.x;
-            float duration = Time.time - flightTouchStartTime;
+            float duration = Time.unscaledTime - flightTouchStartTime;
 
-            if (duration < 0.35f && Mathf.Abs(deltaX) > 25f)
+            if (duration < 0.35f && Mathf.Abs(deltaX) > 30f)
             {
-                float steerAngle = (deltaX > 0f) ? 3.0f : -3.0f;
+                // 화면 전체 스와이프: 기본 5° / 빠른 스와이프(거리 > 80px) 8°
+                float baseAngle = (Mathf.Abs(deltaX) > 80f) ? 8.0f : 5.0f;
+                float steerAngle = (deltaX > 0f) ? baseAngle : -baseAngle;
                 if (stone != null && !stone.isSunk && !stone.isCrashed)
                 {
                     stone.ApplySteerAngle(steerAngle);
-                    lastTimingText += (steerAngle > 0f) ? " \n👉 [RIGHT 3° 조향]" : " \n👈 [LEFT 3° 조향]";
+                    lastTimingText += (steerAngle > 0f) ? $" \n👉 [RIGHT {steerAngle:F0}° 조향]" : $" \n👈 [LEFT {Mathf.Abs(steerAngle):F0}° 조향]";
                 }
             }
         }
@@ -1385,6 +1419,7 @@ public class GameController : MonoBehaviour
             if (key == KeyCode.R && Keyboard.current.rKey.wasPressedThisFrame) return true;
             if ((key == KeyCode.A || key == KeyCode.LeftArrow) && (Keyboard.current.aKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame)) return true;
             if ((key == KeyCode.D || key == KeyCode.RightArrow) && (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame)) return true;
+            if ((key == KeyCode.S || key == KeyCode.DownArrow) && (Keyboard.current.sKey.wasPressedThisFrame || Keyboard.current.downArrowKey.wasPressedThisFrame)) return true;
         }
 #endif
         try
