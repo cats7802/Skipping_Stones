@@ -42,7 +42,10 @@ namespace SkippingStones.RhythmArcade
 
         [Header("타이밍 판정 윈도우 (비트 주기 대비 오차 비율)")]
         public float windowPerfectRatio = 0.10f; // ±10% (BPM 60 기준 ±0.10s)
-        public float windowGreatRatio = 0.22f;   // ±22% (BPM 60 기준 ±0.22s)
+        [Header("자동 시작 옵션")]
+        public bool autoStartOnPlay = true;
+        public Vector3 defaultStartPos = new Vector3(0f, 0f, 5f);
+        public Vector3 defaultForwardDir = Vector3.forward;
 
         private float currentStepProgress = 0f;
         private bool hasTappedThisStep = false;
@@ -59,6 +62,11 @@ namespace SkippingStones.RhythmArcade
             {
                 ringIndicator = gameObject.AddComponent<RhythmArcadeRingIndicator>();
                 ringIndicator.Initialize();
+            }
+
+            if (autoStartOnPlay)
+            {
+                StartArcadeGame(defaultStartPos, defaultForwardDir);
             }
         }
 
@@ -88,6 +96,20 @@ namespace SkippingStones.RhythmArcade
 
             arcadeStone.Initialize(startPos, forwardDir, currentBPM, distGreat);
             arcadeStone.StartFlight();
+
+            // 카메라 타깃 연결
+            var cam = FindAnyObjectByType<DualCameraSetup>();
+            if (cam != null)
+            {
+                cam.targetStone = arcadeStone.transform;
+                cam.currentMode = DualCameraSetup.CameraMode.DynamicFlight;
+            }
+
+            // BGM 재생
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBGM(null, currentBPM);
+            }
         }
 
         private void OnStoneBounceTriggered(Vector3 landingPos, float duration)
