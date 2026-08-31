@@ -365,24 +365,43 @@ public class StoneSkippingUGUIController : MonoBehaviour
     {
         if (flightHudObj == null) return;
 
+        Transform safeContainer = transform.Find("StoneSkipping_uGUICanvas/SafeContainer") ?? transform;
+
         // 컨테이너 탐색/생성
         if (flightTouchButtonsContainer == null)
         {
-            Transform existing = flightHudObj.transform.Find("FlightTouchButtons_Container");
+            Transform existing = safeContainer.Find("FlightTouchButtons_Container");
             if (existing != null) flightTouchButtonsContainer = existing.gameObject;
         }
 
         if (flightTouchButtonsContainer == null)
         {
-            flightTouchButtonsContainer = new GameObject("FlightTouchButtons_Container");
-            flightTouchButtonsContainer.transform.SetParent(flightHudObj.transform, false);
+            flightTouchButtonsContainer = new GameObject("FlightTouchButtons_Container", typeof(RectTransform));
+            flightTouchButtonsContainer.transform.SetParent(safeContainer, false);
 
-            RectTransform rootRt = flightTouchButtonsContainer.AddComponent<RectTransform>();
+            RectTransform rootRt = flightTouchButtonsContainer.GetComponent<RectTransform>();
             rootRt.anchorMin = new Vector2(0.5f, 0f);
             rootRt.anchorMax = new Vector2(0.5f, 0f);
             rootRt.pivot = new Vector2(0.5f, 0f);
             rootRt.anchoredPosition = new Vector2(0f, 60f);
             rootRt.sizeDelta = new Vector2(560f, 120f);
+        }
+        else
+        {
+            // 부모가 SafeContainer가 아니라면 이동
+            if (flightTouchButtonsContainer.transform.parent != safeContainer)
+            {
+                flightTouchButtonsContainer.transform.SetParent(safeContainer, false);
+            }
+            RectTransform rootRt = flightTouchButtonsContainer.GetComponent<RectTransform>();
+            if (rootRt != null)
+            {
+                rootRt.anchorMin = new Vector2(0.5f, 0f);
+                rootRt.anchorMax = new Vector2(0.5f, 0f);
+                rootRt.pivot = new Vector2(0.5f, 0f);
+                rootRt.anchoredPosition = new Vector2(0f, 60f);
+                rootRt.sizeDelta = new Vector2(560f, 120f);
+            }
         }
 
         // 스프라이트 로드
@@ -552,6 +571,8 @@ public class StoneSkippingUGUIController : MonoBehaviour
             chargingObj.SetActive(state == GameController.GameState.ChargingPower);
         if (flightHudObj != null)
             flightHudObj.SetActive(state == GameController.GameState.Flying);
+        if (flightTouchButtonsContainer != null)
+            flightTouchButtonsContainer.SetActive(state == GameController.GameState.Flying);
         if (replayObj != null)
             replayObj.SetActive(state == GameController.GameState.Replay);
         if (resultObj != null)
