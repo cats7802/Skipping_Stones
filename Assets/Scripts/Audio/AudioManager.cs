@@ -242,10 +242,49 @@ public class AudioManager : MonoBehaviour
 
         if (bgmSource.clip != null)
         {
+            if (_bgmFadeCoroutine != null)
+            {
+                StopCoroutine(_bgmFadeCoroutine);
+                _bgmFadeCoroutine = null;
+            }
             bgmSource.volume = masterVolume * 0.7f;
             bgmSource.pitch = 1.0f;
             bgmSource.Play();
         }
+    }
+
+    private Coroutine _bgmFadeCoroutine;
+
+    public void StopBGMFadeOut(float duration = 3.0f)
+    {
+        if (bgmSource != null && bgmSource.isPlaying)
+        {
+            if (_bgmFadeCoroutine != null) StopCoroutine(_bgmFadeCoroutine);
+            _bgmFadeCoroutine = StartCoroutine(CoFadeOutBGM(duration));
+        }
+    }
+
+    private System.Collections.IEnumerator CoFadeOutBGM(float duration)
+    {
+        if (bgmSource == null) yield break;
+
+        float startVolume = bgmSource.volume;
+        float elapsed = 0f;
+
+        while (elapsed < duration && bgmSource != null && bgmSource.isPlaying)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / duration;
+            bgmSource.volume = Mathf.Lerp(startVolume, 0f, t);
+            yield return null;
+        }
+
+        if (bgmSource != null)
+        {
+            bgmSource.Stop();
+            bgmSource.volume = startVolume;
+        }
+        _bgmFadeCoroutine = null;
     }
 
     public void SetBGMPitchByBPM(float targetBPM, float baseBPM = 60f)

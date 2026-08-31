@@ -1156,6 +1156,13 @@ public class GameController : MonoBehaviour
         lastTimingText = string.Empty;
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
+
+        // 🎵 결과 화면 진입 시 3.0초에 걸쳐 BGM 자연스러운 페이드아웃 정지
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopBGMFadeOut(3.0f);
+        }
+
         CalculateFinalScores(dist);
     }
 
