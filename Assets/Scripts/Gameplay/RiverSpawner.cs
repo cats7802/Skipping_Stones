@@ -35,13 +35,14 @@ public class RiverSpawner : MonoBehaviour
 
     public void GenerateRiverEntitiesForMode(GameController.GameMode mode)
     {
-        if (mode == GameController.GameMode.LongDistance)
+        if (mode == GameController.GameMode.TargetAccuracy)
         {
-            GenerateLongDistanceRiver();
+            GenerateTargetAccuracyRiver();
         }
         else
         {
-            GenerateTargetAccuracyRiver();
+            // LongDistance 및 RhythmArcade 모드는 강줄기 장거리 엔티티 스폰 (타깃 부표 제외)
+            GenerateLongDistanceRiver();
         }
     }
 
