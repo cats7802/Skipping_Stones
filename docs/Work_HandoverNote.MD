@@ -38,11 +38,16 @@
 - 하단 3버튼 uGUI와 `RhythmArcadeModeHandler` 실시간 HUD 바인딩 미세 튜닝.
 
 ### 🧩 2. 단계적 모듈화/객체화 리팩토링 과제 (Rule 준수)
-1. **`MetaUIManager.cs` (화면/모달 분리)**:
+1. **`MusicTrackCatalog` (음원 트랙 카탈로그 시스템 구축)**:
+   - 각 BGM 음원별 `trackId`, `audioClip`, `originalBPM`, `targetStartBPM`, `previewStartTime` 목록화.
+   - 스테이지/테마별 자동 BGM 바인딩 및 BPM 콤보 가속 시 톤 왜곡 없는 피치 싱크 엔진 구현.
+2. **`CameraProfile` (모드 데이터와 카메라 분리)**:
+   - 각 `IGameModeHandler` 또는 ScriptableObject 모드 데이터가 자체 카메라 값을 소유하고, 카메라는 수동 수치 하드코딩 없이 모드 프로필을 수신받아 투영하도록 고도화.
+3. **`MetaUIManager.cs` (화면/모달 분리)**:
    - `IMetaScreenView` 기반 `TitleScreenView`, `LobbyScreenView`, `MapSelectScreenView` 분리.
    - 도감/상점/랭킹/세팅 모달 뷰(`CollectionModalView` 등) 독립 객체화.
-2. **`StoneThrowerCharacter.cs` (책임 분리)**:
+4. **`StoneThrowerCharacter.cs` (책임 분리)**:
    - 투구 애니메이션 및 45~55프레임 리드인 코루틴을 `CharacterThrowAnimator`로 분리.
    - 타깃 모드 웨이포인트 가이드 및 포지셔닝을 `CharacterWaypointNavigator`로 분리.
-3. **`RiverSpawner.cs` (엔티티 생성 팩토리화)**:
+5. **`RiverSpawner.cs` (엔티티 생성 팩토리화)**:
    - `IRiverEntitySpawner` 인터페이스 기반 `FishSpawner`, `ObstacleSpawner`, `BoostPadSpawner` 등으로 분리하여 모드별 조립형 스폰 구조 구축.
