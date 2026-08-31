@@ -171,11 +171,17 @@ public class DualCameraSetup : MonoBehaviour
 
     [Header("모드별 독립 카메라 프로필")]
     public CameraProfile longDistanceProfile = CameraProfile.DefaultLongDistance();
-    public CameraProfile rhythmArcadeProfile = CameraProfile.DefaultRhythmArcade();
 
     public void ApplyProfileForMode(GameController.GameMode mode)
     {
-        CameraProfile p = (mode == GameController.GameMode.RhythmArcade) ? rhythmArcadeProfile : longDistanceProfile;
+        // 🎵 리듬 아케이드 모드: 디렉터님이 인스펙터에서 자유롭게 튜닝/실험 중이므로 강제 덮어쓰기 금지!
+        if (mode == GameController.GameMode.RhythmArcade)
+        {
+            return;
+        }
+
+        // 🌊 롱디스턴스 물리 모드: 디렉터 확정 골든 수치(-1.5, 1.5, 2.5, 10, -5.5, 4.2) 완벽 고정
+        CameraProfile p = longDistanceProfile;
 
         defaultFOV = p.defaultFOV;
         flightFOV = p.flightFOV;

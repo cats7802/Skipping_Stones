@@ -37,6 +37,14 @@ public class GameController : MonoBehaviour
     public GameMode currentMode = GameMode.LongDistance;
     public GameState currentState = GameState.ModeSelect;
 
+    [Header("🎵 리듬 아케이드 밸런스 튜닝 (디렉터 프리셋)")]
+    [Tooltip("리듬 아케이드 모드에서 적용할 기본 밸런스 프리셋 (Cute_10m / Standard_12m / Speed_15m / Custom)")]
+    public SkippingStones.Arcade.ArcadeSkippingStone.RhythmPresetType rhythmPreset = SkippingStones.Arcade.ArcadeSkippingStone.RhythmPresetType.Cute_10m;
+    [Tooltip("통통 귀엽게 튀는 고정 포물선 정점 높이")]
+    public float rhythmArcadeHeight = 1.8f;
+    [Tooltip("Custom 선택 시 사용할 자유 튜닝 수치")]
+    public SkippingStones.Arcade.ArcadeSkippingStone.PresetData customRhythmPreset = new SkippingStones.Arcade.ArcadeSkippingStone.PresetData(10.0f, +0.5f, +0.2f, 0.0f, -0.3f, -0.6f);
+
     [Header("🛠️ 개발자 테스트 설정")]
     [Tooltip("체크 시 로비/맵선택창을 건너뛰고 시작하자마자 곧바로 인게임 투척 대기(Positioning) 상태로 직행합니다.")]
     public bool autoStartInGame = false;

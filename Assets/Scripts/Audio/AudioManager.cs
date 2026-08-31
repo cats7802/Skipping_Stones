@@ -248,7 +248,7 @@ public class AudioManager : MonoBehaviour
                 _bgmFadeCoroutine = null;
             }
             bgmSource.volume = masterVolume * 0.7f;
-            bgmSource.pitch = 1.0f;
+            bgmSource.pitch = 0.55f; // 🎵 임시 테스트: 60 BPM 정박 주기에 맞춘 편안한 템포
             bgmSource.Play();
         }
     }
@@ -291,7 +291,8 @@ public class AudioManager : MonoBehaviour
     {
         if (bgmSource != null && bgmSource.isPlaying)
         {
-            bgmSource.pitch = Mathf.Clamp(targetBPM / baseBPM, 0.8f, 2.0f);
+            // 0.55f 기본 피치 기준으로 BPM 비율만큼 완만하게 가속
+            bgmSource.pitch = Mathf.Clamp(0.55f * (targetBPM / baseBPM), 0.4f, 1.5f);
         }
     }
 
