@@ -50,6 +50,25 @@ public class StoneSkippingUGUIController : MonoBehaviour
     [SerializeField] private Image flightTouchBtnCenter;
     [SerializeField] private Image flightTouchBtnRight;
 
+    public void TriggerButtonVisualFeedback(float steerAngle)
+    {
+        if (steerAngle < 0f && flightTouchBtnLeft != null)
+        {
+            var h = flightTouchBtnLeft.GetComponent<SkippingStones.UI.FlightTouchButtonHandler>();
+            if (h != null) h.TriggerVisualFeedback();
+        }
+        else if (steerAngle > 0f && flightTouchBtnRight != null)
+        {
+            var h = flightTouchBtnRight.GetComponent<SkippingStones.UI.FlightTouchButtonHandler>();
+            if (h != null) h.TriggerVisualFeedback();
+        }
+        else if (Mathf.Approximately(steerAngle, 0f) && flightTouchBtnCenter != null)
+        {
+            var h = flightTouchBtnCenter.GetComponent<SkippingStones.UI.FlightTouchButtonHandler>();
+            if (h != null) h.TriggerVisualFeedback();
+        }
+    }
+
     [Header("7. 리플레이 (Replay)")]
     [SerializeField] private GameObject replayObj;
     [SerializeField] private Text replayTitleText;

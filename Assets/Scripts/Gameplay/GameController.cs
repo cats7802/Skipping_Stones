@@ -966,6 +966,7 @@ public class GameController : MonoBehaviour
             lastLeftKeyTime = now;
 
             float steerAngle = isDoubleTap ? -8.0f : -5.0f;
+            TriggerButtonFeedback(steerAngle);
             EvaluateRhythmTiming(steerAngle);
             return;
         }
@@ -976,11 +977,13 @@ public class GameController : MonoBehaviour
             lastRightKeyTime = now;
 
             float steerAngle = isDoubleTap ? 8.0f : 5.0f;
+            TriggerButtonFeedback(steerAngle);
             EvaluateRhythmTiming(steerAngle);
             return;
         }
         else if (centerTriggered)
         {
+            TriggerButtonFeedback(0f);
             EvaluateRhythmTiming(0f);
             return;
         }
@@ -1428,6 +1431,15 @@ public class GameController : MonoBehaviour
         }
         catch { }
         return false;
+    }
+
+    private void TriggerButtonFeedback(float steerAngle)
+    {
+        var ugui = Object.FindAnyObjectByType<StoneSkippingUGUIController>();
+        if (ugui != null)
+        {
+            ugui.TriggerButtonVisualFeedback(steerAngle);
+        }
     }
 
     #endregion
