@@ -1,69 +1,66 @@
-# 📋 최종 작업 인수인계서 (Work Handover Note & Current Code Status)
+# 📋 최종 작업 인수인계서 (Work Handover Note & Future Architecture)
 
-**작성 일시**: 2026-08-31 20:58  
+**작성 일시**: 2026-08-31 22:42  
 **현재 브랜치**: `feature/sandbox-momentum-rhythm`  
-**상태 요약**: 하단 3버튼(`[ ◀ ] [ ● ] [ ▶ ]`) 터치/스와이프 연계 조작계 및 키보드(A/D/S, 방향키) 단일탭(`±5°`)/더블탭(`±8°`) 조향 체계 완비. 빌드 0 오류 0 경고 검증 완료.
+**상태 요약**: 하단 3버튼 uGUI 연동 및 카메라 기본값 튜닝 완료. BPM 기반 고정 주기 리듬 아케이드 모드 전환 설계 및 통합 방향 수립 완료.
 
 ---
 
-## 1. 🛠️ 금일 핵심 작업 및 시스템 현황 (Fact-Based)
+## 1. 🛠️ 금일 완료된 작업 현황
 
-### ✅ 1. 하단 3버튼 터치/스와이프 조작 컨트롤러 구축 및 인터랙션 피드백 (`FlightTouchButtonHandler.cs`, `StoneSkippingUGUIController.cs`)
-- **UI 계층 일원화**: `[StoneSkippingUGUI]` > `StoneSkipping_uGUICanvas` > `SafeContainer` 하위에 `FlightTouchButtons_Container` 독립 패널로 배치하여 화면 하단 중앙(`Bottom Anchor`, `Y=60`)에 안정적으로 고정.
-- **2D/UI 정품 에셋 적용**: `Assets/2D/UI/` 내의 `Touch_Button_L`, `Touch_Button_O`, `Touch_Button_R` 스프라이트 연동.
-- **인터랙티브 네온 플래시 & 탄성 피드백**:
-  - 터치 다운 또는 키보드 조작(`A/D/S`) 시 즉시 **선명한 네온 시안 발광(`rgba(0.2, 0.9, 1.0, 1.0)`)** 및 `0.88x` 탄성 스케일 축소 후 0.18초 부드러운 복귀.
-- **버튼 구성 및 각도**:
-  - `[ ◀ ]`: 단일 탭 -5° 기본 조향 / 버튼 다운 후 좌측 스와이프 시 -8° (-3° 추가) 조향.
-  - `[ ● ]`: 정면 0° 리듬 스킵 탭.
-  - `[ ▶ ]`: 단일 탭 +5° 기본 조향 / 버튼 다운 후 우측 스와이프 시 +8° (+3° 추가) 조향.
-- **0ms 즉시 판정**: `OnPointerDown`에서 지연 없이 리듬 판정 실행.
+### ✅ 1. 하단 3버튼 터치/스와이프 조작계 및 uGUI 통합
+- `[StoneSkippingUGUI]` > `SafeContainer` 하위에 `FlightTouchButtons_Container` 일원화 배치 (`Bottom Center`, `Y=60`).
+- 2D 정품 스프라이트(`Touch_Button_L/O/R.png`) 연동 및 인스펙터 실시간 색상 반영(`OnValidate`) 지원.
+- 터치/키보드 입력 시 네온 시안 발광 및 `0.88x` 탄성 스케일 피드백 구현.
+- 키보드 `A/D/S` 단일탭(`±5°`), 더블탭(`±8°`), 정면 0° 조향 완비.
 
+### ✅ 2. 3단계 비행 카메라 수치 확정 및 동기화
+- `followBounceY = true`
+- `flightPivotOffsetY = -1.5m`, `flightDistBack = 1.5m`, `flightHeight = 2.5m`, `flightLookForward = 10.0m`, `flightLookHeight = -5.5m`, `headingCatchupSpeed = 4.2`
+- 스크립트 기본값 및 씬 컴포넌트 실시간 동기화 완료.
 
-
-
----
-
-### ✅ 2. PC / 에디터 키보드 친화형 조향 조작계 (`GameController.cs`)
-- **단일 탭 조향**: `A` / `←` (-5°), `D` / `→` (+5°), `S` / `↓` / `Space` (0°).
-- **빠른 더블 탭 (0.25초 이내)**: `A, A` (-8°), `D, D` (+8°) 급선회 꺾기 지원.
-- **화면 전체 스와이프 업그레이드**: 기본 5° / 고속 플릭 8° 각도 체계 일원화.
+### ✅ 3. 유니티 표준 오디오 시스템 업그레이드
+- `AudioManager.cs`에 인스펙터 드래그앤드롭 슬롯 및 `Assets/Resources/Audio/` 자동 로드 체계 구축.
+- Alex Morgan 60 BPM 어쿠스틱 기타 BGM(`alex-morgan-acoustic-guitar-sunrise-travel.mp3`) 등록 및 콤보 가속 피치(`SetBGMPitchByBPM`) 지원.
 
 ---
 
-### ✅ 3. 수면 반사 그림자(`[Water_Reflection_Shadow]`) 누수 및 잔존 버그 해결 (`SkippingStone.cs`)
-- 재투척 및 게임 재시작 시 이전 돌이 파괴되어도 씬 루트에 별도로 생성된 그림자 Quad 메쉬와 동적 텍스처가 파괴되지 않아 하이어라키에 무한 누적되던 문제 수정.
-- `SkippingStone.OnDestroy()`에서 `waterReflectionObj`, `waterReflectionMat`, `mainTexture`를 명시적으로 파괴/해제하여 하이어라키 및 메모리 클린 유지.
+## 2. 🎯 차기 작업: 리듬 아케이드 모드 정식 통합 방향 (Architecture Blueprint)
+
+> [!IMPORTANT]
+> **절대 원칙**: 타이틀 화면, 로비 쇼케이스, 맵/캐릭터 선택, 조준/파워 투구 시퀀스, 맵 청크 스포너 등 **기존의 모든 정식 프레임워크를 100% 온전하게 보존**하고, 오직 **투구 발사 이후 비행/바운스 단계만 리듬 아케이드 엔진으로 전환**해야 합니다. (독립 씬이나 쌩 컨트롤러로 중복 구현 절대 금지).
+
+### 📐 세부 구현 구조
+
+```text
+[ 기존 정상 플로우 (100% 보존) ]
+ 1. 타이틀 화면 ➔ 로비 쇼케이스 ➔ 맵/캐릭터 선택
+ 2. 인게임 진입 (0번 청크 발판 스폰, 캐릭터 배치, 카메라 세팅)
+ 3. 조준선 조절 ➔ 파워 게이지 차징 ➔ 투구 발사 (45~55프레임 리드인)
+
+[ 전환 대상: 55프레임 발사 이후 비행 루프 (GameState.Flying) ]
+ 4. 물리 강체 충돌 대신 BPM 고정 주기 수학적 포물선 비행 (BPM 60 = 1.00초 주기)
+ 5. 수면 착수 순간에 맞춘 7단계 양방향 판정 (TOO EARLY ~ GOOD ~ GREAT ~ PERFECT ~ LATE ~ TOO LATE ~ MISS)
+ 6. 판정 결과에 따른 수평 비행 거리 및 점프 높이 차등:
+    - PERFECT: +30m / 2.6m 점프 / 모멘텀 +20
+    - GREAT: +22m / 2.1m 점프 / 모멘텀 +10
+    - GOOD: +16m / 1.7m 점프 / 모멘텀 +5
+    - LATE: +14m / 1.5m 점프 / 모멘텀 -10 (콤보 리셋)
+    - TOO LATE: +8m / 1.0m 점프 / 모멘텀 -15 (콤보 리셋)
+    - TOO EARLY: 탭 미소모 (재도전 기회 1회 보존)
+    - MISS: +5m / 0.8m 점프 / 모멘텀 -25 (콤보 리셋)
+ 7. 콤보 누적에 따른 5단계 점진적 BPM 가속:
+    - 0~4 콤보: BPM 60 (1.00s)
+    - 5~9 콤보: BPM 72 (0.83s)
+    - 10~14 콤보: BPM 85 (0.70s)
+    - 15~19 콤보: BPM 100 (0.60s)
+    - 20+ 콤보: BPM 120 (0.50s / FEVER!)
+ 8. 모멘텀 소진 시 스키밍 피니시 ➔ 기존 결과창(ResultModalPanel)으로 정상 전환.
+```
 
 ---
 
-### ✅ 4. 순수 모멘텀 생존 체계 및 하이 쿼터뷰 카메라
-- 모멘텀(스태미나) 기반 무조건 생존/회생 바운스 및 Elevation Snap.
-- 착수감 및 전방 시야 최적화 3단계 비행 카메라 기본값 확정:
-  - `flightPivotOffsetY = -1.5m`, `flightDistBack = 1.5m`, `flightHeight = 2.5m`, `flightLookForward = 10.0m`, `flightLookHeight = -5.5m`, `headingCatchupSpeed = 4.2`.
-- 5스킵 이상 완주 후 모멘텀 소진 시 '도로록~' 스키밍 피니시 연동.
+## 3. 🛡️ 검증 및 빌드 상태
 
----
-
-## 2. 🛡️ 검증 및 빌드 상태
-
-- `dotnet build Assembly-CSharp.csproj`: **오류 0개, 경고 0개 (Clean Pass)**
-- `dotnet build Assembly-CSharp-Editor.csproj`: **오류 0개, 경고 0개 (Clean Pass)**
-- 골든 스크립트(`docs/golden_scripts/`) 동기화 완료:
-  - `TouchFlightController.cs.txt`
-  - `GameController.cs.txt`
-  - `SkippingStone.cs.txt`
-  - `DualCameraSetup.cs.txt`
-  - `StoneSkippingUGUIController.cs.txt`
-  - `InGameMomentumHUD.cs.txt`
-
----
-
-## 3. 🎯 다음 작업 세션 권장 태스크
-
-1. **리듬 링 비주얼 디테일 튜닝**:
-   - `_DistortionStrength` 강도 상향 및 내부 디스크 투명도 튜닝 (`shrinkingDiscAlpha = 0.14f`).
-   - 링 수축 애니메이션과 물리 판정 윈도우 1:1 동기화.
-2. **탭 디버그 마커 색상 명확화**:
-   - `TOO EARLY` 마커 색상을 빨강과 혼동되지 않는 선명한 오렌지/보라색으로 분리.
-
+- `dotnet build Assembly-CSharp.csproj`: **0 Errors, 0 Warnings 통과**
+- 골든 스냅샷 동기화 완료 (`AudioManager`, `DualCameraSetup`, `StoneSkippingUGUIController`, `FlightTouchButtonHandler`)
