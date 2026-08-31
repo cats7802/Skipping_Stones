@@ -809,7 +809,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9, g: 0.95, b: 1, a: 0.75}
+  m_Color: {r: 0.19607843, g: 0.78431374, b: 0.78431374, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -835,9 +835,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 1104210988784373088}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: edc1df009f8635e42a17bc50765835fe, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.UI.FlightTouchButtonHandler
+  m_EditorClassIdentifier: SkippingStones.UI::SkippingStones.UI.FlightTouchButtonHandler
 --- !u!1 &1224591447016543524
 GameObject:
   m_ObjectHideFlags: 0
@@ -2616,7 +2616,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9, g: 0.95, b: 1, a: 0.75}
+  m_Color: {r: 0.19607843, g: 0.78431374, b: 0.78431374, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -2642,9 +2642,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 3849151324146358746}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: edc1df009f8635e42a17bc50765835fe, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.UI.FlightTouchButtonHandler
+  m_EditorClassIdentifier: SkippingStones.UI::SkippingStones.UI.FlightTouchButtonHandler
 --- !u!1 &3871153636036018504
 GameObject:
   m_ObjectHideFlags: 0
@@ -3744,7 +3744,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9, g: 0.95, b: 1, a: 0.75}
+  m_Color: {r: 0.19607843, g: 0.78431374, b: 0.78431374, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3770,9 +3770,9 @@ MonoBehaviour:
   m_GameObject: {fileID: 4808719601527754060}
   m_Enabled: 1
   m_EditorHideFlags: 0
-  m_Script: {fileID: 0}
+  m_Script: {fileID: 11500000, guid: edc1df009f8635e42a17bc50765835fe, type: 3}
   m_Name: 
-  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.UI.FlightTouchButtonHandler
+  m_EditorClassIdentifier: SkippingStones.UI::SkippingStones.UI.FlightTouchButtonHandler
 --- !u!1 &4853108290154239565
 GameObject:
   m_ObjectHideFlags: 0
