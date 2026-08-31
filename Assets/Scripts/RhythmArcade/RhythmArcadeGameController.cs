@@ -133,35 +133,62 @@ namespace SkippingStones.RhythmArcade
             if (arcadeStone == null || !arcadeStone.isFlying || arcadeStone.isFinished) return;
             if (hasTappedThisStep) return; // 1바운스 당 1회 입력 제한
 
-            hasTappedThisStep = true;
-
-            // 판정 계산: 착수 시점(progress = 1.0)과의 오차 측정
-            float timingError = Mathf.Abs(1.0f - currentStepProgress);
-            float nextDist = distGreat;
-            float nextPeakHeight = 2.0f; // 기본 점프 높이
+            float nextDist = 20.0f;
+            float nextPeakHeight = 2.0f;
             string grade = "GREAT";
 
-            if (timingError <= windowPerfectRatio)
+            // 착수 시점(1.0) 대비 오차 시간(초 단위 기준: progress * beatDuration)
+            float timingOffset = (currentStepProgress - 1.0f); // 음수: 이른 입력(-), 양수: 늦은 입력(+)
+
+            if (currentStepProgress < 0.60f)
             {
-                grade = "🌟 PERFECT!!";
-                nextDist = distPerfect;
-                nextPeakHeight = 2.6f; // 🌟 PERFECT 시 시원하게 높이 솟구치는 하이 바운스
-                currentCombo++;
-                currentMomentum = Mathf.Min(100f, currentMomentum + 8f);
+                // 1. 💦 TOO EARLY (너무 이름 - 탭 기회 1회 재도전 보존)
+                hasTappedThisStep = false;
+                lastGradeText = "💦 TOO EARLY (재도전 기회 유지!)";
+                return;
             }
-            else if (timingError <= windowGreatRatio)
+            else if (timingOffset < -0.22f)
             {
-                grade = "👍 GREAT!";
-                nextDist = distGreat;
-                nextPeakHeight = 2.0f; // 표준 바운스
+                // 2. ✨ GOOD (+0.5)
+                grade = "✨ GOOD";
+                nextDist = 16.0f;
+                nextPeakHeight = 1.7f;
                 currentCombo++;
-                currentMomentum = Mathf.Min(100f, currentMomentum + 2f);
+                currentMomentum = Mathf.Min(100f, currentMomentum + 5f);
+            }
+            else if (timingOffset < -0.09f)
+            {
+                // 3. ⚡ GREAT! (+1.0)
+                grade = "⚡ GREAT! ⚡";
+                nextDist = 22.0f;
+                nextPeakHeight = 2.1f;
+                currentCombo++;
+                currentMomentum = Mathf.Min(100f, currentMomentum + 10f);
+            }
+            else if (timingOffset <= 0.08f)
+            {
+                // 4. 🔥 PERFECT! (+2.0)
+                grade = "🔥 PERFECT! 🔥";
+                nextDist = 30.0f;
+                nextPeakHeight = 2.6f; // 🌟 완벽한 하이 바운스
+                currentCombo++;
+                currentMomentum = Mathf.Min(100f, currentMomentum + 20f);
+            }
+            else if (timingOffset <= 0.22f)
+            {
+                // 5. ⚠️ LATE (-1.0)
+                grade = "⚠️ LATE";
+                nextDist = 14.0f;
+                nextPeakHeight = 1.5f;
+                currentCombo = 0; // 콤보 리셋
+                currentMomentum -= 10f;
             }
             else
             {
-                grade = (currentStepProgress < 0.7f) ? "💦 TOO EARLY" : "⌛ LATE";
-                nextDist = distEarlyLate;
-                nextPeakHeight = 1.3f; // 낮게 깔림
+                // 6. 🚨 TOO LATE (-1.5)
+                grade = "🚨 TOO LATE";
+                nextDist = 8.0f;
+                nextPeakHeight = 1.0f;
                 currentCombo = 0; // 콤보 리셋
                 currentMomentum -= 15f;
             }

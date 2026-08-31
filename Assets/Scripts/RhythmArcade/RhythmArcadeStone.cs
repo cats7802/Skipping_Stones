@@ -141,8 +141,8 @@ namespace SkippingStones.RhythmArcade
         private void OnStepCompleted()
         {
             transform.position = stepTargetPos;
-            // 타이밍 입력이 없었을 경우 기본 바운스 처리 (Miss 판정으로 감속)
-            StartNewBounceStep(stepDistance * 0.6f, moveDirection);
+            // 타이밍 입력이 없었을 경우 ❌ MISS 판정 처리 (거리 5m, 높이 0.8m)
+            StartNewBounceStep(5.0f, moveDirection, 0.8f);
         }
 
         public void FinishFlight()
