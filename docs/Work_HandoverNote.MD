@@ -8,18 +8,17 @@
 
 ## 1. 🛠️ 금일 핵심 작업 및 시스템 현황 (Fact-Based)
 
-### ✅ 1. 하단 3버튼 터치 및 스와이프 조작 컨트롤러 구축 및 FlightHUDPanel 일원화 (`StoneSkippingUGUIController.cs`)
-- **UI 계층 일원화**: 독립 캔버스가 아닌, 씬의 `[StoneSkippingUGUI]` > `StoneSkipping_uGUICanvas` > `SafeContainer` > `FlightHUDPanel` 하위에 `FlightTouchButtons_Container` 및 3개 버튼(`Btn_Left`, `Btn_Center`, `Btn_Right`)으로 통합. 인스펙터에서 직접 위치 및 크기 수정 가능.
-- **2D/UI 에셋 적용**: `Assets/2D/UI/` 내의 `Touch_Button_L`, `Touch_Button_O`, `Touch_Button_R` 정품 스프라이트 연동 및 `Resources/` 동기화.
-- **멀티플라이어 틴트 및 햅틱 스케일 피드백**:
-  - 기본 상태: 반투명 네온 글래스 틴트 (`rgba(0.9, 0.95, 1.0, 0.75)`).
-  - 터치 다운 시: 선명한 시안 블루 발광 틴트 (`rgba(0.4, 0.85, 1.0, 1.0)`) + `0.92x` 탄성 스케일 축소 효과.
+### ✅ 1. 하단 3버튼 터치/스와이프 조작 컨트롤러 구축 및 인터랙션 피드백 (`FlightTouchButtonHandler.cs`, `StoneSkippingUGUIController.cs`)
+- **UI 계층 일원화**: `[StoneSkippingUGUI]` > `StoneSkipping_uGUICanvas` > `SafeContainer` 하위에 `FlightTouchButtons_Container` 독립 패널로 배치하여 화면 하단 중앙(`Bottom Anchor`, `Y=60`)에 안정적으로 고정.
+- **2D/UI 정품 에셋 적용**: `Assets/2D/UI/` 내의 `Touch_Button_L`, `Touch_Button_O`, `Touch_Button_R` 스프라이트 연동.
+- **인터랙티브 네온 플래시 & 탄성 피드백**:
+  - 터치 다운 또는 키보드 조작(`A/D/S`) 시 즉시 **선명한 네온 시안 발광(`rgba(0.2, 0.9, 1.0, 1.0)`)** 및 `0.88x` 탄성 스케일 축소 후 0.18초 부드러운 복귀.
 - **버튼 구성 및 각도**:
   - `[ ◀ ]`: 단일 탭 -5° 기본 조향 / 버튼 다운 후 좌측 스와이프 시 -8° (-3° 추가) 조향.
   - `[ ● ]`: 정면 0° 리듬 스킵 탭.
   - `[ ▶ ]`: 단일 탭 +5° 기본 조향 / 버튼 다운 후 우측 스와이프 시 +8° (+3° 추가) 조향.
-- **반응성 극대화**: 터치 다운(`OnPointerDown`) 즉시 0ms 지연으로 판정 실행.
-- **배경 터치와 상호 간섭 차단**: `EventSystem.IsPointerOverGameObject()` 연동으로 버튼 영역 터치 시 전체 제스처 중복 발동 방지.
+- **0ms 즉시 판정**: `OnPointerDown`에서 지연 없이 리듬 판정 실행.
+
 
 
 
