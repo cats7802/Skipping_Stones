@@ -38,6 +38,18 @@
 
 ## 3. 변경 이력 (Changelog)
 
+### [2026-08-31] 3단계 비행 추적 카메라 기본값 튜닝 반영
+- **수정 목적**: 돌의 박진감 넘치는 근접 시점 및 수면/착수점 시인성 개선.
+- **확정 기본값**:
+  - `followBounceY = true`
+  - `flightPivotOffsetY = -1.5f`
+  - `flightDistBack = 1.5f`
+  - `flightHeight = 2.5f`
+  - `flightLookForward = 10.0f`
+  - `flightLookHeight = -5.5f`
+  - `headingCatchupSpeed = 4.2f`
+- **컴파일 검증**: 0 Errors, 0 Warnings.
+
 ### [2026-08-30] 투구 45~55프레임 발사 앵커 선행 가속(LaunchLeadIn) 및 좌우 요동침 원천 해결
 - **수정 목적**: 45프레임 리드인 시 손에 매달려 회전하는 돌의 트랜스폼 간섭으로 인해 카메라가 좌우로 심하게 요동치던 현상 해결.
 - **적용 내용**:

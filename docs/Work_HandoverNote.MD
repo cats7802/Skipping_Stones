@@ -39,7 +39,8 @@
 
 ### ✅ 4. 순수 모멘텀 생존 체계 및 하이 쿼터뷰 카메라
 - 모멘텀(스태미나) 기반 무조건 생존/회생 바운스 및 Elevation Snap.
-- 착수감 및 전방 시야 확보용 카메라 튜닝 (`flightHeight = 1.7m`, `flightDistBack = 2.2m`).
+- 착수감 및 전방 시야 최적화 3단계 비행 카메라 기본값 확정:
+  - `flightPivotOffsetY = -1.5m`, `flightDistBack = 1.5m`, `flightHeight = 2.5m`, `flightLookForward = 10.0m`, `flightLookHeight = -5.5m`, `headingCatchupSpeed = 4.2`.
 - 5스킵 이상 완주 후 모멘텀 소진 시 '도로록~' 스키밍 피니시 연동.
 
 ---
