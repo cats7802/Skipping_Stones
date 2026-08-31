@@ -538,6 +538,7 @@ public class GameController : MonoBehaviour
 
         if (dualCamera != null && character != null)
         {
+            dualCamera.ApplyProfileForMode(currentMode);
             dualCamera.targetCharacter = character.transform;
             dualCamera.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
             dualCamera.SnapCameraImmediate();
