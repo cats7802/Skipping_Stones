@@ -412,15 +412,6 @@ public class StoneSkippingUGUIController : MonoBehaviour
             {
                 flightTouchButtonsContainer.transform.SetParent(safeContainer, false);
             }
-            RectTransform rootRt = flightTouchButtonsContainer.GetComponent<RectTransform>();
-            if (rootRt != null)
-            {
-                rootRt.anchorMin = new Vector2(0.5f, 0f);
-                rootRt.anchorMax = new Vector2(0.5f, 0f);
-                rootRt.pivot = new Vector2(0.5f, 0f);
-                rootRt.anchoredPosition = new Vector2(0f, 60f);
-                rootRt.sizeDelta = new Vector2(560f, 120f);
-            }
         }
 
         // 스프라이트 로드
