@@ -23,7 +23,7 @@ namespace SkippingStones.RhythmArcade
         public float currentBPM = 60f;
         public float beatDuration = 1.0f;       // 60 / BPM
         public float stepDistance = 20.0f;      // 현재 스텝 수평 비행 거리
-        public float peakHeight = 1.2f;         // 포물선 정점 높이
+        public float peakHeight = 2.2f;         // 🌟 통통 튀는 아케이드 포물선 정점 높이 (기존 1.2m -> 2.2m 상향)
         public Vector3 moveDirection = Vector3.forward;
 
         private Vector3 stepStartPos;
@@ -40,7 +40,7 @@ namespace SkippingStones.RhythmArcade
         public event Action<float> OnFlightProgress;          // 진행률 (0~1)
         public event Action OnFlightFinished;
 
-        public void Initialize(Vector3 startPos, Vector3 initialDirection, float initBPM, float initDistance)
+        public void Initialize(Vector3 startPos, Vector3 initialDirection, float initBPM, float initDistance, float initPeakHeight = 2.2f)
         {
             UpdateWaterLevel();
             transform.position = new Vector3(startPos.x, waterLevel + 0.1f, startPos.z);
@@ -48,6 +48,7 @@ namespace SkippingStones.RhythmArcade
             currentBPM = initBPM;
             beatDuration = 60f / Mathf.Max(30f, currentBPM);
             stepDistance = initDistance;
+            peakHeight = initPeakHeight;
             totalDistance = 0f;
             skipCount = 0;
             comboCount = 0;
@@ -61,16 +62,17 @@ namespace SkippingStones.RhythmArcade
         {
             isFlying = true;
             isFinished = false;
-            StartNewBounceStep(stepDistance, moveDirection);
+            StartNewBounceStep(stepDistance, moveDirection, peakHeight);
         }
 
-        public void SetNextBounceStep(float nextStepDist, float steerAngleDegrees, float nextBPM)
+        public void SetNextBounceStep(float nextStepDist, float steerAngleDegrees, float nextBPM, float nextPeakHeight = 2.2f)
         {
             if (isFinished) return;
 
             currentBPM = nextBPM;
             beatDuration = 60f / Mathf.Max(30f, currentBPM);
             stepDistance = nextStepDist;
+            peakHeight = nextPeakHeight;
 
             if (Mathf.Abs(steerAngleDegrees) > 0.01f)
             {
@@ -78,12 +80,13 @@ namespace SkippingStones.RhythmArcade
                 moveDirection = (rot * moveDirection).normalized;
             }
 
-            StartNewBounceStep(stepDistance, moveDirection);
+            StartNewBounceStep(stepDistance, moveDirection, peakHeight);
         }
 
-        private void StartNewBounceStep(float distance, Vector3 dir)
+        private void StartNewBounceStep(float distance, Vector3 dir, float height)
         {
             skipCount++;
+            peakHeight = height;
             stepStartPos = transform.position;
             stepStartPos.y = waterLevel; // 수면 시작점 고정
 

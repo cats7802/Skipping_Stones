@@ -138,12 +138,14 @@ namespace SkippingStones.RhythmArcade
             // 판정 계산: 착수 시점(progress = 1.0)과의 오차 측정
             float timingError = Mathf.Abs(1.0f - currentStepProgress);
             float nextDist = distGreat;
+            float nextPeakHeight = 2.0f; // 기본 점프 높이
             string grade = "GREAT";
 
             if (timingError <= windowPerfectRatio)
             {
                 grade = "🌟 PERFECT!!";
                 nextDist = distPerfect;
+                nextPeakHeight = 2.6f; // 🌟 PERFECT 시 시원하게 높이 솟구치는 하이 바운스
                 currentCombo++;
                 currentMomentum = Mathf.Min(100f, currentMomentum + 8f);
             }
@@ -151,6 +153,7 @@ namespace SkippingStones.RhythmArcade
             {
                 grade = "👍 GREAT!";
                 nextDist = distGreat;
+                nextPeakHeight = 2.0f; // 표준 바운스
                 currentCombo++;
                 currentMomentum = Mathf.Min(100f, currentMomentum + 2f);
             }
@@ -158,12 +161,13 @@ namespace SkippingStones.RhythmArcade
             {
                 grade = (currentStepProgress < 0.7f) ? "💦 TOO EARLY" : "⌛ LATE";
                 nextDist = distEarlyLate;
+                nextPeakHeight = 1.3f; // 낮게 깔림
                 currentCombo = 0; // 콤보 리셋
                 currentMomentum -= 15f;
             }
 
             maxCombo = Mathf.Max(maxCombo, currentCombo);
-            lastGradeText = $"{grade} (콤보: {currentCombo} | 거리: +{nextDist:F0}m)";
+            lastGradeText = $"{grade} (콤보: {currentCombo} | 거리: +{nextDist:F0}m | 높이: {nextPeakHeight:F1}m)";
 
             // 콤보에 따른 BPM 단계적 가속 계산
             currentBPM = CalculateBPMByCombo(currentCombo);
@@ -177,7 +181,7 @@ namespace SkippingStones.RhythmArcade
             }
 
             // 다음 스텝 파라미터 갱신 및 실행
-            arcadeStone.SetNextBounceStep(nextDist, steerAngle, currentBPM);
+            arcadeStone.SetNextBounceStep(nextDist, steerAngle, currentBPM, nextPeakHeight);
         }
 
         private float CalculateBPMByCombo(int combo)
