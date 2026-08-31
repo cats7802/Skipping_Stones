@@ -61,13 +61,40 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip buttonClickClip;
     [SerializeField] private AudioClip bgmMusicClip;
 
-    [Header("BGM 오디오 소스")]
+    // BGM 오디오 소스는 런타임에 자동 생성/바인딩
+    [HideInInspector]
     [SerializeField] private AudioSource bgmSource;
 
     private Dictionary<SoundType, AudioClip> _clipCache = new Dictionary<SoundType, AudioClip>();
     private List<AudioSource> _sourcePool = new List<AudioSource>();
     private const int PoolSize = 10;
     private int _poolIndex = 0;
+
+    private void Reset()
+    {
+        AutoFillClipsFromResources();
+    }
+
+    private void OnValidate()
+    {
+        AutoFillClipsFromResources();
+    }
+
+    public void AutoFillClipsFromResources()
+    {
+#if UNITY_EDITOR
+        if (throwWhooshClip == null) throwWhooshClip = Resources.Load<AudioClip>("Audio/Throw_Whoosh");
+        if (bounceWaterClip == null) bounceWaterClip = Resources.Load<AudioClip>("Audio/Bounce_Water");
+        if (bounceGoodClip == null) bounceGoodClip = Resources.Load<AudioClip>("Audio/Bounce_Good");
+        if (bouncePerfectClip == null) bouncePerfectClip = Resources.Load<AudioClip>("Audio/Bounce_Perfect");
+        if (skimSlideClip == null) skimSlideClip = Resources.Load<AudioClip>("Audio/Skim_Slide");
+        if (boostPadClip == null) boostPadClip = Resources.Load<AudioClip>("Audio/Boost_Pad");
+        if (coinJingleClip == null) coinJingleClip = Resources.Load<AudioClip>("Audio/Coin_Jingle");
+        if (stoneSinkClip == null) stoneSinkClip = Resources.Load<AudioClip>("Audio/Stone_Sink");
+        if (buttonClickClip == null) buttonClickClip = Resources.Load<AudioClip>("Audio/Button_Click");
+        if (bgmMusicClip == null) bgmMusicClip = Resources.Load<AudioClip>("Audio/alex-morgan-acoustic-guitar-sunrise-travel");
+#endif
+    }
 
     private void Awake()
     {
@@ -262,6 +289,14 @@ public class AudioManager : MonoBehaviour
         AudioClip clip = AudioClip.Create(clipName, samples.Length, 1, 44100, false);
         clip.SetData(samples, 0);
         return clip;
+    }
+
+    /// <summary>
+    /// 모바일 100% 호환 Play 사운드 재생 (간편 호출)
+    /// </summary>
+    public void Play(SoundType type, float volumeScale = 1f)
+    {
+        PlaySound(type, volumeScale);
     }
 
     /// <summary>

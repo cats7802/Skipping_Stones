@@ -302,6 +302,16 @@ namespace SkippingStones.Arcade
                 rhythmRing.PlayHitFeedback(grade);
             }
 
+            // 🎵 오디오 사운드 재생
+            if (AudioManager.Instance != null)
+            {
+                if (grade.Contains("PERFECT")) AudioManager.Instance.Play(SoundType.BouncePerfect);
+                else if (grade.Contains("GREAT") || grade.Contains("GOOD")) AudioManager.Instance.Play(SoundType.BounceGood);
+                else AudioManager.Instance.Play(SoundType.BounceWater);
+
+                AudioManager.Instance.SetBGMPitchByBPM(currentBPM, 60f);
+            }
+
             OnSkipBounced?.Invoke(skipCount, grade);
 
             // 모멘텀 고갈 시 스키밍 피니시 진입
@@ -334,6 +344,7 @@ namespace SkippingStones.Arcade
         {
             isSkimming = true;
             if (rhythmRing != null) rhythmRing.Hide();
+            if (AudioManager.Instance != null) AudioManager.Instance.Play(SoundType.SkimSlide);
 
             float duration = 1.2f;
             float elapsed = 0f;
@@ -362,6 +373,7 @@ namespace SkippingStones.Arcade
             isSunk = true;
             isSkimming = false;
             if (rhythmRing != null) rhythmRing.Hide();
+            if (AudioManager.Instance != null) AudioManager.Instance.Play(SoundType.StoneSink);
 
             OnStoneSunk?.Invoke(totalDistance);
         }
