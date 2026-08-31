@@ -135,11 +135,11 @@ public class DualCameraSetup : MonoBehaviour
                 shoulderLookForward = 14.0f,
                 shoulderLookHeight = 1.3f,
                 followBounceY = true,
-                flightPivotOffsetY = 0f,
-                flightDistBack = 2.2f,
-                flightHeight = 1.7f,
+                flightPivotOffsetY = -1.5f,
+                flightDistBack = 1.5f,
+                flightHeight = 2.5f,
                 flightLookForward = 10.0f,
-                flightLookHeight = -1.3f,
+                flightLookHeight = -5.5f,
                 headingCatchupSpeed = 4.2f
             };
         }
@@ -149,7 +149,7 @@ public class DualCameraSetup : MonoBehaviour
             return new CameraProfile
             {
                 defaultFOV = 60f,
-                flightFOV = 75f,
+                flightFOV = 80f,
                 topDownDistBack = 9.0f,
                 topDownHeight = 5.6f,
                 topDownLookForward = 10.0f,
@@ -159,12 +159,12 @@ public class DualCameraSetup : MonoBehaviour
                 shoulderLookForward = 14.0f,
                 shoulderLookHeight = 1.3f,
                 followBounceY = true,
-                flightPivotOffsetY = 0f,
-                flightDistBack = 2.8f,          // 아케이드: 조금 더 뒤에서 시원하게 조망
-                flightHeight = 2.2f,            // 아케이드: 돌과 링이 더 잘 보이도록 시야각 확보
+                flightPivotOffsetY = -1.5f,
+                flightDistBack = 1.5f,
+                flightHeight = 2.5f,
                 flightLookForward = 10.0f,
-                flightLookHeight = -1.5f,
-                headingCatchupSpeed = 4.5f
+                flightLookHeight = -5.5f,
+                headingCatchupSpeed = 4.2f
             };
         }
     }
