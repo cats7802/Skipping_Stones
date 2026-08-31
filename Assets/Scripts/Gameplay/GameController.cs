@@ -1132,6 +1132,12 @@ public class GameController : MonoBehaviour
 
     public void HandleStoneSunk(float dist)
     {
+        // 🎵 침몰 순간 0.4초 만에 음악이 스르륵 꺼지며 꼴깍- 물소리만 강조!
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopBGMFadeOut(0.4f);
+        }
+
         StartCoroutine(DelayedShowResultRoutine(dist, 1.5f));
     }
 
@@ -1156,13 +1162,6 @@ public class GameController : MonoBehaviour
         lastTimingText = string.Empty;
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
-
-        // 🎵 결과 화면 진입 시 3.0초에 걸쳐 BGM 자연스러운 페이드아웃 정지
-        if (AudioManager.Instance != null)
-        {
-            AudioManager.Instance.StopBGMFadeOut(3.0f);
-        }
-
         CalculateFinalScores(dist);
     }
 
