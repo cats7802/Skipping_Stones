@@ -3375,7 +3375,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9, g: 0.95, b: 1, a: 0.75}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -3404,6 +3404,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edc1df009f8635e42a17bc50765835fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.UI.FlightTouchButtonHandler
+  normalColor: {r: 0.74509805, g: 1, b: 0.9607843, a: 0.627451}
+  pressedColor: {r: 0.31764707, g: 0.6666667, b: 1, a: 1}
+  flashColor: {r: 0.4, g: 1, b: 1, a: 1}
 --- !u!1 &4732120064941545130
 GameObject:
   m_ObjectHideFlags: 0
@@ -8039,7 +8042,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9, g: 0.95, b: 1, a: 0.75}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -8068,6 +8071,9 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edc1df009f8635e42a17bc50765835fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.UI.FlightTouchButtonHandler
+  normalColor: {r: 0.74509805, g: 1, b: 0.9625448, a: 0.627451}
+  pressedColor: {r: 0.3160377, g: 0.6670764, b: 1, a: 1}
+  flashColor: {r: 0.4, g: 1, b: 1, a: 1}
 --- !u!1 &9085414593412207740
 GameObject:
   m_ObjectHideFlags: 0
@@ -8292,7 +8298,7 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: UnityEngine.UI::UnityEngine.UI.Image
   m_Material: {fileID: 0}
-  m_Color: {r: 0.9, g: 0.95, b: 1, a: 0.75}
+  m_Color: {r: 1, g: 1, b: 1, a: 1}
   m_RaycastTarget: 1
   m_RaycastPadding: {x: 0, y: 0, z: 0, w: 0}
   m_Maskable: 1
@@ -8321,3 +8327,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: edc1df009f8635e42a17bc50765835fe, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.UI.FlightTouchButtonHandler
+  normalColor: {r: 0.74509805, g: 1, b: 0.9607843, a: 0.627451}
+  pressedColor: {r: 0.31764707, g: 0.6666667, b: 1, a: 1}
+  flashColor: {r: 0.4, g: 1, b: 1, a: 1}

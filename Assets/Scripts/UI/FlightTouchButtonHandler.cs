@@ -25,18 +25,42 @@ namespace SkippingStones.UI
         private bool hasTriggeredSwipeBonus = false;
         private Coroutine flashCoroutine;
 
+        private void Awake()
+        {
+            if (buttonImage == null) buttonImage = GetComponent<Image>();
+            ApplyColor(normalColor);
+        }
+
+        private void OnValidate()
+        {
+            if (buttonImage == null) buttonImage = GetComponent<Image>();
+            ApplyColor(normalColor);
+        }
+
+        public void ApplyColor(Color col)
+        {
+            if (buttonImage != null)
+            {
+                buttonImage.color = col;
+            }
+        }
+
         public void Init(TouchFlightController ctrl, float bAngle, float sAngle, Image img, Color nColor, Color pColor)
         {
             controller = ctrl;
             baseAngle = bAngle;
             swipeAngle = sAngle;
-            buttonImage = img;
-            normalColor = nColor;
-            pressedColor = pColor;
-            if (buttonImage != null)
+            if (img != null) buttonImage = img;
+            if (buttonImage == null) buttonImage = GetComponent<Image>();
+
+            // 인스펙터에 이미 설정된 색상이 있다면 유지하고, 기본값일 때만 nColor 적용
+            if (normalColor == default || normalColor.a == 0f)
             {
-                buttonImage.color = normalColor;
+                normalColor = nColor;
+                pressedColor = pColor;
             }
+
+            ApplyColor(normalColor);
         }
 
         public void TriggerVisualFeedback()

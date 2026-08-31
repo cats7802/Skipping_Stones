@@ -474,7 +474,6 @@ public class StoneSkippingUGUIController : MonoBehaviour
             img.type = Image.Type.Simple;
             img.preserveAspect = true;
         }
-        img.color = normalColor;
 
         var handler = btnObj.GetComponent<SkippingStones.UI.FlightTouchButtonHandler>() ?? btnObj.AddComponent<SkippingStones.UI.FlightTouchButtonHandler>();
         handler.Init(null, baseAngle, swipeAngle, img, normalColor, pressedColor);
