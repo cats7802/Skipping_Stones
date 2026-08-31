@@ -49,6 +49,21 @@ public class AudioManager : MonoBehaviour
     [Range(0f, 1f)] public float masterVolume = 1.0f;
     [Range(0f, 1f)] public float sfxVolume = 1.0f;
 
+    [Header("인스펙터 정품 오디오 클립 등록 (Audio Clips)")]
+    [SerializeField] private AudioClip throwWhooshClip;
+    [SerializeField] private AudioClip bounceWaterClip;
+    [SerializeField] private AudioClip bounceGoodClip;
+    [SerializeField] private AudioClip bouncePerfectClip;
+    [SerializeField] private AudioClip skimSlideClip;
+    [SerializeField] private AudioClip boostPadClip;
+    [SerializeField] private AudioClip coinJingleClip;
+    [SerializeField] private AudioClip stoneSinkClip;
+    [SerializeField] private AudioClip buttonClickClip;
+    [SerializeField] private AudioClip bgmMusicClip;
+
+    [Header("BGM 오디오 소스")]
+    [SerializeField] private AudioSource bgmSource;
+
     private Dictionary<SoundType, AudioClip> _clipCache = new Dictionary<SoundType, AudioClip>();
     private List<AudioSource> _sourcePool = new List<AudioSource>();
     private const int PoolSize = 10;
@@ -128,28 +143,73 @@ public class AudioManager : MonoBehaviour
 
     private void LoadOrSynthesizeClips()
     {
-        LoadClip(SoundType.ThrowWhoosh, "Throw_Whoosh");
-        LoadClip(SoundType.BounceWater, "Bounce_Water");
-        LoadClip(SoundType.BounceGood, "Bounce_Good");
-        LoadClip(SoundType.BouncePerfect, "Bounce_Perfect");
-        LoadClip(SoundType.SkimSlide, "Skim_Slide");
-        LoadClip(SoundType.BoostPad, "Boost_Pad");
-        LoadClip(SoundType.CoinJingle, "Coin_Jingle");
-        LoadClip(SoundType.StoneSink, "Stone_Sink");
-        LoadClip(SoundType.ButtonClick, "Button_Click");
-    }
+        // 1. 인스펙터에 직접 할당된 클립 우선 등록
+        RegisterInspectorClip(SoundType.ThrowWhoosh, throwWhooshClip, "Throw_Whoosh");
+        RegisterInspectorClip(SoundType.BounceWater, bounceWaterClip, "Bounce_Water");
+        RegisterInspectorClip(SoundType.BounceGood, bounceGoodClip, "Bounce_Good");
+        RegisterInspectorClip(SoundType.BouncePerfect, bouncePerfectClip, "Bounce_Perfect");
+        RegisterInspectorClip(SoundType.SkimSlide, skimSlideClip, "Skim_Slide");
+        RegisterInspectorClip(SoundType.BoostPad, boostPadClip, "Boost_Pad");
+        RegisterInspectorClip(SoundType.CoinJingle, coinJingleClip, "Coin_Jingle");
+        RegisterInspectorClip(SoundType.StoneSink, stoneSinkClip, "Stone_Sink");
+        RegisterInspectorClip(SoundType.ButtonClick, buttonClickClip, "Button_Click");
 
-    private void LoadClip(SoundType type, string resourceName)
-    {
-        AudioClip clip = Resources.Load<AudioClip>("Audio/" + resourceName);
-        if (clip != null)
+        // 2. BGM 소스 초기화
+        if (bgmSource == null)
         {
-            _clipCache[type] = clip;
+            bgmSource = gameObject.AddComponent<AudioSource>();
+            bgmSource.loop = true;
+            bgmSource.playOnAwake = false;
+            bgmSource.spatialBlend = 0f;
+        }
+
+        if (bgmMusicClip != null)
+        {
+            bgmSource.clip = bgmMusicClip;
         }
         else
         {
-            // Fallback: 런타임 메모리 프로시저럴 합성
-            _clipCache[type] = CreateProceduralFallback(type);
+            AudioClip resBgm = Resources.Load<AudioClip>("Audio/BGM_Main");
+            if (resBgm != null) bgmSource.clip = resBgm;
+        }
+    }
+
+    private void RegisterInspectorClip(SoundType type, AudioClip inspectorClip, string resourceName)
+    {
+        if (inspectorClip != null)
+        {
+            _clipCache[type] = inspectorClip;
+            return;
+        }
+
+        AudioClip resClip = Resources.Load<AudioClip>("Audio/" + resourceName);
+        if (resClip != null)
+        {
+            _clipCache[type] = resClip;
+            return;
+        }
+
+        // 마지막 폴백: 프로시저럴 합성
+        _clipCache[type] = CreateProceduralFallback(type);
+    }
+
+    public void PlayBGM(AudioClip clip = null, float bpm = 60f)
+    {
+        if (bgmSource == null) return;
+
+        if (clip != null) bgmSource.clip = clip;
+        if (bgmSource.clip != null && !bgmSource.isPlaying)
+        {
+            bgmSource.volume = masterVolume * 0.7f;
+            bgmSource.Play();
+        }
+    }
+
+    public void SetBGMPitchByBPM(float targetBPM, float baseBPM = 60f)
+    {
+        if (bgmSource != null && bgmSource.isPlaying)
+        {
+            bgmSource.pitch = Mathf.Clamp(targetBPM / baseBPM, 0.8f, 2.0f);
         }
     }
 
