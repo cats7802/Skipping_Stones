@@ -57,6 +57,13 @@ namespace SkippingStones.Gameplay.Modes
             }
 
             arcadeStone.Launch(direction, powerMultiplier);
+
+            // 🎵 투구 발사 순간부터 60 BPM BGM 첫 비트 시작!
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBGM(null, 60f);
+                AudioManager.Instance.SetBGMPitchByBPM(60f, 60f);
+            }
         }
 
         public void OnFlyingUpdate(GameController controller)

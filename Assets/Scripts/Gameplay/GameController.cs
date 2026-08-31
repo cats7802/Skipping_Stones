@@ -650,7 +650,7 @@ public class GameController : MonoBehaviour
 
     private void UpdatePositioning()
     {
-        if (currentMode == GameMode.LongDistance)
+        if (currentMode == GameMode.LongDistance || currentMode == GameMode.RhythmArcade)
         {
             if (currentLaunchPier != null)
             {
