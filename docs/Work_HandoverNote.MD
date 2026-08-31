@@ -31,7 +31,18 @@
 
 ---
 
-## 3. 🎯 차기 작업 제안
+## 3. 🎯 차기 작업 로드맵 (Roadmap)
 
-- 에디터/씬 내에서 `ArcadeGameController`를 통한 실기 플레이 테스트 및 연출 다듬기.
-- 하단 3버튼 uGUI와 `ArcadeGameController`의 실시간 HUD 바인딩 미세 튜닝.
+### 🚀 1. 실기 플레이 테스트 및 연출 다듬기
+- 에디터/씬 내에서 `GameController` 3대 모드(원거리/타깃/아케이드) 전환 실기 테스트.
+- 하단 3버튼 uGUI와 `RhythmArcadeModeHandler` 실시간 HUD 바인딩 미세 튜닝.
+
+### 🧩 2. 단계적 모듈화/객체화 리팩토링 과제 (Rule 준수)
+1. **`MetaUIManager.cs` (화면/모달 분리)**:
+   - `IMetaScreenView` 기반 `TitleScreenView`, `LobbyScreenView`, `MapSelectScreenView` 분리.
+   - 도감/상점/랭킹/세팅 모달 뷰(`CollectionModalView` 등) 독립 객체화.
+2. **`StoneThrowerCharacter.cs` (책임 분리)**:
+   - 투구 애니메이션 및 45~55프레임 리드인 코루틴을 `CharacterThrowAnimator`로 분리.
+   - 타깃 모드 웨이포인트 가이드 및 포지셔닝을 `CharacterWaypointNavigator`로 분리.
+3. **`RiverSpawner.cs` (엔티티 생성 팩토리화)**:
+   - `IRiverEntitySpawner` 인터페이스 기반 `FishSpawner`, `ObstacleSpawner`, `BoostPadSpawner` 등으로 분리하여 모드별 조립형 스폰 구조 구축.
