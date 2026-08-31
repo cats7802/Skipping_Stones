@@ -99,14 +99,105 @@ public class DualCameraSetup : MonoBehaviour
     [Range(0.1f, 0.5f)] public float pipWidth = 0.32f;
     [Range(0.1f, 0.5f)] public float pipHeight = 0.35f;
 
+    [System.Serializable]
+    public struct CameraProfile
+    {
+        public float defaultFOV;
+        public float flightFOV;
+        public float topDownDistBack;
+        public float topDownHeight;
+        public float topDownLookForward;
+        public float topDownLookHeight;
+        public float shoulderDistBack;
+        public float shoulderHeight;
+        public float shoulderLookForward;
+        public float shoulderLookHeight;
+        public bool followBounceY;
+        public float flightPivotOffsetY;
+        public float flightDistBack;
+        public float flightHeight;
+        public float flightLookForward;
+        public float flightLookHeight;
+        public float headingCatchupSpeed;
+
+        public static CameraProfile DefaultLongDistance()
+        {
+            return new CameraProfile
+            {
+                defaultFOV = 60f,
+                flightFOV = 80f,
+                topDownDistBack = 9.0f,
+                topDownHeight = 5.6f,
+                topDownLookForward = 10.0f,
+                topDownLookHeight = 1.5f,
+                shoulderDistBack = 3.4f,
+                shoulderHeight = 2.2f,
+                shoulderLookForward = 14.0f,
+                shoulderLookHeight = 1.3f,
+                followBounceY = true,
+                flightPivotOffsetY = -1.5f,
+                flightDistBack = 1.5f,
+                flightHeight = 2.5f,
+                flightLookForward = 10.0f,
+                flightLookHeight = -5.5f,
+                headingCatchupSpeed = 4.2f
+            };
+        }
+
+        public static CameraProfile DefaultRhythmArcade()
+        {
+            return new CameraProfile
+            {
+                defaultFOV = 60f,
+                flightFOV = 80f,
+                topDownDistBack = 9.0f,
+                topDownHeight = 5.6f,
+                topDownLookForward = 10.0f,
+                topDownLookHeight = 1.5f,
+                shoulderDistBack = 3.4f,
+                shoulderHeight = 2.2f,
+                shoulderLookForward = 14.0f,
+                shoulderLookHeight = 1.3f,
+                followBounceY = true,
+                flightPivotOffsetY = -1.5f,
+                flightDistBack = 1.5f,
+                flightHeight = 2.5f,
+                flightLookForward = 10.0f,
+                flightLookHeight = -5.5f,
+                headingCatchupSpeed = 4.2f
+            };
+        }
+    }
+
+    [Header("모드별 독립 카메라 프로필")]
+    public CameraProfile longDistanceProfile = CameraProfile.DefaultLongDistance();
+    public CameraProfile rhythmArcadeProfile = CameraProfile.DefaultRhythmArcade();
+
+    public void ApplyProfileForMode(GameController.GameMode mode)
+    {
+        CameraProfile p = (mode == GameController.GameMode.RhythmArcade) ? rhythmArcadeProfile : longDistanceProfile;
+
+        defaultFOV = p.defaultFOV;
+        flightFOV = p.flightFOV;
+        topDownDistBack = p.topDownDistBack;
+        topDownHeight = p.topDownHeight;
+        topDownLookForward = p.topDownLookForward;
+        topDownLookHeight = p.topDownLookHeight;
+        shoulderDistBack = p.shoulderDistBack;
+        shoulderHeight = p.shoulderHeight;
+        shoulderLookForward = p.shoulderLookForward;
+        shoulderLookHeight = p.shoulderLookHeight;
+        followBounceY = p.followBounceY;
+        flightPivotOffsetY = p.flightPivotOffsetY;
+        flightDistBack = p.flightDistBack;
+        flightHeight = p.flightHeight;
+        flightLookForward = p.flightLookForward;
+        flightLookHeight = p.flightLookHeight;
+        headingCatchupSpeed = p.headingCatchupSpeed;
+    }
+
     private void Awake()
     {
-        followBounceY = true;
-        flightPivotOffsetY = 0f;
-        flightDistBack = 2.2f;
-        flightHeight = 1.7f;
-        flightLookForward = 10.0f;
-        flightLookHeight = -1.3f;
         EnsureReferences();
     }
 

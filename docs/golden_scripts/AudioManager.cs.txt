@@ -61,13 +61,40 @@ public class AudioManager : MonoBehaviour
     [SerializeField] private AudioClip buttonClickClip;
     [SerializeField] private AudioClip bgmMusicClip;
 
-    [Header("BGM 오디오 소스")]
+    // BGM 오디오 소스는 런타임에 자동 생성/바인딩
+    [HideInInspector]
     [SerializeField] private AudioSource bgmSource;
 
     private Dictionary<SoundType, AudioClip> _clipCache = new Dictionary<SoundType, AudioClip>();
     private List<AudioSource> _sourcePool = new List<AudioSource>();
     private const int PoolSize = 10;
     private int _poolIndex = 0;
+
+    private void Reset()
+    {
+        AutoFillClipsFromResources();
+    }
+
+    private void OnValidate()
+    {
+        AutoFillClipsFromResources();
+    }
+
+    public void AutoFillClipsFromResources()
+    {
+#if UNITY_EDITOR
+        if (throwWhooshClip == null) throwWhooshClip = Resources.Load<AudioClip>("Audio/Throw_Whoosh");
+        if (bounceWaterClip == null) bounceWaterClip = Resources.Load<AudioClip>("Audio/Bounce_Water");
+        if (bounceGoodClip == null) bounceGoodClip = Resources.Load<AudioClip>("Audio/Bounce_Good");
+        if (bouncePerfectClip == null) bouncePerfectClip = Resources.Load<AudioClip>("Audio/Bounce_Perfect");
+        if (skimSlideClip == null) skimSlideClip = Resources.Load<AudioClip>("Audio/Skim_Slide");
+        if (boostPadClip == null) boostPadClip = Resources.Load<AudioClip>("Audio/Boost_Pad");
+        if (coinJingleClip == null) coinJingleClip = Resources.Load<AudioClip>("Audio/Coin_Jingle");
+        if (stoneSinkClip == null) stoneSinkClip = Resources.Load<AudioClip>("Audio/Stone_Sink");
+        if (buttonClickClip == null) buttonClickClip = Resources.Load<AudioClip>("Audio/Button_Click");
+        if (bgmMusicClip == null) bgmMusicClip = Resources.Load<AudioClip>("Audio/alex-morgan-acoustic-guitar-sunrise-travel");
+#endif
+    }
 
     private void Awake()
     {
@@ -195,14 +222,69 @@ public class AudioManager : MonoBehaviour
 
     public void PlayBGM(AudioClip clip = null, float bpm = 60f)
     {
-        if (bgmSource == null) return;
-
-        if (clip != null) bgmSource.clip = clip;
-        if (bgmSource.clip != null && !bgmSource.isPlaying)
+        if (bgmSource == null)
         {
+            bgmSource = gameObject.AddComponent<AudioSource>();
+            bgmSource.loop = true;
+            bgmSource.playOnAwake = false;
+            bgmSource.spatialBlend = 0f;
+        }
+
+        if (clip != null)
+        {
+            bgmSource.clip = clip;
+        }
+        else if (bgmSource.clip == null)
+        {
+            if (bgmMusicClip != null) bgmSource.clip = bgmMusicClip;
+            else bgmSource.clip = Resources.Load<AudioClip>("Audio/alex-morgan-acoustic-guitar-sunrise-travel") ?? Resources.Load<AudioClip>("Audio/BGM_Main");
+        }
+
+        if (bgmSource.clip != null)
+        {
+            if (_bgmFadeCoroutine != null)
+            {
+                StopCoroutine(_bgmFadeCoroutine);
+                _bgmFadeCoroutine = null;
+            }
             bgmSource.volume = masterVolume * 0.7f;
+            bgmSource.pitch = 1.0f;
             bgmSource.Play();
         }
+    }
+
+    private Coroutine _bgmFadeCoroutine;
+
+    public void StopBGMFadeOut(float duration = 3.0f)
+    {
+        if (bgmSource != null && bgmSource.isPlaying)
+        {
+            if (_bgmFadeCoroutine != null) StopCoroutine(_bgmFadeCoroutine);
+            _bgmFadeCoroutine = StartCoroutine(CoFadeOutBGM(duration));
+        }
+    }
+
+    private System.Collections.IEnumerator CoFadeOutBGM(float duration)
+    {
+        if (bgmSource == null) yield break;
+
+        float startVolume = bgmSource.volume;
+        float elapsed = 0f;
+
+        while (elapsed < duration && bgmSource != null && bgmSource.isPlaying)
+        {
+            elapsed += Time.unscaledDeltaTime;
+            float t = elapsed / duration;
+            bgmSource.volume = Mathf.Lerp(startVolume, 0f, t);
+            yield return null;
+        }
+
+        if (bgmSource != null)
+        {
+            bgmSource.Stop();
+            bgmSource.volume = startVolume;
+        }
+        _bgmFadeCoroutine = null;
     }
 
     public void SetBGMPitchByBPM(float targetBPM, float baseBPM = 60f)
@@ -262,6 +344,14 @@ public class AudioManager : MonoBehaviour
         AudioClip clip = AudioClip.Create(clipName, samples.Length, 1, 44100, false);
         clip.SetData(samples, 0);
         return clip;
+    }
+
+    /// <summary>
+    /// 모바일 100% 호환 Play 사운드 재생 (간편 호출)
+    /// </summary>
+    public void Play(SoundType type, float volumeScale = 1f)
+    {
+        PlaySound(type, volumeScale);
     }
 
     /// <summary>

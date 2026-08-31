@@ -16,8 +16,9 @@ public class GameController : MonoBehaviour
 
     public enum GameMode
     {
-        LongDistance,   // 장거리 모드
-        TargetAccuracy  // 타깃 정밀 모드
+        LongDistance,   // 장거리 물리 모드
+        TargetAccuracy, // 타깃 정밀 모드
+        RhythmArcade    // 🎵 리듬 아케이드 모드
     }
 
     public enum GameState
@@ -148,6 +149,11 @@ public class GameController : MonoBehaviour
     private float flightTouchStartTime = 0f;
     private bool isTrackingFlightTouch = false;
 
+    // 🎮 모드별 독립 객체 핸들러 (Strategy Pattern)
+    private SkippingStones.Gameplay.Modes.IGameModeHandler currentModeHandler;
+    private readonly System.Collections.Generic.Dictionary<GameMode, SkippingStones.Gameplay.Modes.IGameModeHandler> modeHandlers = 
+        new System.Collections.Generic.Dictionary<GameMode, SkippingStones.Gameplay.Modes.IGameModeHandler>();
+
     private void Awake()
     {
         if (Instance == null)
@@ -162,6 +168,11 @@ public class GameController : MonoBehaviour
 
         // 인스펙터 연결 누락 시에만 계층 탐색으로 보완
         ResolveSceneReferences();
+
+        // 모드 핸들러 등록
+        modeHandlers[GameMode.LongDistance] = new SkippingStones.Gameplay.Modes.LongDistanceModeHandler();
+        modeHandlers[GameMode.TargetAccuracy] = new SkippingStones.Gameplay.Modes.TargetAccuracyModeHandler();
+        modeHandlers[GameMode.RhythmArcade] = new SkippingStones.Gameplay.Modes.RhythmArcadeModeHandler();
     }
 
     private void Start()
@@ -353,9 +364,21 @@ public class GameController : MonoBehaviour
         currentMode = mode;
         if (stonePrefab != null) defaultStonePrefab = stonePrefab;
 
+        if (currentModeHandler != null) currentModeHandler.OnExitMode(this);
+        if (modeHandlers.TryGetValue(mode, out var handler))
+        {
+            currentModeHandler = handler;
+        }
+        else
+        {
+            currentModeHandler = new SkippingStones.Gameplay.Modes.LongDistanceModeHandler();
+        }
+
         SetupMapEnvironment(mapPrefab);
         SetupCharacter(charPrefab);
         ResetToPositioning();
+
+        currentModeHandler.OnEnterMode(this);
     }
 
     private void SetupMapEnvironment(GameObject mapPrefab)
@@ -515,6 +538,7 @@ public class GameController : MonoBehaviour
 
         if (dualCamera != null && character != null)
         {
+            dualCamera.ApplyProfileForMode(currentMode);
             dualCamera.targetCharacter = character.transform;
             dualCamera.SetCameraMode(DualCameraSetup.CameraMode.TopDownPosition);
             dualCamera.SnapCameraImmediate();
@@ -559,9 +583,9 @@ public class GameController : MonoBehaviour
 
             character.basePosition = spawnPos;
             character.currentPosition = spawnPos;
-            character.baseRotation = currentLaunchPier.rotation; // 발판의 회전 방향과 일치
+            character.baseRotation = Quaternion.Euler(0f, 0f, 0f); // 월드 Z축(정면) 절대 정렬
             character.transform.position = spawnPos;
-            character.transform.rotation = currentLaunchPier.rotation;
+            character.transform.rotation = character.baseRotation;
         }
         else
         {
@@ -627,7 +651,7 @@ public class GameController : MonoBehaviour
 
     private void UpdatePositioning()
     {
-        if (currentMode == GameMode.LongDistance)
+        if (currentMode == GameMode.LongDistance || currentMode == GameMode.RhythmArcade)
         {
             if (currentLaunchPier != null)
             {
@@ -892,54 +916,18 @@ public class GameController : MonoBehaviour
         Vector3 spawnPos = (character != null) ? character.GetHandPosition() : transform.position + new Vector3(0.35f, 1.2f, 0.8f);
         Quaternion spawnRot = Quaternion.LookRotation(direction, Vector3.up);
 
-        if (stone != null)
+        if (currentModeHandler != null)
         {
-            stone.OnSkipBounced -= HandleSkipBounced;
-            stone.OnStoneSunk -= HandleStoneSunk;
-            Destroy(stone.gameObject);
-            stone = null;
+            currentModeHandler.OnLaunchStone(this, direction, finalPowerMultiplier);
         }
-
-        GameObject prefabToSpawn = defaultStonePrefab ?? Resources.Load<GameObject>("Stone");
-        GameObject newStoneObj = (prefabToSpawn != null) ? Instantiate(prefabToSpawn, spawnPos, spawnRot) : new GameObject("Stone");
-        newStoneObj.name = "Stone";
-
-        stone = newStoneObj.GetComponent<SkippingStone>();
-        if (stone == null)
+        else
         {
-            Debug.LogError($"[GameController] 생성된 돌 '{newStoneObj.name}'에 SkippingStone 컴포넌트가 없습니다! 프리팹 설정을 확인해주세요.");
-            return;
-        }
-        stone.OnSkipBounced += HandleSkipBounced;
-        stone.OnStoneSunk += HandleStoneSunk;
-
-        // 투수 캐릭터와 돌 사이의 물리적 충돌 상호 무시 (투구 순간 몸체 콜라이더에 걸려 튀는 현상 원천 차단)
-        if (character != null)
-        {
-            var charCols = character.GetComponentsInChildren<Collider>();
-            var stoneCols = stone.GetComponentsInChildren<Collider>();
-            foreach (var cCol in charCols)
+            if (modeHandlers.TryGetValue(currentMode, out var handler))
             {
-                foreach (var sCol in stoneCols)
-                {
-                    Physics.IgnoreCollision(cCol, sCol, true);
-                }
+                currentModeHandler = handler;
+                currentModeHandler.OnLaunchStone(this, direction, finalPowerMultiplier);
             }
         }
-
-        if (dualCamera != null)
-        {
-            dualCamera.targetStone = stone.transform;
-            dualCamera.SetCameraMode(DualCameraSetup.CameraMode.DynamicFlight);
-        }
-        if (topDownReplay != null)
-        {
-            topDownReplay.stone = stone;
-        }
-
-        stone.isGodMode = devGodMode;
-        stone.godModeTargetDistance = devGodModeTargetDistance;
-        stone.Launch(direction, finalPowerMultiplier);
     }
 
     private float lastLeftKeyTime = -10f;
@@ -948,6 +936,11 @@ public class GameController : MonoBehaviour
 
     private void UpdateFlying()
     {
+        if (currentModeHandler != null)
+        {
+            currentModeHandler.OnFlyingUpdate(this);
+        }
+
         if (IsKeyTriggered(KeyCode.Escape))
         {
             Application.Quit();
@@ -1076,37 +1069,14 @@ public class GameController : MonoBehaviour
 
     public void EvaluateRhythmTiming(float steerAngleDegrees = 0f)
     {
-        if (stone == null || stone.isCrashed) return;
-
-        bool bounced = stone.TryRhythmBounce(steerAngleDegrees, out string timingGrade);
-        if (bounced)
+        if (currentModeHandler != null)
         {
-            lastTimingText = timingGrade;
+            currentModeHandler.OnEvaluateTiming(this, steerAngleDegrees);
         }
-        else
+        else if (stone != null && !stone.isCrashed)
         {
-            if (timingGrade.Contains("LATE MISS"))
-            {
-                lastTimingText = "❌ 이미 입수됨 (지각 입력 마커 기록)";
-            }
-            else if (timingGrade == "💦 TOO EARLY")
-            {
-                lastTimingText = "💦 너무 이름! (착수 직전 1회 재도전 가능)";
-            }
-            else if (timingGrade.Contains("기회 소모"))
-            {
-                lastTimingText = "❌ 너무 이름 (막누름 기회 소모!)";
-            }
-            else if (timingGrade == "ALREADY TAPPED")
-            {
-                // 이미 이번 하강에서 탭을 소모한 상태 (연타 무시)
-                return;
-            }
-            else
-            {
-                // 상공 비행 중 (무시)
-                return;
-            }
+            stone.TryRhythmBounce(steerAngleDegrees, out string timingGrade);
+            lastTimingText = timingGrade;
         }
 
         StopCoroutine(nameof(ClearTimingTextAfterDelay));
@@ -1152,7 +1122,7 @@ public class GameController : MonoBehaviour
         bannerNotificationText = "";
     }
 
-    private void HandleSkipBounced(int count, string text)
+    public void HandleSkipBounced(int count, string text)
     {
         lastTimingText = text;
         if (text.Contains("PERFECT")) perfectTimingCount++;
@@ -1160,8 +1130,14 @@ public class GameController : MonoBehaviour
         StartCoroutine(ClearTimingTextAfterDelay(0.8f));
     }
 
-    private void HandleStoneSunk(float dist)
+    public void HandleStoneSunk(float dist)
     {
+        // 🎵 침몰 순간 0.4초 만에 음악이 스르륵 꺼지며 꼴깍- 물소리만 강조!
+        if (AudioManager.Instance != null)
+        {
+            AudioManager.Instance.StopBGMFadeOut(0.4f);
+        }
+
         StartCoroutine(DelayedShowResultRoutine(dist, 1.5f));
     }
 
