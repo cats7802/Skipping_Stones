@@ -93,6 +93,8 @@ namespace SkippingStones.Arcade
         private float cycleElapsedTime = 0f;
         private bool hasTappedInCycle = false;
         private int earlyRetryCount = 0;
+        private float pendingSteerAngle = 0f;
+        private string pendingGrade = "";
 
         // 판정 기준 윈도우 (착수 전 잔여 시간 초)
         private const float WINDOW_PERFECT = 0.100f;   // ±100ms
@@ -197,6 +199,8 @@ namespace SkippingStones.Arcade
             cycleElapsedTime = 0f;
             hasTappedInCycle = false;
             earlyRetryCount = 0;
+            pendingGrade = "";
+            pendingSteerAngle = 0f;
         }
 
         private void Update()
@@ -206,7 +210,7 @@ namespace SkippingStones.Arcade
             cycleElapsedTime += Time.deltaTime;
             float t = cycleElapsedTime / currentCycleDuration;
 
-            // 1. 디렉터 확정: 고정 높이 1.8m 기반 수학적 포물선
+            // 1. 디렉터 확정: 고정 높이 1.8m 기반 수학적 포물선 (1.00초 정박 동안 끝까지 수면으로 비행)
             Vector3 horizPos = Vector3.Lerp(cycleStartPos, cycleEndPos, Mathf.Clamp01(t));
             // y = waterLevel + 4 * H * t * (1 - t)
             float yPos = waterLevel + 4f * fixedBounceArcHeight * t * (1f - t);
@@ -219,18 +223,16 @@ namespace SkippingStones.Arcade
                 transform.rotation = Quaternion.LookRotation(vel, Vector3.up) * Quaternion.Euler(-15f, 0f, 0f);
             }
 
-            // 3. 착수 시점(t >= 1.0) 도달 시 자연 판정 (미입력 = MISS 처리)
+            // 3. 🎯 핵심: 정확히 수면 표면(t >= 1.0)에 닿는 순간 다음 바운스 실행!
             if (cycleElapsedTime >= currentCycleDuration)
             {
-                if (!hasTappedInCycle)
-                {
-                    ResolveImpact("MISS");
-                }
+                string gradeToExecute = hasTappedInCycle ? pendingGrade : "MISS";
+                ExecuteSurfaceImpact(gradeToExecute, pendingSteerAngle);
             }
         }
 
         /// <summary>
-        /// 🎮 플레이어 터치/키보드 입력 시 6단계 판정 평가
+        /// 🎮 플레이어 터치/키보드 입력 시 판정 즉시 평가 (사운드/이펙트 즉시 피드백, 착수는 수면에서 자연 실행)
         /// </summary>
         public bool TryRhythmTap(float steerAngleDegrees, out string resultGrade)
         {
@@ -266,15 +268,16 @@ namespace SkippingStones.Arcade
                 }
                 else
                 {
-                    // 연타 막누름 시 기회 소진 후 MISS 처리
+                    // 연타 막누름 시 기회 소진 후 MISS 예약
                     hasTappedInCycle = true;
-                    ResolveImpact("MISS", steerAngleDegrees);
+                    pendingGrade = "MISS";
+                    pendingSteerAngle = steerAngleDegrees;
                     resultGrade = "❌ TOO EARLY MISS";
                     return true;
                 }
             }
 
-            // 3. 정밀 판정 구간
+            // 3. 정밀 판정 구간 (누른 즉시 사운드/판정 텍스트 피드백 발생)
             hasTappedInCycle = true;
             string grade;
             if (timeRemaining <= WINDOW_PERFECT && timeRemaining >= -0.06f)
@@ -302,12 +305,29 @@ namespace SkippingStones.Arcade
                 grade = "MISS";
             }
 
-            ResolveImpact(grade, steerAngleDegrees);
+            pendingGrade = grade;
+            pendingSteerAngle = steerAngleDegrees;
             resultGrade = grade;
+
+            // 🎵 누른 순간 사운드 & 링 버스트 피드백 즉시 폭발!
+            if (AudioManager.Instance != null)
+            {
+                if (grade.Contains("PERFECT")) AudioManager.Instance.Play(SoundType.BouncePerfect);
+                else if (grade.Contains("GREAT") || grade.Contains("GOOD")) AudioManager.Instance.Play(SoundType.BounceGood);
+                else AudioManager.Instance.Play(SoundType.BounceWater);
+            }
+            if (rhythmRing != null)
+            {
+                rhythmRing.PlayHitFeedback(grade);
+            }
+
             return true;
         }
 
-        private void ResolveImpact(string grade, float steerAngle = 0f)
+        /// <summary>
+        /// 🌊 돌이 1.00초 정박에 정확히 수면에 닿았을 때 다음 바운스로 자연 튀어오름
+        /// </summary>
+        private void ExecuteSurfaceImpact(string grade, float steerAngle = 0f)
         {
             hasTappedInCycle = true;
             skipCount++;
@@ -378,18 +398,9 @@ namespace SkippingStones.Arcade
             totalDistance += currentBounceDistance;
             UpdateBPM();
 
-            if (rhythmRing != null)
-            {
-                rhythmRing.PlayHitFeedback(grade);
-            }
-
-            // 🎵 오디오 사운드 재생
+            // 🎵 BGM 피치는 착수 후 다음 바운스 템포에 맞춰 갱신
             if (AudioManager.Instance != null)
             {
-                if (grade.Contains("PERFECT")) AudioManager.Instance.Play(SoundType.BouncePerfect);
-                else if (grade.Contains("GREAT") || grade.Contains("GOOD")) AudioManager.Instance.Play(SoundType.BounceGood);
-                else AudioManager.Instance.Play(SoundType.BounceWater);
-
                 AudioManager.Instance.SetBGMPitchByBPM(currentBPM, 60f);
             }
 
@@ -411,6 +422,8 @@ namespace SkippingStones.Arcade
                 cycleElapsedTime = 0f;
                 hasTappedInCycle = false;
                 earlyRetryCount = 0;
+                pendingGrade = "";
+                pendingSteerAngle = 0f;
             }
         }
 
