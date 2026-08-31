@@ -935,6 +935,11 @@ public class GameController : MonoBehaviour
 
     private void UpdateFlying()
     {
+        if (currentModeHandler != null)
+        {
+            currentModeHandler.OnFlyingUpdate(this);
+        }
+
         if (IsKeyTriggered(KeyCode.Escape))
         {
             Application.Quit();
