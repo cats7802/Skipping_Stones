@@ -582,9 +582,9 @@ public class GameController : MonoBehaviour
 
             character.basePosition = spawnPos;
             character.currentPosition = spawnPos;
-            character.baseRotation = currentLaunchPier.rotation; // 발판의 회전 방향과 일치
+            character.baseRotation = Quaternion.Euler(0f, 0f, 0f); // 월드 Z축(정면) 절대 정렬
             character.transform.position = spawnPos;
-            character.transform.rotation = currentLaunchPier.rotation;
+            character.transform.rotation = character.baseRotation;
         }
         else
         {
