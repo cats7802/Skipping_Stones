@@ -222,12 +222,28 @@ public class AudioManager : MonoBehaviour
 
     public void PlayBGM(AudioClip clip = null, float bpm = 60f)
     {
-        if (bgmSource == null) return;
+        if (bgmSource == null)
+        {
+            bgmSource = gameObject.AddComponent<AudioSource>();
+            bgmSource.loop = true;
+            bgmSource.playOnAwake = false;
+            bgmSource.spatialBlend = 0f;
+        }
 
-        if (clip != null) bgmSource.clip = clip;
-        if (bgmSource.clip != null && !bgmSource.isPlaying)
+        if (clip != null)
+        {
+            bgmSource.clip = clip;
+        }
+        else if (bgmSource.clip == null)
+        {
+            if (bgmMusicClip != null) bgmSource.clip = bgmMusicClip;
+            else bgmSource.clip = Resources.Load<AudioClip>("Audio/alex-morgan-acoustic-guitar-sunrise-travel") ?? Resources.Load<AudioClip>("Audio/BGM_Main");
+        }
+
+        if (bgmSource.clip != null)
         {
             bgmSource.volume = masterVolume * 0.7f;
+            bgmSource.pitch = 1.0f;
             bgmSource.Play();
         }
     }

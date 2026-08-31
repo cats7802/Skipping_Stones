@@ -55,6 +55,11 @@ namespace SkippingStones.Gameplay.Modes
                     controller.dualCamera.targetStone = stone.transform;
                     controller.dualCamera.SetCameraMode(DualCameraSetup.CameraMode.DynamicFlight);
                 }
+
+                if (AudioManager.Instance != null)
+                {
+                    AudioManager.Instance.PlayBGM();
+                }
             }
         }
 
