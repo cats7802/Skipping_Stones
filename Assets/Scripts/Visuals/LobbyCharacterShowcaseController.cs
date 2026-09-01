@@ -100,10 +100,24 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 계층 구조 내 Staging_Position 자동 탐색 (대소문자/오타 무관하게 STAGING_POSITION 또는 STAGINGPOSITION 검색)
+        /// 계층 구조 내 Staging_Position 및 로비 뷰 카메라 자동 탐색
         /// </summary>
         public void FindStagingPosition()
         {
+            if (targetCamera == null || !targetCamera.gameObject.activeInHierarchy)
+            {
+                Camera[] allCams = FindObjectsByType<Camera>(FindObjectsInactive.Exclude);
+                foreach (var cam in allCams)
+                {
+                    if (cam.gameObject.activeInHierarchy && (cam.name.Contains("Lobby") || cam.name.Contains("Camera001") || cam.name.Contains("Select")))
+                    {
+                        targetCamera = cam;
+                        break;
+                    }
+                }
+                if (targetCamera == null) targetCamera = Camera.main;
+            }
+
             if (stagingPosition != null && stagingPosition.gameObject.scene.name != null) return;
 
             Transform[] allChildren = GetComponentsInChildren<Transform>(true);
@@ -123,6 +137,24 @@ namespace SkippingStones.Visuals
             {
                 stagingPosition = transform;
             }
+        }
+
+        /// <summary>
+        /// 로비 뷰 카메라(targetCamera)를 정면으로 바라보는 기준 회전 반환
+        /// </summary>
+        public Quaternion GetCameraFacingRotation(Vector3 centerPos)
+        {
+            FindStagingPosition();
+            if (targetCamera != null)
+            {
+                Vector3 toCam = (targetCamera.transform.position - centerPos);
+                toCam.y = 0f;
+                if (toCam.sqrMagnitude > 0.001f)
+                {
+                    return Quaternion.LookRotation(toCam.normalized, Vector3.up);
+                }
+            }
+            return stagingPosition != null ? stagingPosition.rotation : transform.rotation;
         }
 
         /// <summary>
@@ -302,7 +334,8 @@ namespace SkippingStones.Visuals
 
                 if (currentSpawnedCharacter != null)
                 {
-                    Quaternion baseRot = stagingPosition != null ? stagingPosition.rotation : transform.rotation;
+                    Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
+                    Quaternion baseRot = GetCameraFacingRotation(centerPos);
                     currentSpawnedCharacter.transform.rotation = baseRot * Quaternion.Euler(0f, currentModelRotationY, 0f);
                 }
             }
@@ -329,6 +362,21 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
+        /// 캐릭터 선택/확인 시 환호(Select) 애니메이션 1회 재생
+        /// </summary>
+        public void PlaySelectAnimation()
+        {
+            if (currentSpawnedCharacter != null)
+            {
+                var anim = currentSpawnedCharacter.GetComponentInChildren<Animator>();
+                if (anim != null)
+                {
+                    anim.SetTrigger("Select");
+                }
+            }
+        }
+
+        /// <summary>
         /// 캐릭터 슬라이드/걸어나오기 트랜지션 코루틴
         /// direction: 1 = 다음(오른쪽으로 퇴장, 왼쪽에서 등장) / -1 = 이전
         /// </summary>
@@ -339,7 +387,7 @@ namespace SkippingStones.Visuals
 
             FindStagingPosition();
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
-            Quaternion finalFrontRot = stagingPosition != null ? stagingPosition.rotation : transform.rotation;
+            Quaternion finalFrontRot = GetCameraFacingRotation(centerPos);
 
             // 로비 룸 및 카메라 쿼터뷰에 맞춘 화면상 좌우 횡이동 축 계산 (기본 55도 적용)
             Vector3 moveDir = (Quaternion.Euler(0f, entryAngleOffset, 0f) * transform.right).normalized;
@@ -381,7 +429,7 @@ namespace SkippingStones.Visuals
                 {
                     newChr.transform.position = Vector3.Lerp(enterPos, centerPos, ease);
                     
-                    // 진입 시: 처음엔 걸어오는 방향 -> 중앙 도달(후반 50%~) 시 부드럽게 정면 카메라를 바라보도록 회전
+                    // 진입 시: 처음엔 걸어오는 방향 -> 중앙 도달(후반 40%~) 시 부드럽게 정면 카메라를 바라보도록 회전
                     float turnT = Mathf.Clamp01((t - 0.4f) / 0.6f);
                     float turnEase = Mathf.SmoothStep(0f, 1f, turnT);
                     newChr.transform.rotation = Quaternion.Slerp(enterWalkRot, finalFrontRot, turnEase);
@@ -424,7 +472,7 @@ namespace SkippingStones.Visuals
 
             FindStagingPosition();
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
-            Quaternion centerRot = stagingPosition != null ? stagingPosition.rotation : Quaternion.identity;
+            Quaternion centerRot = GetCameraFacingRotation(centerPos);
 
             GameObject prefab = characterPrefabs[index];
             currentSpawnedCharacter = Instantiate(prefab, centerPos, centerRot, stagingPosition != null ? stagingPosition : transform);

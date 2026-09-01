@@ -643,6 +643,10 @@ namespace SkippingStones.UI
 
             if (DrawResponsiveButton(new Rect(465, 1140, 225, 110), "🚀 GO!\n(맵 선택)", _primaryBtnStyle))
             {
+                if (spawnedCharacterController != null)
+                {
+                    spawnedCharacterController.PlaySelectAnimation();
+                }
                 ShowScreen(MetaScreen.MapSelect);
             }
         }
