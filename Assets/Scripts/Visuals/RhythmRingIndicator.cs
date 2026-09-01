@@ -52,18 +52,45 @@ public class RhythmRingIndicator : MonoBehaviour
 
     private void Awake()
     {
-        if (stone == null) stone = GetComponentInParent<SkippingStone>();
+        ResolveTargetReferences();
         CreateRingLines();
         UpdateWaterLevel();
     }
 
     private void Start()
     {
-        if (stone != null)
+        ResolveTargetReferences();
+        BindEvents();
+        UpdateWaterLevel();
+    }
+
+    public void ResolveTargetReferences()
+    {
+        if (arcadeStone == null) arcadeStone = GetComponentInParent<SkippingStones.Arcade.ArcadeSkippingStone>();
+        if (arcadeStone == null) arcadeStone = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+
+        if (arcadeStone != null && arcadeStone.enabled)
         {
+            stone = null; // 아케이드 모드에서는 레거시 stone 참조 강제 해제
+            return;
+        }
+
+        if (stone == null) stone = GetComponentInParent<SkippingStone>();
+        if (stone == null) stone = FindAnyObjectByType<SkippingStone>();
+    }
+
+    private void BindEvents()
+    {
+        if (arcadeStone != null)
+        {
+            arcadeStone.OnSkipBounced -= HandleBounceBurst;
+            arcadeStone.OnSkipBounced += HandleBounceBurst;
+        }
+        else if (stone != null)
+        {
+            stone.OnSkipBounced -= HandleBounceBurst;
             stone.OnSkipBounced += HandleBounceBurst;
         }
-        UpdateWaterLevel();
     }
 
     public void UpdateWaterLevel()
@@ -137,7 +164,6 @@ public class RhythmRingIndicator : MonoBehaviour
 
         // 🌟 1. [안쪽] 진하고 불투명한 퍼펙트 타깃 코어 디스크 (Inner Target Core)
         innerCoreObj = new GameObject("InnerTargetCore_SolidWaterFixed");
-        innerCoreObj.transform.SetParent(transform, false);
         innerCoreFilter = innerCoreObj.AddComponent<MeshFilter>();
         innerCoreRenderer = innerCoreObj.AddComponent<MeshRenderer>();
         innerCoreRenderer.material = innerCoreMat;
@@ -150,7 +176,6 @@ public class RhythmRingIndicator : MonoBehaviour
 
         // 🌟 2. [안쪽] 퍼펙트 타깃 테두리 링
         innerBorderObj = new GameObject("InnerTargetBorder_WaterFixed");
-        innerBorderObj.transform.SetParent(transform, false);
         innerRingBorder = innerBorderObj.AddComponent<LineRenderer>();
         ConfigureLineRenderer(innerRingBorder, lineMat, innerRingBorderColor, lineWidth);
         innerRingBorder.alignment = LineAlignment.TransformZ;
@@ -159,7 +184,6 @@ public class RhythmRingIndicator : MonoBehaviour
 
         // 🌟 3. [바깥쪽] 옐로우->오렌지->레드로 수축하는 반투명 디스크 (Shrinking Disc)
         shrinkingDiscObj = new GameObject("ShrinkingDisc_FilledWaterFixed");
-        shrinkingDiscObj.transform.SetParent(transform, false);
         shrinkingDiscFilter = shrinkingDiscObj.AddComponent<MeshFilter>();
         shrinkingDiscRenderer = shrinkingDiscObj.AddComponent<MeshRenderer>();
         shrinkingDiscRenderer.material = shrinkingDiscMat;
@@ -172,7 +196,6 @@ public class RhythmRingIndicator : MonoBehaviour
 
         // 🌟 4. [바깥쪽] 수축 링 테두리 라인
         outerBorderObj = new GameObject("OuterShrinkingBorder_WaterFixed");
-        outerBorderObj.transform.SetParent(transform, false);
         outerRingBorder = outerBorderObj.AddComponent<LineRenderer>();
         ConfigureLineRenderer(outerRingBorder, lineMat, shrinkingColorStart, lineWidth * 1.2f);
         outerRingBorder.alignment = LineAlignment.TransformZ;
@@ -200,16 +223,10 @@ public class RhythmRingIndicator : MonoBehaviour
 
     private void LateUpdate()
     {
-        if (stone == null && arcadeStone == null)
+        if (arcadeStone == null && stone == null)
         {
-            stone = GetComponentInParent<SkippingStone>();
-            arcadeStone = GetComponentInParent<SkippingStones.Arcade.ArcadeSkippingStone>();
-            if (stone == null && arcadeStone == null)
-            {
-                stone = FindAnyObjectByType<SkippingStone>();
-                arcadeStone = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
-            }
-            if (stone == null && arcadeStone == null) return;
+            ResolveTargetReferences();
+            if (arcadeStone == null && stone == null) return;
         }
 
         UpdateWaterLevel();
@@ -219,9 +236,9 @@ public class RhythmRingIndicator : MonoBehaviour
             UpdateBurstAnimation();
         }
 
-        bool isThrown = (stone != null && stone.isThrown) || (arcadeStone != null && arcadeStone.isThrown);
-        bool isSunk = (stone != null && stone.isSunk) || (arcadeStone != null && arcadeStone.isSunk);
-        bool isCrashed = (stone != null && stone.isCrashed) || (arcadeStone != null && arcadeStone.isCrashed);
+        bool isThrown = (arcadeStone != null && arcadeStone.isThrown) || (stone != null && stone.isThrown);
+        bool isSunk = (arcadeStone != null && arcadeStone.isSunk) || (stone != null && stone.isSunk);
+        bool isCrashed = (arcadeStone != null && arcadeStone.isCrashed) || (stone != null && stone.isCrashed);
         bool isSkimming = (arcadeStone != null && arcadeStone.isSkimming);
 
         if (!isThrown || isSunk || isCrashed || isSkimming)
@@ -231,8 +248,8 @@ public class RhythmRingIndicator : MonoBehaviour
             return;
         }
 
-        // 🎵 리듬 아케이드 모드 전용 (BPM 고정 주기 기반 정확한 수학적 링 수축)
-        if (arcadeStone != null)
+        // 🎵 1. 리듬 아케이드 모드 전용 (BPM 고정 주기 기반 정확한 수학적 링 수축)
+        if (arcadeStone != null && arcadeStone.enabled)
         {
             int curSkip = arcadeStone.skipCount;
             if (curSkip != lastSkipIndex)
@@ -241,17 +258,26 @@ public class RhythmRingIndicator : MonoBehaviour
                 isTargetLocked = false;
             }
 
-            // 수축 비율 계산 (0: 착수, 1: 상공)
+            // 수축 비율 계산 (0.0: 정박 착수 순간, 1.0: 바운스 시작 상공)
             float normRemaining = (arcadeStone.currentCycleDuration > 0.001f) 
                 ? (arcadeStone.currentCycleDuration - arcadeStone.CycleElapsedTime) / arcadeStone.currentCycleDuration 
                 : 0f;
             float arcadeRatio = Mathf.Clamp01(normRemaining);
 
-            RenderRings(arcadeStone.CycleEndPosition, arcadeRatio);
+            Vector3 impactPos = arcadeStone.CycleEndPosition;
+            impactPos.y = waterLevel;
+
+            RenderRings(impactPos, arcadeRatio);
             return;
         }
 
-        // 🌊 롱디스턴스 물리 모드 전용 로직
+        // 🌊 2. 롱디스턴스 물리 모드 전용 로직
+        if (stone == null || !stone.enabled)
+        {
+            SetRingsActive(false);
+            return;
+        }
+
         Rigidbody rb = stone.GetComponent<Rigidbody>();
         if (rb == null)
         {
@@ -373,23 +399,26 @@ public class RhythmRingIndicator : MonoBehaviour
         discFillColor.a = shrinkingDiscAlpha;
 
         // 🎯 [안쪽] 1. 불투명하고 진한 퍼펙트 타깃 코어 디스크 (수면 고정)
-        DrawFilledDisc(innerCoreFilter, innerCoreRenderer, innerCoreMesh, innerCoreMat, impactPos + Vector3.up * 0.002f, compensatedTargetRadius, innerCoreColor);
+        DrawFilledDisc(innerCoreObj, innerCoreFilter, innerCoreRenderer, innerCoreMesh, innerCoreMat, impactPos + Vector3.up * 0.002f, compensatedTargetRadius, innerCoreColor);
 
         // 🎯 [안쪽] 2. 퍼펙트 타깃 테두리 링
-        DrawFlatCircle(innerRingBorder, impactPos + Vector3.up * 0.003f, compensatedTargetRadius, innerRingBorderColor);
+        DrawFlatCircle(innerBorderObj, innerRingBorder, impactPos + Vector3.up * 0.003f, compensatedTargetRadius, innerRingBorderColor);
 
         // ⏱️ [바깥쪽] 3. 옐로우/오렌지/레드로 좁혀지는 반투명 수축 디스크
         float currentOuterRadius = compensatedTargetRadius * Mathf.Lerp(1.0f, curMaxMultiplier, ratio);
-        DrawFilledDisc(shrinkingDiscFilter, shrinkingDiscRenderer, shrinkingDiscMesh, shrinkingDiscMat, impactPos + Vector3.up * 0.001f, currentOuterRadius, discFillColor);
+        DrawFilledDisc(shrinkingDiscObj, shrinkingDiscFilter, shrinkingDiscRenderer, shrinkingDiscMesh, shrinkingDiscMat, impactPos + Vector3.up * 0.001f, currentOuterRadius, discFillColor);
 
         // ⏱️ [바깥쪽] 4. 수축 외곽 테두리 링
-        DrawFlatCircle(outerRingBorder, impactPos + Vector3.up * 0.004f, currentOuterRadius, currentOuterColor);
+        DrawFlatCircle(outerBorderObj, outerRingBorder, impactPos + Vector3.up * 0.004f, currentOuterRadius, currentOuterColor);
     }
 
-    private void DrawFilledDisc(MeshFilter mf, MeshRenderer mr, Mesh mesh, Material mat, Vector3 center, float radius, Color color)
+    private void DrawFilledDisc(GameObject hostObj, MeshFilter mf, MeshRenderer mr, Mesh mesh, Material mat, Vector3 center, float radius, Color color)
     {
-        if (mr == null || mesh == null) return;
+        if (mr == null || mesh == null || hostObj == null) return;
         mr.enabled = true;
+        hostObj.transform.position = center;
+        hostObj.transform.rotation = Quaternion.identity;
+
         if (mat != null)
         {
             if (mat.HasProperty("_Color")) mat.SetColor("_Color", color);
@@ -400,16 +429,16 @@ public class RhythmRingIndicator : MonoBehaviour
         int[] triangles = new int[segments * 6]; // 양면 렌더링 (Double-sided)
         Color[] colors = new Color[segments + 1];
 
-        vertices[0] = center;
+        vertices[0] = Vector3.zero; // 로컬 원점 (center에 hostObj 배치)
         colors[0] = color;
 
         float angleStep = 360f / segments;
         for (int i = 0; i < segments; i++)
         {
             float rad = Mathf.Deg2Rad * (i * angleStep);
-            float x = center.x + Mathf.Cos(rad) * radius;
-            float z = center.z + Mathf.Sin(rad) * radius;
-            vertices[i + 1] = new Vector3(x, center.y, z);
+            float x = Mathf.Cos(rad) * radius;
+            float z = Mathf.Sin(rad) * radius;
+            vertices[i + 1] = new Vector3(x, 0f, z);
             colors[i + 1] = color;
 
             int next = (i + 1) % segments;
@@ -431,10 +460,12 @@ public class RhythmRingIndicator : MonoBehaviour
         mesh.RecalculateNormals();
     }
 
-    private void DrawFlatCircle(LineRenderer lr, Vector3 center, float radius, Color color)
+    private void DrawFlatCircle(GameObject hostObj, LineRenderer lr, Vector3 center, float radius, Color color)
     {
-        if (lr == null) return;
+        if (lr == null || hostObj == null) return;
         lr.enabled = true;
+        hostObj.transform.position = Vector3.zero;
+        hostObj.transform.rotation = Quaternion.identity;
         lr.startColor = color;
         lr.endColor = color;
 

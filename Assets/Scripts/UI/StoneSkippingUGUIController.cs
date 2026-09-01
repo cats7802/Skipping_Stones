@@ -646,20 +646,54 @@ public class StoneSkippingUGUIController : MonoBehaviour
             if (powerPercentText != null) powerPercentText.text = $"[POWER] {(int)(gameController.powerGaugeValue * 100)}%";
         }
 
-        if (gameController.stone != null && flightHudObj != null && flightHudObj.activeSelf)
+        if (flightHudObj != null && flightHudObj.activeSelf)
         {
-            if (flightDistanceText != null) flightDistanceText.text = $"[거리] {gameController.stone.totalDistance:F1} m";
-            if (flightSkipText != null) flightSkipText.text = $"[바운스] {gameController.stone.skipCount}회";
+            float dist = 0f;
+            int skips = 0;
+            if (gameController.currentMode == GameController.GameMode.RhythmArcade)
+            {
+                var arcade = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+                if (arcade != null)
+                {
+                    dist = arcade.totalDistance;
+                    skips = arcade.skipCount;
+                }
+            }
+            else if (gameController.stone != null)
+            {
+                dist = gameController.stone.totalDistance;
+                skips = gameController.stone.skipCount;
+            }
+
+            if (flightDistanceText != null) flightDistanceText.text = $"[거리] {dist:F1} m";
+            if (flightSkipText != null) flightSkipText.text = $"[바운스] {skips}회";
             if (flightTimingText != null) flightTimingText.text = gameController.lastTimingText;
         }
 
         if (resultObj != null && resultObj.activeSelf)
         {
+            float finalDist = 0f;
+            int finalSkips = 0;
+            if (gameController.currentMode == GameController.GameMode.RhythmArcade)
+            {
+                var arcade = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+                if (arcade != null)
+                {
+                    finalDist = arcade.totalDistance;
+                    finalSkips = arcade.skipCount;
+                }
+            }
+            else if (gameController.stone != null)
+            {
+                finalDist = gameController.stone.totalDistance;
+                finalSkips = gameController.stone.skipCount;
+            }
+
             if (resultReasonText != null) resultReasonText.text = gameController.lastTimingText;
-            if (resultDistanceScoreText != null && gameController.stone != null)
-                resultDistanceScoreText.text = $"1. 도달 거리 ({gameController.stone.totalDistance:F1} m)  +{gameController.distanceScore:N0} 점";
-            if (resultSkipScoreText != null && gameController.stone != null)
-                resultSkipScoreText.text = $"2. 튕긴 횟수 ({gameController.stone.skipCount} 회)  +{gameController.skipScore:N0} 점";
+            if (resultDistanceScoreText != null)
+                resultDistanceScoreText.text = $"1. 도달 거리 ({finalDist:F1} m)  +{gameController.distanceScore:N0} 점";
+            if (resultSkipScoreText != null)
+                resultSkipScoreText.text = $"2. 튕긴 횟수 ({finalSkips} 회)  +{gameController.skipScore:N0} 점";
             if (resultSpecialScoreText != null)
             {
                 string skimInfo = (gameController.lastSkimBonusDist > 0.1f) ? $" 도로록:+{gameController.lastSkimBonusDist:F1}m" : "";

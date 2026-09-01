@@ -25,6 +25,7 @@ namespace SkippingStones.UI
         private Text floatingGradeText;
 
         private SkippingStone currentStone;
+        private Arcade.ArcadeSkippingStone currentArcadeStone;
         private float displayedFillAmount = 0.6f;
         private Coroutine floatingTextCoroutine;
 
@@ -58,7 +59,7 @@ namespace SkippingStones.UI
             // 1. Canvas 설정
             hudCanvas = gameObject.AddComponent<Canvas>();
             hudCanvas.renderMode = RenderMode.ScreenSpaceOverlay;
-            hudCanvas.sortingOrder = 50;
+            hudCanvas.sortingOrder = 50; // InGame HUD 위에 표시
 
             canvasScaler = gameObject.AddComponent<CanvasScaler>();
             canvasScaler.uiScaleMode = CanvasScaler.ScaleMode.ScaleWithScreenSize;
@@ -67,15 +68,15 @@ namespace SkippingStones.UI
 
             graphicRaycaster = gameObject.AddComponent<GraphicRaycaster>();
 
-            // 2. 루트 컨테이너 (화면 상단 중앙 Y=1180)
-            rootPanel = new GameObject("MomentumBar_Container");
+            // 2. 루트 컨테이너 (화면 상단 중앙 Y=-60)
+            rootPanel = new GameObject("MomentumHUD_Container");
             rootPanel.transform.SetParent(transform, false);
             RectTransform rootRect = rootPanel.AddComponent<RectTransform>();
             rootRect.anchorMin = new Vector2(0.5f, 1f);
             rootRect.anchorMax = new Vector2(0.5f, 1f);
             rootRect.pivot = new Vector2(0.5f, 1f);
-            rootRect.anchoredPosition = new Vector2(0f, -45f);
-            rootRect.sizeDelta = new Vector2(360f, 48f);
+            rootRect.anchoredPosition = new Vector2(0f, -60f);
+            rootRect.sizeDelta = new Vector2(360f, 32f);
 
             // 3. 배경 바 (반투명 다크 글래스)
             GameObject bgObj = new GameObject("BgBar");
@@ -146,17 +147,36 @@ namespace SkippingStones.UI
             {
                 currentStone = FindAnyObjectByType<SkippingStone>();
             }
+            if (currentArcadeStone == null || !currentArcadeStone.isThrown || currentArcadeStone.isSunk || currentArcadeStone.isCrashed)
+            {
+                currentArcadeStone = FindAnyObjectByType<Arcade.ArcadeSkippingStone>();
+            }
 
-            bool inGamePlaying = (currentStone != null && currentStone.isThrown && !currentStone.isSunk && !currentStone.isCrashed);
+            bool inGamePlaying = (currentArcadeStone != null && currentArcadeStone.isThrown && !currentArcadeStone.isSunk && !currentArcadeStone.isCrashed) ||
+                                 (currentStone != null && currentStone.isThrown && !currentStone.isSunk && !currentStone.isCrashed);
+
             if (rootPanel != null && rootPanel.activeSelf != inGamePlaying)
             {
                 rootPanel.SetActive(inGamePlaying);
             }
 
-            if (!inGamePlaying || currentStone == null) return;
+            if (!inGamePlaying) return;
+
+            float curMomentum = 0f;
+            float maxMom = 100f;
+            if (currentArcadeStone != null && currentArcadeStone.isThrown && !currentArcadeStone.isSunk)
+            {
+                curMomentum = currentArcadeStone.currentMomentum;
+                maxMom = currentArcadeStone.maxMomentum;
+            }
+            else if (currentStone != null)
+            {
+                curMomentum = currentStone.currentMomentum;
+                maxMom = currentStone.maxMomentum;
+            }
 
             // 부드러운 게이지 Lerp
-            float targetFill = Mathf.Clamp01(currentStone.currentMomentum / currentStone.maxMomentum);
+            float targetFill = Mathf.Clamp01(curMomentum / maxMom);
             displayedFillAmount = Mathf.Lerp(displayedFillAmount, targetFill, Time.deltaTime * 8f);
 
             if (fillBar != null)
@@ -164,12 +184,12 @@ namespace SkippingStones.UI
                 fillBar.fillAmount = displayedFillAmount;
 
                 // 게이지 잔량에 따른 색상 전환 (정상: 시안, 위험: 오렌지/레드 펄스)
-                if (currentStone.currentMomentum <= 2.5f)
+                if (curMomentum <= (maxMom * 0.25f))
                 {
                     float pulse = (Mathf.Sin(Time.time * 12f) + 1f) * 0.5f;
                     fillBar.color = Color.Lerp(new Color(1f, 0.2f, 0.2f, 0.95f), new Color(1f, 0.6f, 0.1f, 0.95f), pulse);
                 }
-                else if (currentStone.currentMomentum <= 5.0f)
+                else if (curMomentum <= (maxMom * 0.50f))
                 {
                     fillBar.color = new Color(0.95f, 0.85f, 0.2f, 0.95f);
                 }
@@ -181,7 +201,7 @@ namespace SkippingStones.UI
 
             if (momentumText != null)
             {
-                momentumText.text = $"⚡ MOMENTUM: {currentStone.currentMomentum:F1} / {currentStone.maxMomentum:F0}";
+                momentumText.text = $"⚡ MOMENTUM: {curMomentum:F0} / {maxMom:F0}";
             }
         }
 

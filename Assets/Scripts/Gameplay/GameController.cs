@@ -881,6 +881,18 @@ public class GameController : MonoBehaviour
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
 
+        float animSpeed = 1f;
+        if (currentMode == GameMode.RhythmArcade)
+        {
+            // 🎵 리듬 아케이드 모드: 투구 버튼 탭 즉시 BGM 시작 (120 BPM 원곡의 2박 정박 60 BPM 싱크)
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlayBGM(null, 60f);
+            }
+            // 60 BPM 기준 정확히 1.0초 동안 투구 완료되도록 속도 동기화 (1.833x 배속)
+            animSpeed = 1.833f;
+        }
+
         if (character != null)
         {
             character.PlayThrowAnimation(
@@ -891,7 +903,8 @@ public class GameController : MonoBehaviour
                 onReleaseCallback: () =>
                 {
                     ExecuteLaunchPhysics();
-                }
+                },
+                speedMultiplier: animSpeed
             );
         }
         else
@@ -1066,12 +1079,26 @@ public class GameController : MonoBehaviour
                 // 화면 전체 스와이프: 기본 5° / 빠른 스와이프(거리 > 80px) 8°
                 float baseAngle = (Mathf.Abs(deltaX) > 80f) ? 8.0f : 5.0f;
                 float steerAngle = (deltaX > 0f) ? baseAngle : -baseAngle;
-                if (stone != null && !stone.isSunk && !stone.isCrashed)
-                {
-                    stone.ApplySteerAngle(steerAngle);
-                    lastTimingText += (steerAngle > 0f) ? $" \n👉 [RIGHT {steerAngle:F0}° 조향]" : $" \n👈 [LEFT {Mathf.Abs(steerAngle):F0}° 조향]";
-                }
+                ApplySteerToCurrentStone(steerAngle);
             }
+        }
+    }
+
+    public void ApplySteerToCurrentStone(float steerAngle)
+    {
+        if (currentMode == GameMode.RhythmArcade)
+        {
+            var arcade = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+            if (arcade != null && !arcade.isSunk && !arcade.isCrashed)
+            {
+                arcade.ApplySteerAngle(steerAngle);
+                lastTimingText += (steerAngle > 0f) ? $" \n👉 [RIGHT {steerAngle:F0}° 조향]" : $" \n👈 [LEFT {Mathf.Abs(steerAngle):F0}° 조향]";
+            }
+        }
+        else if (stone != null && !stone.isSunk && !stone.isCrashed)
+        {
+            stone.ApplySteerAngle(steerAngle);
+            lastTimingText += (steerAngle > 0f) ? $" \n👉 [RIGHT {steerAngle:F0}° 조향]" : $" \n👈 [LEFT {Mathf.Abs(steerAngle):F0}° 조향]";
         }
     }
 
@@ -1096,7 +1123,13 @@ public class GameController : MonoBehaviour
         fishSnipeCount++;
         bannerNotificationText = $"🎯 FISH SNIPE! [{speciesName}] 저격 성공! (+1,000점 & 코인)";
         lastTimingText = "🔥 FISH SNIPE! 🔥";
-        StartCoroutine(HitStopSlowMo(0.25f));
+
+        // 🎵 리듬 아케이드 모드에서는 비트 박자 싱크 유지를 위해 타임스케일 슬로우모션(멈칫) 비활성화
+        if (currentMode != GameMode.RhythmArcade)
+        {
+            StartCoroutine(HitStopSlowMo(0.25f));
+        }
+
         StopCoroutine(nameof(ClearBannerAfterDelay));
         StartCoroutine(ClearBannerAfterDelay(2.5f));
     }
@@ -1134,6 +1167,12 @@ public class GameController : MonoBehaviour
     {
         lastTimingText = text;
         if (text.Contains("PERFECT")) perfectTimingCount++;
+
+        if (SkippingStones.UI.InGameMomentumHUD.Instance != null)
+        {
+            SkippingStones.UI.InGameMomentumHUD.Instance.TriggerGradePopup(text);
+        }
+
         StopCoroutine(nameof(ClearTimingTextAfterDelay));
         StartCoroutine(ClearTimingTextAfterDelay(0.8f));
     }

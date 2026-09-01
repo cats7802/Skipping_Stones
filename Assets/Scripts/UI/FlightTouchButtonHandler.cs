@@ -96,6 +96,9 @@ namespace SkippingStones.UI
             flashCoroutine = null;
         }
 
+        private float lastTapTime = -10f;
+        private const float DOUBLE_TAP_TIME = 0.28f;
+
         public void OnPointerDown(PointerEventData eventData)
         {
             pointerDownPos = eventData.position;
@@ -109,14 +112,25 @@ namespace SkippingStones.UI
                 transform.localScale = new Vector3(0.88f, 0.88f, 1f);
             }
 
-            // 1. 터치 즉시 기본 각도로 리듬 판정 실행 (0ms 지연)
+            // 🌟 더블탭 감지 (좌/우 버튼 빠르게 2번 탭 시 +3° 추가 조향)
+            float now = Time.unscaledTime;
+            bool isDoubleTap = (baseAngle != 0f && (now - lastTapTime <= DOUBLE_TAP_TIME));
+            lastTapTime = now;
+
+            float effectiveAngle = baseAngle;
+            if (isDoubleTap)
+            {
+                effectiveAngle = (baseAngle > 0f) ? (baseAngle + 3.0f) : (baseAngle - 3.0f); // 5° -> 8° / -5° -> -8°
+            }
+
+            // 1. 터치 즉시 리듬 판정 실행 (0ms 지연)
             if (controller != null)
             {
-                controller.OnButtonActionTriggered(baseAngle);
+                controller.OnButtonActionTriggered(effectiveAngle);
             }
             else if (GameController.Instance != null)
             {
-                GameController.Instance.EvaluateRhythmTiming(baseAngle);
+                GameController.Instance.EvaluateRhythmTiming(effectiveAngle);
             }
         }
 
@@ -135,15 +149,13 @@ namespace SkippingStones.UI
             {
                 hasTriggeredSwipeBonus = true;
                 float bonusSteer = (baseAngle > 0f) ? 3.0f : -3.0f;
-                if (controller != null)
+                if (GameController.Instance != null)
+                {
+                    GameController.Instance.ApplySteerToCurrentStone(bonusSteer);
+                }
+                else if (controller != null)
                 {
                     controller.OnExtraSteerTriggered(bonusSteer);
-                }
-                else if (GameController.Instance != null && GameController.Instance.stone != null && 
-                         !GameController.Instance.stone.isSunk && !GameController.Instance.stone.isCrashed)
-                {
-                    GameController.Instance.stone.ApplySteerAngle(bonusSteer);
-                    GameController.Instance.lastTimingText += (bonusSteer > 0f) ? "\n👉 [SWIPE +3° 추가]" : "\n👈 [SWIPE -3° 추가]";
                 }
             }
         }

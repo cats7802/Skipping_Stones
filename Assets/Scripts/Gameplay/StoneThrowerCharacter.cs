@@ -758,25 +758,25 @@ public class StoneThrowerCharacter : MonoBehaviour
     /// <summary>
     /// 3단계: 방향 및 파워 선택 완료 -> 캐릭터 투구 애니메이션 실행 -> 30~55프레임 페이드아웃 -> 45프레임 55f 발사 앵커 기준 카메라 선행 가속 -> 55프레임 발사
     /// </summary>
-    public void PlayThrowAnimation(System.Action<Vector3, Vector3> onCameraLeadInCallback = null, System.Action onReleaseCallback = null)
+    public void PlayThrowAnimation(System.Action<Vector3, Vector3> onCameraLeadInCallback = null, System.Action onReleaseCallback = null, float speedMultiplier = 1f)
     {
-        StartCoroutine(ThrowRoutine(onCameraLeadInCallback, onReleaseCallback));
+        StartCoroutine(ThrowRoutine(onCameraLeadInCallback, onReleaseCallback, speedMultiplier));
     }
 
-    private IEnumerator ThrowRoutine(System.Action<Vector3, Vector3> onCameraLeadInCallback, System.Action onReleaseCallback)
+    private IEnumerator ThrowRoutine(System.Action<Vector3, Vector3> onCameraLeadInCallback, System.Action onReleaseCallback, float speedMultiplier = 1f)
     {
         isThrowing = true;
         isStoneReleased = false;
         transform.rotation = currentAimRotation;
         RestoreVisibility();
 
-        // 1. 0프레임 정지 해제 및 투구 애니메이션 0프레임부터 재생 시작
+        // 1. 0프레임 정지 해제 및 투구 애니메이션 0프레임부터 재생 시작 (BPM 속도 연동)
         if (animator != null && animator.runtimeAnimatorController != null)
         {
             animator.enabled = true;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            animator.speed = 1f;
+            animator.speed = Mathf.Max(0.1f, speedMultiplier);
             if (animator.layerCount > 0) animator.SetLayerWeight(0, 1f);
 
             if (HasState(animator, "Throw"))
@@ -791,9 +791,10 @@ public class StoneThrowerCharacter : MonoBehaviour
         }
 
         float fps = (animationFps > 0f) ? animationFps : 30f;
-        float frame30Time = 30f / fps;
-        float frame45Time = 45f / fps;
-        float frame55Time = 55f / fps;
+        float actualSpeed = Mathf.Max(0.1f, speedMultiplier);
+        float frame30Time = (30f / fps) / actualSpeed;
+        float frame45Time = (45f / fps) / actualSpeed;
+        float frame55Time = (55f / fps) / actualSpeed;
 
         bool cameraLeadInTriggered = false;
         var charRenderers = GetComponentsInChildren<Renderer>(true);

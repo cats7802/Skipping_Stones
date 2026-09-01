@@ -101,8 +101,8 @@ namespace SkippingStones.Gameplay.Modes
                 controller.dualCamera.SetCameraMode(DualCameraSetup.CameraMode.DynamicFlight);
             }
 
-            // 🎵 투구 발사 순간부터 60 BPM 여유로운 템포 BGM 재생
-            if (AudioManager.Instance != null)
+            // 🎵 BGM이 아직 재생 중이지 않다면 재생 보장
+            if (AudioManager.Instance != null && !AudioManager.Instance.IsBGMPlaying())
             {
                 AudioManager.Instance.PlayBGM(null, 60f);
             }

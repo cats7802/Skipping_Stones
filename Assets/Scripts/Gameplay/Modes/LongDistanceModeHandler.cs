@@ -43,6 +43,23 @@ namespace SkippingStones.Gameplay.Modes
             SkippingStone stone = newStoneObj.GetComponent<SkippingStone>();
             if (stone != null)
             {
+                stone.enabled = true;
+
+                // 아케이드 컴포넌트가 남아있다면 비활성화
+                var arcade = newStoneObj.GetComponent<SkippingStones.Arcade.ArcadeSkippingStone>();
+                if (arcade != null)
+                {
+                    arcade.enabled = false;
+                }
+
+                // 🎯 붉은 과녁 링(RhythmRingIndicator) 바인딩
+                RhythmRingIndicator ring = newStoneObj.GetComponentInChildren<RhythmRingIndicator>();
+                if (ring != null)
+                {
+                    ring.stone = stone;
+                    ring.arcadeStone = null;
+                }
+
                 controller.stone = stone;
                 stone.OnSkipBounced += controller.HandleSkipBounced;
                 stone.OnStoneSunk += controller.HandleStoneSunk;
