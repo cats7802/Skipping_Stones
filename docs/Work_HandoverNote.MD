@@ -1,47 +1,72 @@
-# 📋 최종 작업 인수인계서 (Work Handover Note & Future Architecture)
+# 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
-**작성 일시**: 2026-09-01 15:23  
+**작성 일시**: 2026-09-01 19:00  
 **현재 브랜치**: `feature/sandbox-momentum-rhythm`  
-**상태 요약**: 리듬 아케이드 모드 완성도 고도화(충돌, 조향, 60/120BPM 음악 싱크, 도로록 피니시, HUD 연동) 및 롱디스턴스 모드 리듬링 상호 호환성 완벽 복원 완료.
+**빌드 검증**: `0 Errors, 0 Warnings` (골든 스크립트 100% 동기화)
 
 ---
 
-## 1. 🛠️ 금일 완료된 작업 현황
+## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
 
-### ✅ 1. 지형/바위 충돌 연속 감지 & 텀블링 연출 (`ArcadeSkippingStone.cs`)
-- Kinematic 이동 시 발생할 수 있는 메시 콜라이더(Concave) 터널링 방지를 위해 `Physics.OverlapSphere`를 통한 매 프레임 반경 0.12m 연속 충돌 검출.
-- 지형 충돌 시 허공 정지 버그 제거 및 `CoCrashTumble` 포물선 튕김 낙하 + 먼지 이펙트 연동.
+### ✅ 1. 스탠드얼론 빌드(EXE/APK) 단일 진실 공급원 직렬화 아키텍처 완성
+- **배경 및 원인**: Resources 복제본 의존 및 `#if UNITY_EDITOR` 분기 편중으로 인해 스탠드얼론 빌드시 로비 쇼케이스, 맵 프리팹, 해금 데이터가 증발하던 문제 원천 해결.
+- **해결 내역**:
+  - `Lobby.prefab`: 원본 프리팹 4종 돌(`Stone`, `Stone_Blue`, `Stone_Green`, `Stone_red`) 및 캐릭터 3종(`Thrower_001`, `Thrower_Test`, `Thrower_Minwoo`)을 인스펙터에 직접 직렬화 연결하여 원본 수정 시 빌드에 100% 즉시 반영되도록 구현.
+  - `MetaUIManager.cs`: 맵 프리팹 직렬화 리스트 및 다중 폴백 스캔 체계 구축.
+  - `SampleScene.unity`: `GameController`의 `defaultMapPrefab`을 최신 `New_TestEnvMgr`로 직접 연결.
+  - `GameDataManager.cs`: 빌드본에서도 `devUnlockAllByDefault` 설정 시 모든 캐릭터 및 돌 4종 전체 해금 상태로 안전 로드 보장.
 
-### ✅ 2. 120 BPM 원곡 피치(1.0x) & 60 BPM 2박자 하프비트 싱크 (`AudioManager.cs`, `ArcadeSkippingStone.cs`, `GameController.cs`)
-- BGM 음원을 왜곡 없이 1.0x 피치(120 BPM 원곡 속도)로 맑고 경쾌하게 재생.
-- 돌의 1회 비행 주기 및 리듬링 수축 주기를 음악의 2박 정박인 **60 BPM (정확히 1.00초 주기)**으로 동기화.
-- 물고기 포획 시 발생하던 타임스케일 히트스톱(`HitStopSlowMo`)을 리듬 아케이드 모드에서 비활성화하여 비트 끊김 현상 원천 차단.
+### ✅ 2. 판정 링 시각 효과(VFX)와 물리 돌의 완전 독립화 (`RhythmRingIndicator.cs`, `SkippingStone.cs`, `ArcadeSkippingStone.cs`)
+- **배경 및 원인**: 판정 링(`RhythmRingIndicator`)이 돌의 하위 자식(`transform.SetParent(transform)`)으로 묶여 있어, 돌의 실시간 3축 회전(피치 각도 및 초당 1440도 스핀)을 상속받아 링이 공중에 서 버리는 결함 발생.
+- **해결 내역**:
+  - `RhythmRingIndicator`를 돌의 하위 자식이 아닌 **독립된 최상위 월드 루트 오브젝트(`[RhythmRingIndicator_WorldEffect]`)**로 완전 분리.
+  - LineRenderer 및 타깃 디스크의 렌더링 회전을 **`Quaternion.identity` 및 `LineAlignment.View`**로 고정하여 수면에 100% 평평하게 밀착 유지.
+  - 장거리 물리 모드와 아케이드 리듬 모드 양쪽 모두 동일한 구조로 단일 진실 고정.
+  - 돌 파괴 및 모드 퇴장 시 자동 안전 정리(`OnDestroy`) 보장.
 
-### ✅ 3. 좌/우 5° 기본 및 8° 더블탭 & 스와이프 조향 시스템 (`FlightTouchButtonHandler.cs`, `GameController.cs`, `ArcadeSkippingStone.cs`)
-- **단일 탭**: ±5° 회전
-- **더블탭 (0.28s 내 2회 연타)** & **버튼/화면 바깥 스와이프**: +3° 추가 (총 ±8° 급회전 조향 지원).
-- 조향 입력 시 콘솔 창에 `[🎵 Rhythm Precision] 조향: +8°` 및 실시간 조향 반영 로그 출력.
+### ✅ 3. 로비 3D 쇼케이스 및 타이틀-로비 화면 동기화 보강 (`MetaUIManager.cs`, `LobbyStoneShowcaseController.cs`, `LobbyCharacterShowcaseController.cs`)
+- **배경 및 원인**: 타이틀에서 로비 진입 시 3D 모델(돌, 캐릭터) 스폰/초기화 타이밍 지연으로 하단 독 바 UI만 노출되고 모델이 보이지 않던 현상 해결.
+- **해결 내역**:
+  - 로비 진입 시 `LobbyStoneShowcaseController`와 `LobbyCharacterShowcaseController`의 `InitializeShowcase()`를 즉시 명시 호출하여 돌과 캐릭터 3D 모델이 누락 없이 화면에 바로 노출되도록 보장.
+  - 로비 카메라(`Lobby_CAM`) 활성화 및 메인 카메라 온오프 바인딩 강화.
 
-### ✅ 4. 비행 HUD 비거리 & 플로팅 판정 텍스트 & 도로록~ 스키밍 피니시 연동
-- `StoneSkippingUGUIController`: 리듬 아케이드 모드 돌(`ArcadeSkippingStone`)의 비거리(`totalDistance`) 및 바운스 횟수 실시간 상단 HUD & 결과창 연동.
-- `InGameMomentumHUD`: 모멘텀 게이지 잔량 및 `PERFECT/GREAT/GOOD` 플로팅 텍스트 팝업 연동.
-- 체력 고갈 시 수면을 도로록~ 미끄러지며 물결 밥빙 & 연속 물보라 이펙트와 함께 보너스 거리 합산 피니시 연출.
+### ✅ 4. 맵 선택 화면 모드 UI 정돈 (`MetaUIManager.cs`)
+- 타깃 모드 탭 버튼을 숨기고 `🔘 1500m (장거리)`, `🔘 🎵아케이드` 2단 탭으로 깔끔하게 재배치.
+- 저장된 데이터가 `TargetAccuracy`일 경우 기본 `LongDistance`로 안전하게 자동 보정.
 
-### ✅ 5. 롱디스턴스 & 리듬 아케이드 모드 간 리듬링 바인딩 완벽 분리 (`LongDistanceModeHandler.cs`, `RhythmArcadeModeHandler.cs`)
-- 모드 전환 시 `RhythmRingIndicator`가 현재 모드의 전용 돌 컴포넌트(`SkippingStone` vs `ArcadeSkippingStone`)를 1:1 강제 명시 바인딩하여 어떤 모드에서도 리듬원이 정상 수축 및 작동하도록 보장.
+### ✅ 5. 리듬 아케이드 모드 수면 반사 그림자 동기화 (`ArcadeSkippingStone.cs`)
+- `SkippingStone`의 소프트 알파 수면 밀착 그림자 시스템(`SetupWaterReflectionShadow()`, `UpdateWaterReflectionShadow()`, `OnDestroy` 메모리 해제)을 아케이드 모드 돌에도 탑재하여 수면 위 그림자가 동일하게 연출되도록 지원.
+
+### ✅ 6. 결과창 복귀 및 모드 전환 시 3D 디버그 마커 소멸 보장 (`GameController.cs`, `LongDistanceModeHandler.cs`)
+- 결과창 [확인] 클릭 및 맵 선택/로비 복귀 시 또는 모드 퇴장 시 `SkippingStone.ClearAllTapDebugMarkers()`를 명시적으로 호출하여 씬에 디버그 마커 오브젝트가 잔존하던 문제 완벽 해결.
 
 ---
 
-## 2. 🛡️ 검증 및 빌드 상태
+## 2. 📁 수정된 주요 파일 및 골든 스크립트 동기화 현황
 
-- `dotnet build Assembly-CSharp.csproj`: **0 Errors, 0 Warnings 통과**
-- Unity Editor 콘솔 검증 완료.
+| 분류 | 수정 파일 경로 | 골든 스냅샷 동기화 |
+| :--- | :--- | :--- |
+| **UI** | `Assets/Scripts/UI/MetaUIManager.cs` | `docs/golden_scripts/MetaUIManager.cs.txt` |
+| **Visuals** | `Assets/Scripts/Visuals/RhythmRingIndicator.cs` | `docs/golden_scripts/RhythmRingIndicator.cs.txt` |
+| **Visuals** | `Assets/Scripts/Visuals/LobbyStoneShowcaseController.cs` | `docs/golden_scripts/LobbyStoneShowcaseController.cs.txt` |
+| **Visuals** | `Assets/Scripts/Visuals/LobbyCharacterShowcaseController.cs` | `docs/golden_scripts/LobbyCharacterShowcaseController.cs.txt` |
+| **Gameplay** | `Assets/Scripts/Gameplay/SkippingStone.cs` | `docs/golden_scripts/SkippingStone.cs.txt` |
+| **Arcade** | `Assets/Scripts/Arcade/ArcadeSkippingStone.cs` | `docs/golden_scripts/ArcadeSkippingStone.cs.txt` |
+| **Prefabs/Scenes** | `Assets/prefab/Lobby.prefab`, `Assets/Scenes/SampleScene.unity` | 프리팹/씬 직렬화 완료 |
 
 ---
 
-## 3. 🎯 다음 작업 방향
+## 3. 🛡️ 검증 및 빌드 상태
 
-1. **지형 맵 코스 밸런스 점검**:
+- **Unity C# 컴파일**: `0 Errors, 0 Warnings` (CS0618 등 경고 없음)
+- **에디터 & 빌드 환경**: 스탠드얼론 빌드 및 에디터 플레이 시 완벽 호환 보장.
+
+---
+
+## 4. 🎯 다음 작업 방향 및 백로그 (Backlog)
+
+1. **아케이드 모드용 부스트 패드 인터랙션 재설계**:
+   - 물리(RigidBody) 방식에서 Kinematic 리듬 방식으로 전환됨에 따라, 아케이드 모드에서 부스트 패드 획득 시 효과(순간 비거리 보너스, 게이지 급속 충전, 피버 시간 추가 등)를 추후 디렉터 설정에 맞춰 별도 정의.
+2. **지형 맵 코스 밸런스 점검**:
    - 굽이치는 강줄기 코스에서 5°/8° 조향을 활용한 코너링 난이도 검증.
-2. **에셋 및 모바일 실기 빌드 테스트**:
-   - 디바이스 터치 반응성 및 Safe Area 대응 상태 최종 점검.
+

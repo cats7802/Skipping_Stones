@@ -774,6 +774,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: 7e2c7f3a88eb1634388df87c90ad816b, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: b9211b702f670c44d9bd98d322378aa4, type: 2}
+    - target: {fileID: -5754084199372789682, guid: 7e2c7f3a88eb1634388df87c90ad816b, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: b1e5ebd63cd0e5b4aa0d06296e7d7fa9, type: 2}
     - target: {fileID: 919132149155446097, guid: 7e2c7f3a88eb1634388df87c90ad816b, type: 3}
       propertyPath: m_Name
       value: brook__M_01

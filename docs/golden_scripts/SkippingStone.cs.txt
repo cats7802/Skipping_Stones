@@ -364,11 +364,26 @@ public class SkippingStone : MonoBehaviour
         trail.emitting = true;
     }
 
+    private RhythmRingIndicator spawnedRhythmRing;
+
     private void EnsureRhythmRing()
     {
-        if (GetComponent<RhythmRingIndicator>() == null)
+        if (spawnedRhythmRing == null)
         {
-            Debug.LogWarning($"[SkippingStone] '{gameObject.name}'에 RhythmRingIndicator 컴포넌트가 없습니다. 리듬 링 판정 연출을 원하시면 프리팹에 RhythmRingIndicator를 추가해주세요.");
+            spawnedRhythmRing = FindAnyObjectByType<RhythmRingIndicator>();
+        }
+
+        if (spawnedRhythmRing == null)
+        {
+            // 🌟 돌의 자식(Child)이 아닌 독립된 월드 루트 오브젝트로 생성하여 물리 회전 상속을 100% 원천 차단
+            GameObject ringObj = new GameObject("[RhythmRingIndicator_WorldEffect]");
+            spawnedRhythmRing = ringObj.AddComponent<RhythmRingIndicator>();
+        }
+
+        if (spawnedRhythmRing != null)
+        {
+            spawnedRhythmRing.stone = this;
+            spawnedRhythmRing.arcadeStone = null;
         }
     }
 
@@ -1431,6 +1446,12 @@ public class SkippingStone : MonoBehaviour
 
     private void OnDestroy()
     {
+        if (spawnedRhythmRing != null)
+        {
+            Destroy(spawnedRhythmRing.gameObject);
+            spawnedRhythmRing = null;
+        }
+
         if (waterReflectionObj != null)
         {
             if (waterReflectionMat != null)

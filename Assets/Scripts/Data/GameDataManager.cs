@@ -184,25 +184,27 @@ namespace SkippingStones.Data
         private UserPersistentData CreateDefaultUserData()
         {
             var data = new UserPersistentData();
-
-#if UNITY_EDITOR
-            // 🌟 에디터/개발 PC 테스트 모드: 모든 캐릭터/돌/맵 ALL 해금 + 테스트 골드 지급
-            data.userId = "dev_tester_local";
-            data.nickname = "개발자(QA)";
-            data.gold = 999999;
-            data.diamonds = 9999;
-            data.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old" };
-            data.unlockedStoneIds = new List<string> { "default", "flat_slate", "emerald_pebble", "crimson_flint" };
-            Debug.Log("🛠️ [GameDataManager] 에디터 테스트 모드 활성화: 모든 캐릭터/돌/맵 ALL 해금 프로필이 로드되었습니다.");
-#else
-            // 상용 배포: 순정 신규 유저 기본값
-            data.userId = "local_guest";
-            data.nickname = "조약돌 달인";
-            data.gold = 1200;
-            data.diamonds = 50;
-            data.unlockedCharacterIds = new List<string> { "boy_default" };
-            data.unlockedStoneIds = new List<string> { "default", "flat_slate" };
-#endif
+            if (devUnlockAllByDefault)
+            {
+                // 🌟 테스트 모드: 모든 캐릭터/돌/맵 ALL 해금 + 테스트 골드 지급
+                data.userId = "dev_tester_local";
+                data.nickname = "개발자(QA)";
+                data.gold = 999999;
+                data.diamonds = 9999;
+                data.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old" };
+                data.unlockedStoneIds = new List<string> { "default", "flat_slate", "emerald_pebble", "crimson_flint" };
+                Debug.Log("🛠️ [GameDataManager] 테스트 모드 활성화: 모든 캐릭터/돌/맵 ALL 해금 프로필이 로드되었습니다.");
+            }
+            else
+            {
+                // 상용 배포: 순정 신규 유저 기본값
+                data.userId = "local_guest";
+                data.nickname = "조약돌 달인";
+                data.gold = 1200;
+                data.diamonds = 50;
+                data.unlockedCharacterIds = new List<string> { "boy_default" };
+                data.unlockedStoneIds = new List<string> { "default", "flat_slate" };
+            }
             return data;
         }
 

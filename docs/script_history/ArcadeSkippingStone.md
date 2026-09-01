@@ -28,15 +28,23 @@
 | **⚙️ 커스텀 (Custom)** | 인스펙터 지정 | 인스펙터 지정 | 인스펙터 지정 | 0.0m | 인스펙터 지정 | 인스펙터 지정 | Custom Base 롤백 |
 
 * **모멘텀(라이프) 변동**: PERFECT(+20), GREAT(+10), GOOD(+5), LATE(-10), TOO LATE(-20), MISS(-30).
-* **BPM 콤보 가속**: 0~4 Combo(60 BPM), 5~9 Combo(72 BPM), 10~14 Combo(85 BPM), 15~19 Combo(100 BPM), 20+ Combo(120 BPM).
+* **BPM 비거리 비례 가속**: 0~200m(60 BPM / 1.00s), 200~500m(72 BPM / 0.83s), 500~1000m(85 BPM / 0.70s), 1000~1600m(100 BPM / 0.60s), 1600m+(120 BPM / 0.50s).
 
 ---
 
 ## 🕒 4. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-09-01] 디렉터 확정 거리 증감/롤백 및 실시간 튜닝 프리셋 시스템 구축
-- **수정 목적**: 물리 모드 오연결 해소 및 디렉터 확정 리듬 룰(높이 1.8m 고정, 판정별 거리 증감, 미스 시 Base 롤백, 실시간 프리셋 스위칭) 구현.
+### [2026-09-01] 리듬 아케이드 모드 고도화 및 곡선 강줄기 스폰 완벽 호환
+- **수정 목적**: 물리 모드 오연결 해소, 디렉터 확정 리듬 룰 완성, 충돌/조향/가속 물리 고도화 및 굽이치는 맵 스폰 연동.
 - **적용 내용**:
-  - `ArcadeSkippingStone.cs`: `RhythmPresetType` 열거형 및 프리셋 데이터 구조체 도입, 판정별 증감치 정확 연산.
-  - `RhythmArcadeModeHandler.cs`: 롱디 물리 엔진 대신 `ArcadeSkippingStone` 완벽 연결.
+  1. `ArcadeSkippingStone.cs`:
+     - 60 BPM(1.00s) 하프비트 정박 및 도달 거리(m) 비례 점진적 코스 템포 가속(60~120 BPM) 구현.
+     - 공중 직진 관성 유지 및 수면 착수 순간 박차는 조향 예약(`pendingSteerAngle`) 시스템 완성.
+     - Kinematic 0.12m 연속 충돌 검출(`OverlapSphere`) 및 지형 충돌 시 텀블링 튕김 연출(`CoCrashTumble`).
+     - 체력 소진 시 수면 밥빙 & 물보라 & 거리 합산 도로록 스키밍 피니시(`CoSkimmingFinish`) 구현.
+  2. `RiverSpawner.cs` & `GlobalRiverPath.cs`:
+     - 굽이치는 곡선 청크 스플라인의 실제 곡선 거리(`GetSegmentDistanceRange`) 순회 연동.
+     - 섬으로 분기되는 좌/우 양쪽 물길 모두에 물고기/패드가 고르게 스폰되도록 다중 채널(`DetectSplitWaterChannels`) 스캔 확장.
+  3. `LakeEnvironmentManager.cs`:
+     - `GetTrackingZ`에 `ArcadeSkippingStone` 실시간 위치 추적 연동.
 - **컴파일 검증**: 0 Errors, 0 Warnings 통과.

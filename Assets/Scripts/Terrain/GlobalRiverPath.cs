@@ -180,5 +180,36 @@ namespace SkippingStones.Terrain
             distanceAlongRiver = bestDist;
             return true;
         }
+
+        /// <summary>
+        /// 특정 월드 Z좌표에 위치한 청크 세그먼트의 곡선 시작/끝 거리(startDist, endDist) 반환
+        /// </summary>
+        public bool GetSegmentDistanceRange(float worldZ, out float startDist, out float endDist)
+        {
+            startDist = 0f;
+            endDist = 500f;
+
+            if (segments.Count == 0) RebuildPath();
+            if (segments.Count == 0) return false;
+
+            // 월드 Z와 가장 가까운 청크 세그먼트 매칭
+            ChunkSegment bestSeg = segments[0];
+            float minDiff = float.MaxValue;
+
+            foreach (var seg in segments)
+            {
+                if (seg.chunkTransform == null) continue;
+                float diff = Mathf.Abs(seg.chunkTransform.position.z - worldZ);
+                if (diff < minDiff)
+                {
+                    minDiff = diff;
+                    bestSeg = seg;
+                }
+            }
+
+            startDist = bestSeg.startDistance;
+            endDist = bestSeg.endDistance;
+            return true;
+        }
     }
 }

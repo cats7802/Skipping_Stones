@@ -57,7 +57,7 @@ namespace SkippingStones.Visuals
             InitializeShowcase();
         }
 
-        private void InitializeShowcase()
+        public void InitializeShowcase()
         {
             AutoFindReferences();
 
@@ -143,11 +143,10 @@ namespace SkippingStones.Visuals
         /// </summary>
         public void ScanUnlockedStonesFromCatalog()
         {
-            unlockedStonePrefabs.Clear();
-
             var dm = GameDataManager.Instance;
             if (dm != null && dm.stoneCatalog != null && dm.stoneCatalog.Count > 0)
             {
+                var scannedList = new List<GameObject>();
                 foreach (var stoneData in dm.stoneCatalog)
                 {
                     if (!stoneData.isUnlocked) continue;
@@ -158,27 +157,38 @@ namespace SkippingStones.Visuals
 #else
                     string resourcePath = stoneData.prefabPath;
                     if (resourcePath.StartsWith("Assets/prefab/")) resourcePath = resourcePath.Substring("Assets/prefab/".Length);
+                    if (resourcePath.StartsWith("Assets/3D/prefab/")) resourcePath = resourcePath.Substring("Assets/3D/prefab/".Length);
                     if (resourcePath.EndsWith(".prefab")) resourcePath = resourcePath.Substring(0, resourcePath.Length - ".prefab".Length);
                     GameObject prefab = Resources.Load<GameObject>(resourcePath);
 #endif
                     if (prefab != null)
                     {
-                        unlockedStonePrefabs.Add(prefab);
+                        scannedList.Add(prefab);
                     }
                 }
+
+                if (scannedList.Count > 0)
+                {
+                    unlockedStonePrefabs = scannedList;
+                }
+            }
+
+            // 프리팹에 인스펙터로 사전 등록된 직렬화 목록이 이미 존재하면 그대로 보존
+            if (unlockedStonePrefabs != null && unlockedStonePrefabs.Count > 0)
+            {
+                return;
             }
 
             // 폴백: 에디터에서 직접 4종 스캔
 #if UNITY_EDITOR
-            if (unlockedStonePrefabs.Count == 0)
+            if (unlockedStonePrefabs == null) unlockedStonePrefabs = new List<GameObject>();
+            unlockedStonePrefabs.Clear();
+            string[] prefabNames = { "Stone", "Stone_Blue", "Stone_Green", "Stone_red" };
+            foreach (string pName in prefabNames)
             {
-                string[] prefabNames = { "Stone", "Stone_Blue", "Stone_Green", "Stone_red" };
-                foreach (string pName in prefabNames)
-                {
-                    string path = $"Assets/prefab/Stone/{pName}.prefab";
-                    GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                    if (prefab != null) unlockedStonePrefabs.Add(prefab);
-                }
+                string path = $"Assets/prefab/Stone/{pName}.prefab";
+                GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (prefab != null) unlockedStonePrefabs.Add(prefab);
             }
 #endif
         }

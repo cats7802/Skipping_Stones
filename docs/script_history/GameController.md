@@ -18,6 +18,13 @@
   - `GameController.cs`: `UpdateFlying()`에서 키보드 `A/D/S`, `←/→/↓` 입력 및 0.25초 이내 더블 탭 판정 추가. 화면 전체 스와이프 시 5° / 8° 조향 각도 반영.
 - **컴파일 검증**: `Assembly-CSharp.csproj`, `Editor.csproj` 경고 0개, 오류 0개 완료.
 
+### [2026-09-01] 결과창 복귀 및 모드 전환 시 3D 텔레메트리 디버그 마커 완전 소멸 처리
+- **수정 목적**: 장거리 모드에서 생성된 `[TAP_DEBUG]` 마커가 결과창 확인 후 맵 선택/로비 복귀 시 또는 타 모드 전환 시 씬에 남아있던 현상 해결.
+- **적용 내용**:
+  - `GameController.cs`: `FinishMatchAndReturnToMapSelect()` 및 `ResetToPositioning()`에 `SkippingStone.ClearAllTapDebugMarkers()` 호출 추가.
+  - `LongDistanceModeHandler.cs`: `OnExitMode()`에 마커 일괄 제거 추가.
+- **컴파일 검증**: 0 Errors, 0 Warnings.
+
 
 
 

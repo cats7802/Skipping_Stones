@@ -181,6 +181,12 @@ namespace SkippingStones.Visuals
                 }
             }
 
+            // 프리팹에 인스펙터로 사전 등록된 직렬화 목록이 이미 존재하면 그대로 보존
+            if (characterPrefabs != null && characterPrefabs.Count > 0)
+            {
+                return;
+            }
+
             // 만약 아무것도 못 찾았을 경우 에셋 폴더 내 기본 캐릭터 폴백 등록
             if (characterPrefabs.Count == 0)
             {

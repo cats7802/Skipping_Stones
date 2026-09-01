@@ -81,7 +81,7 @@ public class BoostPad : MonoBehaviour
             s.RecordBoostPadHit(transform.position);
 
             Rigidbody rb = s.GetComponent<Rigidbody>();
-            if (rb != null)
+            if (rb != null && !rb.isKinematic)
             {
                 rb.linearVelocity = new Vector3(rb.linearVelocity.x * boostMultiplier, upwardLift, rb.linearVelocity.z * boostMultiplier);
             }

@@ -332,7 +332,7 @@ MonoBehaviour:
     goodDelta: 0
     lateDelta: -0.3
     tooLateDelta: -0.6
-  autoStartInGame: 1
+  autoStartInGame: 0
   devGodMode: 0
   devGodModeTargetDistance: 1800
   _character: {fileID: 0}
@@ -343,7 +343,7 @@ MonoBehaviour:
   _playerPositionRoot: {fileID: 0}
   defaultCharacterPrefab: {fileID: 4424490057512640635, guid: 31a1e07c8895f704e990d5e8f83aad68, type: 3}
   defaultStonePrefab: {fileID: 7764890063275383968, guid: 0a5f7596819abed49897effe880e4581, type: 3}
-  defaultMapPrefab: {fileID: 6726142715302024581, guid: b6b0c5db5108ad544a6babc10cb5616f, type: 3}
+  defaultMapPrefab: {fileID: 1123660413367043095, guid: 0dd84945b2122da4c8c0cb3533106436, type: 3}
   startPosX: 0
   aimGaugeValue: 0
   powerGaugeValue: 0

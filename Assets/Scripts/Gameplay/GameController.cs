@@ -1264,6 +1264,7 @@ public class GameController : MonoBehaviour
     public void FinishMatchAndReturnToMapSelect()
     {
         StopAllCoroutines();
+        SkippingStone.ClearAllTapDebugMarkers();
         if (topDownReplay != null)
         {
             topDownReplay.isReplayActive = false;
@@ -1292,6 +1293,7 @@ public class GameController : MonoBehaviour
     public void ResetToPositioning()
     {
         StopAllCoroutines();
+        SkippingStone.ClearAllTapDebugMarkers();
         if (topDownReplay != null) topDownReplay.isReplayActive = false;
 
         currentState = GameState.Positioning;

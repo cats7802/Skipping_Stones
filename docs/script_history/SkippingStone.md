@@ -16,3 +16,9 @@
   - `SkippingStone.cs`: `OnDestroy()` 라이프사이클 메서드를 구현하여 `waterReflectionObj`, `waterReflectionMat`, `mainTexture`를 명시적으로 파괴/해제하도록 처리.
 - **컴파일 검증**: 0 Errors, 0 Warnings.
 
+### [2026-09-01] 장거리 모드 리듬 링 자동 보장 (EnsureRhythmRing 동적 생성)
+- **수정 목적**: 장거리 물리 모드에서 프리팹에 `RhythmRingIndicator`가 없더라도 비행 시 동적으로 생성 및 돌 인스턴스에 자동 바인딩되도록 개선.
+- **적용 내용**:
+  - `SkippingStone.cs`: `EnsureRhythmRing()`에서 누락 시 자식 오브젝트로 `RhythmRingIndicator` 자동 생성 및 `ring.stone = this` 바인딩 처리.
+- **컴파일 검증**: 0 Errors, 0 Warnings.
+

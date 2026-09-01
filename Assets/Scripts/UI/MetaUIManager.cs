@@ -180,6 +180,10 @@ namespace SkippingStones.UI
                 if (spawnedLobbyInstance == null)
                 {
                     GameObject prefabToUse = lobbyPrefab;
+                    if (prefabToUse == null)
+                    {
+                        prefabToUse = Resources.Load<GameObject>("Lobby");
+                    }
 #if UNITY_EDITOR
                     if (prefabToUse == null)
                     {
@@ -197,15 +201,11 @@ namespace SkippingStones.UI
                     spawnedLobbyInstance.SetActive(true);
                 }
 
-                // Lobby 3D 스톤 셀렉터 & 캐릭터 쇼케이스 컨트롤러 캐싱 (프리팹에 정식 부착된 컴포넌트만 참조)
+                // Lobby 3D 스톤 셀렉터 & 캐릭터 쇼케이스 컨트롤러 캐싱 및 즉시 갱신 (프리팹에 정식 부착된 컴포넌트만 참조)
                 if (spawnedLobbyInstance != null)
                 {
                     spawnedLobbyController = spawnedLobbyInstance.GetComponentInChildren<SkippingStones.Visuals.LobbyStoneShowcaseController>();
-                    if (spawnedLobbyController == null)
-                    {
-                        Debug.LogWarning("[MetaUIManager] Lobby 프리팹에 'LobbyStoneShowcaseController' 컴포넌트가 누락되어 있습니다! 프리팹에 스크립트를 추가해주세요.");
-                    }
-                    else
+                    if (spawnedLobbyController != null)
                     {
                         spawnedLobbyController.OnSelectedStoneChanged += (idx, prefab) =>
                         {
@@ -216,19 +216,34 @@ namespace SkippingStones.UI
                                 dm.SaveUserData();
                             }
                         };
+                        spawnedLobbyController.InitializeShowcase();
                     }
 
                     spawnedCharacterController = spawnedLobbyInstance.GetComponentInChildren<SkippingStones.Visuals.LobbyCharacterShowcaseController>();
-                    if (spawnedCharacterController == null)
+                    if (spawnedCharacterController != null)
                     {
-                        Debug.LogWarning("[MetaUIManager] Lobby 프리팹에 'LobbyCharacterShowcaseController' 컴포넌트가 누락되어 있습니다! 프리팹에 스크립트를 추가해주세요.");
+                        spawnedCharacterController.InitializeShowcase();
                     }
                 }
 
                 // 2. 메인 카메라 비활성화 (로비 카메라 우선 구동)
+                if (cachedMainCamera == null)
+                {
+                    cachedMainCamera = Camera.main;
+                }
                 if (cachedMainCamera != null)
                 {
                     cachedMainCamera.enabled = false;
+                }
+
+                // 로비 인스턴스 내 카메라 활성화 보장
+                if (spawnedLobbyInstance != null)
+                {
+                    var lobbyCam = spawnedLobbyInstance.GetComponentInChildren<Camera>(true);
+                    if (lobbyCam != null)
+                    {
+                        lobbyCam.enabled = true;
+                    }
                 }
             }
             else
@@ -242,6 +257,10 @@ namespace SkippingStones.UI
                 spawnedLobbyController = null;
                 spawnedCharacterController = null;
 
+                if (cachedMainCamera == null)
+                {
+                    cachedMainCamera = Camera.main;
+                }
                 if (cachedMainCamera != null)
                 {
                     cachedMainCamera.enabled = true;
@@ -630,6 +649,8 @@ namespace SkippingStones.UI
         #endregion
 
         #region 3. 맵 & 모드 선택 화면
+        [Header("맵 환경 매니저 프리팹 목록 (단일 진실 공급원)")]
+        [SerializeField] private List<GameObject> mapEnvironmentPrefabs = new List<GameObject>();
         private readonly List<GameObject> envMgrPrefabs = new List<GameObject>();
         private bool envMgrScanned = false;
 
@@ -638,18 +659,50 @@ namespace SkippingStones.UI
             if (envMgrScanned) return;
             envMgrPrefabs.Clear();
 
+            // 1. 인스펙터에 명시된 맵 프리팹 우선 등록
+            if (mapEnvironmentPrefabs != null && mapEnvironmentPrefabs.Count > 0)
+            {
+                foreach (var p in mapEnvironmentPrefabs)
+                {
+                    if (p != null && !envMgrPrefabs.Contains(p))
+                    {
+                        envMgrPrefabs.Add(p);
+                    }
+                }
+            }
+
+            // 2. 런타임 Resources 폴더 내 맵 프리팹 자동 등록 (빌드 환경 지원)
+            var resMaps = Resources.LoadAll<GameObject>("BG_Env");
+            if (resMaps != null && resMaps.Length > 0)
+            {
+                foreach (var p in resMaps)
+                {
+                    if (p != null && p.GetComponent<LakeEnvironmentManager>() != null && !envMgrPrefabs.Contains(p))
+                    {
+                        envMgrPrefabs.Add(p);
+                    }
+                }
+            }
+
 #if UNITY_EDITOR
+            // 3. 에디터 환경: Assets/prefab/BG_Env 전체 자동 스캔 폴백
             string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/BG_Env" });
             foreach (var guid in guids)
             {
                 string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
                 GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab != null && prefab.GetComponent<LakeEnvironmentManager>() != null)
+                if (prefab != null && prefab.GetComponent<LakeEnvironmentManager>() != null && !envMgrPrefabs.Contains(prefab))
                 {
                     envMgrPrefabs.Add(prefab);
                 }
             }
 #endif
+            // 4. 최후의 폴백: GameController의 defaultMapPrefab 사용
+            if (envMgrPrefabs.Count == 0 && GameController.Instance != null && GameController.Instance.defaultMapPrefab != null)
+            {
+                envMgrPrefabs.Add(GameController.Instance.defaultMapPrefab);
+            }
+
             envMgrScanned = true;
         }
 
@@ -665,13 +718,21 @@ namespace SkippingStones.UI
 
             var dm = GameDataManager.Instance;
             GameController.GameMode curMode = (dm != null) ? dm.UserData.selectedGameMode : GameController.GameMode.LongDistance;
+            if (curMode == GameController.GameMode.TargetAccuracy)
+            {
+                curMode = GameController.GameMode.LongDistance;
+                if (dm != null)
+                {
+                    dm.UserData.selectedGameMode = GameController.GameMode.LongDistance;
+                    dm.SaveUserData();
+                }
+            }
 
             bool isLong = (curMode == GameController.GameMode.LongDistance);
-            bool isTarget = (curMode == GameController.GameMode.TargetAccuracy);
             bool isArcade = (curMode == GameController.GameMode.RhythmArcade);
 
-            // 1. 장거리 물리 모드
-            if (DrawResponsiveButton(new Rect(140, 140, 175, 60), isLong ? "🔘 1500m" : "⚪ 1500m", isLong ? _tabActiveStyle : _tabInactiveStyle))
+            // 1. 장거리 물리 모드 (1500m)
+            if (DrawResponsiveButton(new Rect(140, 140, 200, 60), isLong ? "🔘 1500m" : "⚪ 1500m", isLong ? _tabActiveStyle : _tabInactiveStyle))
             {
                 if (dm != null)
                 {
@@ -679,17 +740,8 @@ namespace SkippingStones.UI
                     dm.SaveUserData();
                 }
             }
-            // 2. 타깃 정밀 모드
-            if (DrawResponsiveButton(new Rect(325, 140, 175, 60), isTarget ? "🔘 🎯타깃" : "⚪ 🎯타깃", isTarget ? _tabActiveStyle : _tabInactiveStyle))
-            {
-                if (dm != null)
-                {
-                    dm.UserData.selectedGameMode = GameController.GameMode.TargetAccuracy;
-                    dm.SaveUserData();
-                }
-            }
-            // 3. 리듬 아케이드 모드
-            if (DrawResponsiveButton(new Rect(510, 140, 175, 60), isArcade ? "🔘 🎵아케이드" : "⚪ 🎵아케이드", isArcade ? _tabActiveStyle : _tabInactiveStyle))
+            // 2. 리듬 아케이드 모드
+            if (DrawResponsiveButton(new Rect(350, 140, 200, 60), isArcade ? "🔘 🎵아케이드" : "⚪ 🎵아케이드", isArcade ? _tabActiveStyle : _tabInactiveStyle))
             {
                 if (dm != null)
                 {

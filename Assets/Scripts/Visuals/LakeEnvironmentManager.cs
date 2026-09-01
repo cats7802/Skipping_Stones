@@ -592,8 +592,13 @@ public class LakeEnvironmentManager : MonoBehaviour
         var gc = FindAnyObjectByType<GameController>();
         if (gc != null && gc.currentState == GameController.GameState.Replay)
             return Camera.main != null ? Camera.main.transform.position.z : 0f;
+
+        var arcade = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+        if (arcade != null && arcade.isThrown && !arcade.isSunk) return arcade.transform.position.z;
+
         var stone = FindAnyObjectByType<SkippingStone>();
-        if (stone != null) return stone.transform.position.z;
+        if (stone != null && stone.isThrown && !stone.isSunk) return stone.transform.position.z;
+
         return Camera.main != null ? Camera.main.transform.position.z : 0f;
     }
 

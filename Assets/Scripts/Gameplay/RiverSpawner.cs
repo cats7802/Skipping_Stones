@@ -633,6 +633,17 @@ public class RiverSpawner : MonoBehaviour
         float chunkEndZ = chunkStartZ + chunkSize;
         float curWaterY = GetCurrentWaterLevel();
 
+        // 🌟 [핵심] 스플라인 곡선 거리와 월드 Z좌표의 괴리 해결:
+        // 해당 청크의 실제 스플라인 곡선 시작 거리 ~ 끝 거리를 획득하여 순회
+        float curveStartDist = chunkStartZ;
+        float curveEndDist = chunkEndZ;
+        if (SkippingStones.Terrain.GlobalRiverPath.Instance != null &&
+            SkippingStones.Terrain.GlobalRiverPath.Instance.GetSegmentDistanceRange(chunkStartZ, out float sDist, out float eDist))
+        {
+            curveStartDist = sDist;
+            curveEndDist = eDist;
+        }
+
         // 해당 구간의 기존 엔티티 제거
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
@@ -640,7 +651,7 @@ public class RiverSpawner : MonoBehaviour
             if (child != null)
             {
                 float cz = child.position.z;
-                if (cz >= chunkStartZ && cz < chunkEndZ)
+                if (cz >= chunkStartZ - 30f && cz < chunkEndZ + 30f)
                     SafeDestroy(child.gameObject);
             }
         }
@@ -649,7 +660,7 @@ public class RiverSpawner : MonoBehaviour
         GetWaterColliderBounds(out float minX, out float maxX, out curWaterY);
 
         // 1. 🚀 가속 부스트 패드 (새로 생성된 청크 지형 경계 및 갈라진 물길 적응형 스폰)
-        for (float z = chunkStartZ + 35f; z < chunkEndZ - 35f; z += Random.Range(35f, 65f))
+        for (float z = curveStartDist + 35f; z < curveEndDist - 35f; z += Random.Range(35f, 65f))
         {
             if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
@@ -711,7 +722,7 @@ public class RiverSpawner : MonoBehaviour
         }
 
         // 2. 🪨 장애물 바위 (강폭 및 분기 물길 비례 통로 확보 스폰)
-        for (float z = chunkStartZ + 40f; z < chunkEndZ - 30f; z += Random.Range(25f, 42f))
+        for (float z = curveStartDist + 40f; z < curveEndDist - 30f; z += Random.Range(25f, 42f))
         {
             if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
@@ -762,7 +773,7 @@ public class RiverSpawner : MonoBehaviour
         }
 
         // 3. 🐟 물고기 (갈라진 물길 및 강폭 적응형 스폰)
-        for (float z = chunkStartZ + 35f; z < chunkEndZ - 35f; z += Random.Range(45f, 85f))
+        for (float z = curveStartDist + 35f; z < curveEndDist - 35f; z += Random.Range(45f, 85f))
         {
             if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
@@ -823,17 +834,19 @@ public class RiverSpawner : MonoBehaviour
     private List<Vector3> DetectSplitWaterChannels(Vector3 centerPos, Vector3 normal, float maxScanWidth, float chunkStartZ, float chunkEndZ, float waterY)
     {
         List<Vector3> channels = new List<Vector3>();
-        float step = 3.5f;
+        // 섬 주변 반대편 물길까지 포용할 수 있도록 스캔 반경 확장 (기본 65m 이상)
+        float scanRange = Mathf.Max(maxScanWidth, 65f);
+        float step = 2.5f;
 
         bool inWater = false;
         float segmentStartOffset = 0f;
 
-        for (float offset = -maxScanWidth; offset <= maxScanWidth; offset += step)
+        for (float offset = -scanRange; offset <= scanRange; offset += step)
         {
             Vector3 testPos = centerPos + normal * offset;
             testPos.y = waterY;
 
-            bool isWater = IsValidWaterPosition(testPos, chunkStartZ, chunkEndZ);
+            bool isWater = IsValidWaterPosition(testPos, chunkStartZ, chunkEndZ, false);
 
             if (isWater && !inWater)
             {
@@ -856,7 +869,7 @@ public class RiverSpawner : MonoBehaviour
 
         if (inWater)
         {
-            float segEndOffset = maxScanWidth;
+            float segEndOffset = scanRange;
             if (segEndOffset - segmentStartOffset >= 4.0f)
             {
                 float midOffset = (segmentStartOffset + segEndOffset) * 0.5f;
@@ -877,12 +890,12 @@ public class RiverSpawner : MonoBehaviour
     /// 3) 바닥에 지형/수면이 없는 허공인 경우 -> False
     /// 4) 충분한 수심(waterDepth >= 0.35m)이 확보된 유효한 수면 영역인 경우만 -> True
     /// </summary>
-    private bool IsValidWaterPosition(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
+    private bool IsValidWaterPosition(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue, bool checkZBounds = true)
     {
-        // 1. 청크 Z 범위 경계 초과 방지
-        if (chunkEndZ < float.MaxValue)
+        // 1. 청크 Z 범위 경계 검사 (곡선 강줄기는 옆으로 굽이치므로 checkZBounds가 false면 Z필터 면제)
+        if (checkZBounds && chunkEndZ < float.MaxValue)
         {
-            if (pos.z < chunkStartZ + 15f || pos.z > chunkEndZ - 15f) return false;
+            if (pos.z < chunkStartZ - 50f || pos.z > chunkEndZ + 50f) return false;
         }
 
         float curWater = GetCurrentWaterLevel();
