@@ -159,7 +159,14 @@ namespace SkippingStones.Visuals
                     if (resourcePath.StartsWith("Assets/prefab/")) resourcePath = resourcePath.Substring("Assets/prefab/".Length);
                     if (resourcePath.StartsWith("Assets/3D/prefab/")) resourcePath = resourcePath.Substring("Assets/3D/prefab/".Length);
                     if (resourcePath.EndsWith(".prefab")) resourcePath = resourcePath.Substring(0, resourcePath.Length - ".prefab".Length);
+                    
                     GameObject prefab = Resources.Load<GameObject>(resourcePath);
+                    if (prefab == null)
+                    {
+                        // 파일명만 추출하여 단독 폴백 시도 (예: "Stone", "Stone_Blue")
+                        string fileName = System.IO.Path.GetFileNameWithoutExtension(stoneData.prefabPath);
+                        prefab = Resources.Load<GameObject>(fileName) ?? Resources.Load<GameObject>($"Stone/{fileName}");
+                    }
 #endif
                     if (prefab != null)
                     {

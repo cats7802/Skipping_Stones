@@ -736,5 +736,176 @@ namespace SkippingStones.EditorTools
             }
         }
         #endregion
+
+        #region 6. Kai 캐릭터 빌더
+        [MenuItem("Tools/Skipping Stones/✨ Kai 캐릭터 프리팹 및 컨트롤러 자동 빌드", priority = 10)]
+        public static void BuildKaiCharacter()
+        {
+            Debug.Log("🚀 [KaiCharacterBuilder] Kai 캐릭터 생성 시작...");
+
+            string idlePath = "Assets/3D/Character/Kai_Idle.fbx";
+            string walkPath = "Assets/3D/Character/Kai_Walk.fbx";
+            string throwPath = "Assets/3D/Character/Kai_Throw.fbx";
+            string selectPath = "Assets/3D/Character/Kai_Select.fbx";
+
+            GameObject idleFBX = AssetDatabase.LoadAssetAtPath<GameObject>(idlePath);
+            GameObject walkFBX = AssetDatabase.LoadAssetAtPath<GameObject>(walkPath);
+            GameObject throwFBX = AssetDatabase.LoadAssetAtPath<GameObject>(throwPath);
+            GameObject selectFBX = AssetDatabase.LoadAssetAtPath<GameObject>(selectPath);
+
+            if (idleFBX == null || throwFBX == null)
+            {
+                Debug.LogError("❌ Kai FBX 파일을 찾을 수 없습니다.");
+                return;
+            }
+
+            string ctrlPath = "Assets/3D/Character/Kai_CTRL.controller";
+            var controller = UnityEditor.Animations.AnimatorController.CreateAnimatorControllerAtPath(ctrlPath);
+
+            controller.AddParameter("IsWalking", AnimatorControllerParameterType.Bool);
+            controller.AddParameter("Idle", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("Select", AnimatorControllerParameterType.Trigger);
+            controller.AddParameter("Throw", AnimatorControllerParameterType.Trigger);
+
+            var rootStateMachine = controller.layers[0].stateMachine;
+
+            AnimationClip idleClip = LoadFirstAnimationClip(idlePath);
+            AnimationClip walkClip = LoadFirstAnimationClip(walkPath);
+            AnimationClip throwClip = LoadFirstAnimationClip(throwPath);
+            AnimationClip selectClip = LoadFirstAnimationClip(selectPath);
+
+            var readyState = rootStateMachine.AddState("ReadyPose", new Vector3(200, 100, 0));
+            readyState.motion = idleClip;
+            readyState.speed = 0f;
+
+            var idleState = rootStateMachine.AddState("Idle", new Vector3(200, 200, 0));
+            idleState.motion = idleClip;
+
+            var walkState = rootStateMachine.AddState("Walk", new Vector3(450, 200, 0));
+            walkState.motion = walkClip ?? idleClip;
+
+            var throwState = rootStateMachine.AddState("Throw", new Vector3(200, 320, 0));
+            throwState.motion = throwClip ?? idleClip;
+            throwState.speed = 1f;
+
+            var selectState = rootStateMachine.AddState("Select", new Vector3(450, 320, 0));
+            selectState.motion = selectClip ?? idleClip;
+
+            var idleToWalk = idleState.AddTransition(walkState);
+            idleToWalk.AddCondition(UnityEditor.Animations.AnimatorConditionMode.If, 0, "IsWalking");
+            idleToWalk.duration = 0.2f;
+
+            var walkToIdle = walkState.AddTransition(idleState);
+            walkToIdle.AddCondition(UnityEditor.Animations.AnimatorConditionMode.IfNot, 0, "IsWalking");
+            walkToIdle.duration = 0.2f;
+
+            var anyToSelect = rootStateMachine.AddAnyStateTransition(selectState);
+            anyToSelect.AddCondition(UnityEditor.Animations.AnimatorConditionMode.If, 0, "Select");
+            anyToSelect.duration = 0.15f;
+
+            var anyToIdle = rootStateMachine.AddAnyStateTransition(idleState);
+            anyToIdle.AddCondition(UnityEditor.Animations.AnimatorConditionMode.If, 0, "Idle");
+            anyToIdle.duration = 0.15f;
+
+            var anyToThrow = rootStateMachine.AddAnyStateTransition(throwState);
+            anyToThrow.AddCondition(UnityEditor.Animations.AnimatorConditionMode.If, 0, "Throw");
+            anyToThrow.duration = 0.05f;
+
+            rootStateMachine.defaultState = idleState;
+
+            AssetDatabase.SaveAssets();
+
+            GameObject rootGO = new GameObject("Thrower_Kai");
+            GameObject modelGO = (GameObject)PrefabUtility.InstantiatePrefab(idleFBX, rootGO.transform);
+            modelGO.name = "Kai_Model";
+            modelGO.transform.localPosition = Vector3.zero;
+            modelGO.transform.localRotation = Quaternion.identity;
+
+            var thrower = rootGO.AddComponent<StoneThrowerCharacter>();
+            var animator = rootGO.AddComponent<Animator>();
+            animator.runtimeAnimatorController = controller;
+            animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
+
+            var capsule = rootGO.AddComponent<CapsuleCollider>();
+            capsule.radius = 0.35f;
+            capsule.height = 1.8f;
+            capsule.center = new Vector3(0, 0.85f, 0);
+
+            thrower.animator = animator;
+            thrower.rightHandBone = FindDeepChild(rootGO.transform, "Bip001 R Hand") ?? FindDeepChild(rootGO.transform, "RightHand") ?? FindDeepChild(rootGO.transform, "Hand_R");
+            thrower.dummy01Socket = FindDeepChild(rootGO.transform, "Dummy001") ?? FindDeepChild(rootGO.transform, "Dummy01") ?? thrower.rightHandBone;
+
+            string prefabPath = "Assets/prefab/Character/Thrower_Kai.prefab";
+            string resPrefabPath = "Assets/Resources/Character/Thrower_Kai.prefab";
+
+            System.IO.Directory.CreateDirectory("Assets/prefab/Character");
+            System.IO.Directory.CreateDirectory("Assets/Resources/Character");
+
+            GameObject savedPrefab = PrefabUtility.SaveAsPrefabAsset(rootGO, prefabPath);
+            PrefabUtility.SaveAsPrefabAsset(rootGO, resPrefabPath);
+
+            GameObject.DestroyImmediate(rootGO);
+
+            UpdateLobbyCharacterPrefabs(savedPrefab);
+
+            AssetDatabase.SaveAssets();
+            AssetDatabase.Refresh();
+
+            Debug.Log($"🎉 [KaiCharacterBuilder] Thrower_Kai 프리팹 생성, Lobby 동기화 완료!\n- {prefabPath}\n- {resPrefabPath}");
+        }
+
+        public static void UpdateLobbyCharacterPrefabs(GameObject kaiPrefab)
+        {
+            string[] lobbyPaths = new[] { "Assets/prefab/Lobby.prefab", "Assets/Resources/Lobby.prefab" };
+            foreach (var path in lobbyPaths)
+            {
+                var lobbyGO = AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                if (lobbyGO != null)
+                {
+                    var showcase = lobbyGO.GetComponentInChildren<LobbyCharacterShowcaseController>(true);
+                    if (showcase != null)
+                    {
+                        var so = new SerializedObject(showcase);
+                        var prop = so.FindProperty("characterPrefabs");
+                        if (prop != null)
+                        {
+                            bool exists = false;
+                            for (int i = 0; i < prop.arraySize; i++)
+                            {
+                                var elem = prop.GetArrayElementAtIndex(i);
+                                if (elem.objectReferenceValue == kaiPrefab || (elem.objectReferenceValue != null && elem.objectReferenceValue.name.Equals("Thrower_Kai")))
+                                {
+                                    exists = true;
+                                    break;
+                                }
+                            }
+                            if (!exists && kaiPrefab != null)
+                            {
+                                int idx = prop.arraySize;
+                                prop.InsertArrayElementAtIndex(idx);
+                                prop.GetArrayElementAtIndex(idx).objectReferenceValue = kaiPrefab;
+                                so.ApplyModifiedProperties();
+                                PrefabUtility.SavePrefabAsset(lobbyGO);
+                                Debug.Log($"✅ [LobbySync] {path}에 Thrower_Kai 등록 완료!");
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        private static AnimationClip LoadFirstAnimationClip(string fbxPath)
+        {
+            UnityEngine.Object[] objs = AssetDatabase.LoadAllAssetsAtPath(fbxPath);
+            foreach (var o in objs)
+            {
+                if (o is AnimationClip clip && !clip.name.StartsWith("__preview__"))
+                {
+                    return clip;
+                }
+            }
+            return null;
+        }
+        #endregion
     }
 }

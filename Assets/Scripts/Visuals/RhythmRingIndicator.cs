@@ -178,9 +178,9 @@ public class RhythmRingIndicator : MonoBehaviour
         innerBorderObj = new GameObject("InnerTargetBorder_WaterFixed");
         innerRingBorder = innerBorderObj.AddComponent<LineRenderer>();
         ConfigureLineRenderer(innerRingBorder, lineMat, innerRingBorderColor, lineWidth);
-        innerRingBorder.alignment = LineAlignment.View;
+        innerRingBorder.alignment = LineAlignment.TransformZ;
         innerBorderObj.transform.position = Vector3.zero;
-        innerBorderObj.transform.rotation = Quaternion.identity;
+        innerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         // 🌟 3. [바깥쪽] 옐로우->오렌지->레드로 수축하는 반투명 디스크 (Shrinking Disc)
         shrinkingDiscObj = new GameObject("ShrinkingDisc_FilledWaterFixed");
@@ -198,9 +198,9 @@ public class RhythmRingIndicator : MonoBehaviour
         outerBorderObj = new GameObject("OuterShrinkingBorder_WaterFixed");
         outerRingBorder = outerBorderObj.AddComponent<LineRenderer>();
         ConfigureLineRenderer(outerRingBorder, lineMat, shrinkingColorStart, lineWidth * 1.2f);
-        outerRingBorder.alignment = LineAlignment.View;
+        outerRingBorder.alignment = LineAlignment.TransformZ;
         outerBorderObj.transform.position = Vector3.zero;
-        outerBorderObj.transform.rotation = Quaternion.identity;
+        outerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
     }
 
     private void ConfigureLineRenderer(LineRenderer lr, Material mat, Color col, float width)
@@ -364,8 +364,8 @@ public class RhythmRingIndicator : MonoBehaviour
     {
         SetRingsActive(true);
 
-        if (innerBorderObj != null) innerBorderObj.transform.rotation = Quaternion.identity;
-        if (outerBorderObj != null) outerBorderObj.transform.rotation = Quaternion.identity;
+        if (innerBorderObj != null) innerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        if (outerBorderObj != null) outerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         float compensatedTargetRadius = (stone != null && stone.ringTargetRadius > 0.01f) ? stone.ringTargetRadius : targetRingRadius;
         float compensatedLineWidth = (stone != null && stone.ringLineWidth > 0.001f) ? stone.ringLineWidth : lineWidth;
@@ -465,7 +465,7 @@ public class RhythmRingIndicator : MonoBehaviour
         if (lr == null || hostObj == null) return;
         lr.enabled = true;
         hostObj.transform.position = Vector3.zero;
-        hostObj.transform.rotation = Quaternion.identity;
+        hostObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
         lr.startColor = color;
         lr.endColor = color;
 

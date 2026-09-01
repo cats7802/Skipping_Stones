@@ -109,6 +109,20 @@ namespace SkippingStones.Data
                     unlockGoldCost = 10000,
                     isUnlocked = true // 테스트 편의를 위해 기본 해금
                 });
+
+                characterCatalog.Add(new CharacterInfoData
+                {
+                    id = "kai_hero",
+                    name = "카이",
+                    title = "호숫가의 날렵한 도전자",
+                    description = "경쾌한 스텝과 날렵한 손목 스냅으로 완벽한 스키밍을 구사합니다.",
+                    prefabPath = "Assets/prefab/Character/Thrower_Kai.prefab",
+                    powerBonus = 0.15f,
+                    angleAssist = 3.0f,
+                    perfectTimingAssist = 0.10f,
+                    unlockGoldCost = 5000,
+                    isUnlocked = true // 테스트용 해금 지원
+                });
             }
 
             if (mapCatalog.Count == 0)
@@ -191,7 +205,7 @@ namespace SkippingStones.Data
                 data.nickname = "개발자(QA)";
                 data.gold = 999999;
                 data.diamonds = 9999;
-                data.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old" };
+                data.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old", "kai_hero" };
                 data.unlockedStoneIds = new List<string> { "default", "flat_slate", "emerald_pebble", "crimson_flint" };
                 Debug.Log("🛠️ [GameDataManager] 테스트 모드 활성화: 모든 캐릭터/돌/맵 ALL 해금 프로필이 로드되었습니다.");
             }
@@ -236,7 +250,7 @@ namespace SkippingStones.Data
         public void DevUnlockAll()
         {
             if (UserData == null) UserData = new UserPersistentData();
-            UserData.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old" };
+            UserData.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old", "kai_hero" };
             UserData.unlockedStoneIds = new List<string> { "default", "flat_slate", "emerald_pebble", "crimson_flint" };
             UserData.gold = 999999;
             UserData.diamonds = 9999;

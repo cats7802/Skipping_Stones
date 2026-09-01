@@ -271,6 +271,18 @@ namespace SkippingStones.Arcade
 
         private void Update()
         {
+#if ENABLE_INPUT_SYSTEM
+            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.f2Key.wasPressedThisFrame)
+            {
+                showDebugHUD = !showDebugHUD;
+            }
+#else
+            if (Input.GetKeyDown(KeyCode.F2))
+            {
+                showDebugHUD = !showDebugHUD;
+            }
+#endif
+
             if (!isThrown || isSunk || isCrashed || isSkimming) return;
 
             cycleElapsedTime += Time.deltaTime;
@@ -791,46 +803,42 @@ namespace SkippingStones.Arcade
         }
 
         [Header("🛠️ 실시간 디버그 HUD 및 비트 메트로놈")]
-        public bool showDebugHUD = true;
+        public bool showDebugHUD = false;
 
         private void OnGUI()
         {
             if (!showDebugHUD || !isThrown || isSunk) return;
 
-            // 모바일 펀치홀/노치 대응 Safe Area 및 화면 해상도 비례 스케일링
+            // 모바일 및 PC 화면 대응 콤팩트 좌측 상단 HUD (화면을 가리지 않는 1/3 슬림 사이즈)
             Rect safe = Screen.safeArea;
-            float scale = Mathf.Max(1.0f, Screen.height / 1080f * 1.35f); // 1080p 기준 1.35배 크고 선명하게
+            float scale = Mathf.Max(0.85f, Screen.height / 1080f * 0.9f);
             
-            float width = 360f * scale;
-            float height = 210f * scale;
-            float xPos = safe.xMin + 30f * scale;
-            float yPos = safe.yMin + 40f * scale;
+            float width = 240f * scale;
+            float height = 130f * scale;
+            float xPos = safe.xMin + 16f * scale;
+            float yPos = safe.yMin + 20f * scale;
 
             GUIStyle boxStyle = new GUIStyle(GUI.skin.box);
-            boxStyle.fontSize = Mathf.RoundToInt(15 * scale);
+            boxStyle.fontSize = Mathf.RoundToInt(11 * scale);
             boxStyle.normal.textColor = Color.white;
             boxStyle.alignment = TextAnchor.UpperLeft;
-            boxStyle.padding = new RectOffset((int)(12 * scale), (int)(12 * scale), (int)(10 * scale), (int)(10 * scale));
+            boxStyle.padding = new RectOffset((int)(8 * scale), (int)(8 * scale), (int)(6 * scale), (int)(6 * scale));
 
             GUIStyle labelStyle = new GUIStyle(GUI.skin.label);
-            labelStyle.fontSize = Mathf.RoundToInt(14 * scale);
+            labelStyle.fontSize = Mathf.RoundToInt(11 * scale);
             labelStyle.normal.textColor = Color.white;
             labelStyle.richText = true;
 
             GUILayout.BeginArea(new Rect(xPos, yPos, width, height), boxStyle);
-            GUILayout.Label($"<b>🎵 [리듬 정밀 타이밍 HUD]</b>", labelStyle);
+            GUILayout.Label($"<b>🎵 [리듬 HUD] (F2 토글)</b>", labelStyle);
             
-            // 1. 실시간 0.001초 스톱워치 & 진행 바
+            // 1. 실시간 스톱워치 & 비트
             float progress = (currentCycleDuration > 0.001f) ? Mathf.Clamp01(cycleElapsedTime / currentCycleDuration) : 0f;
-            GUILayout.Label($"⏱️ 비행 시간: <b><color=#00FFAA>{cycleElapsedTime:F3}s</color> / {currentCycleDuration:F2}s</b> ({progress * 100f:F0}%)", labelStyle);
+            string pulse = (progress > 0.85f) ? "<color=#FF3366>● [쿵!]</color>" : "<color=#00E5FF>○ [비행]</color>";
+            GUILayout.Label($"⏱️ {cycleElapsedTime:F2}s / {currentCycleDuration:F2}s ({progress * 100f:F0}%) {pulse}", labelStyle);
 
-            // 2. 비트 메트로놈 펄스 (착수 직전 85% 이상일 때 황금/레드로 깜빡임)
-            string pulse = (progress > 0.85f) ? "<color=#FF3366>● [착수 비트 쿵!]</color>" : "<color=#00E5FF>○ [상공 비행중]</color>";
-            GUILayout.Label($"🥁 비트 펄스: <b>{pulse}</b>", labelStyle);
-
-            GUILayout.Label($"🏃 현재 속도: <b>{currentBPM:F0} BPM</b> (콤보: {currentCombo})", labelStyle);
-            GUILayout.Label($"📏 1바운스 목표: <b>{currentBounceDistance:F1}m</b> (높이: {fixedBounceArcHeight:F1}m 고정)", labelStyle);
-            GUILayout.Label($"🎛️ 적용 프리셋: <b>{activePreset}</b>", labelStyle);
+            GUILayout.Label($"🏃 {currentBPM:F0} BPM | 콤보: {currentCombo}", labelStyle);
+            GUILayout.Label($"📏 목표: {currentBounceDistance:F1}m | 모멘텀: {currentMomentum:F0}", labelStyle);
             GUILayout.EndArea();
         }
 

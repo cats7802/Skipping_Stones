@@ -7,40 +7,40 @@ using SkippingStones.Data;
 namespace SkippingStones.Visuals
 {
     /// <summary>
-    /// 로비 3D 캐릭터 선택 및 쇼케이스 컨트롤러
-    /// - StoneThrowerCharacter 스크립트가 붙은 프리팹을 자동으로 스캔/등록
-    /// - Staging_Position 더미를 중심으로 좌/우 화면 밖 ↔ 중앙 진입/퇴장 (Walk/Slide 보간)
-    /// - 중앙 안착 시 마우스/터치 드래그로 360도 자유 회전 감상
-    /// - GameDataManager 캐릭터 카탈로그 및 유저 선택 캐릭터 ID 동기화
+    /// 로비 3D 캐릭???�택 �??��??�스 컨트롤러
+    /// - StoneThrowerCharacter ?�크립트가 붙�? ?�리?�을 ?�동?�로 ?�캔/?�록
+    /// - Staging_Position ?��?�?중심?�로 �????�면 �???중앙 진입/?�장 (Walk/Slide 보간)
+    /// - 중앙 ?�착 ??마우???�치 ?�래그로 360???�유 ?�전 감상
+    /// - GameDataManager 캐릭??카탈로그 �??��? ?�택 캐릭??ID ?�기??
     /// </summary>
     public class LobbyCharacterShowcaseController : MonoBehaviour
     {
-        [Header("하이어라키 참조 (카메라 & 스테이징)")]
-        [SerializeField] private Camera targetCamera;          // 로비 뷰 카메라 (직접 할당 또는 자동 검색)
-        [SerializeField] private Transform stagingPosition; // Staging_Position 포함된 더미
+        [Header("?�이?�라??참조 (카메??& ?�테?�징)")]
+        [SerializeField] private Camera targetCamera;          // 로비 �?카메??(직접 ?�당 ?�는 ?�동 검??
+        [SerializeField] private Transform stagingPosition; // Staging_Position ?�함???��?
 
-        [Header("캐릭터 프리팹 목록 (자동 스캔)")]
+        [Header("캐릭???�리??목록 (?�동 ?�캔)")]
         [SerializeField] private List<GameObject> characterPrefabs = new List<GameObject>();
 
-        [Header("트랜지션 및 회전 설정")]
+        [Header("?�랜지??�??�전 ?�정")]
         [SerializeField] private float transitionDuration = 0.55f;
-        [SerializeField] private float entryOffsetDistance = 3.5f; // 스테이징 기준 좌/우 스폰 거리
-        [SerializeField] private float entryAngleOffset = 55f;     // 진입/퇴장 각도 보정 (기존 45도 + 10도 = 55도)
-        [SerializeField] private float rotationSensitivity = 0.4f; // 드래그 회전 감도
+        [SerializeField] private float entryOffsetDistance = 3.5f; // ?�테?�징 기�? �????�폰 거리
+        [SerializeField] private float entryAngleOffset = 55f;     // 진입/?�장 각도 보정 (기존 45??+ 10??= 55??
+        [SerializeField] private float rotationSensitivity = 0.4f; // ?�래�??�전 감도
 
-        [Header("상태 모니터링")]
+        [Header("?�태 모니?�링")]
         [SerializeField] private int currentCharacterIndex = 0;
         [SerializeField] private bool isTransitioning = false;
 
         private GameObject currentSpawnedCharacter;
         private Animator currentAnimator;
 
-        // 드래그 조작
+        // ?�래�?조작
         private Vector2 lastPointerPos;
         private bool isDragging = false;
         private float currentModelRotationY = 0f;
 
-        // 이벤트: UI(스탯창/이름) 갱신용
+        // ?�벤?? UI(?�탯�??�름) 갱신??
         public event Action<int, GameObject, CharacterInfoData> OnCharacterChanged;
 
         private void Awake()
@@ -69,7 +69,7 @@ namespace SkippingStones.Visuals
 
             if (characterPrefabs.Count == 0) return;
 
-            // 유저가 이전에 선택해둔 캐릭터(selectedCharacterId) 동기화
+            // ?��?가 ?�전???�택?�둔 캐릭??selectedCharacterId) ?�기??
             int targetIndex = 0;
             var dm = GameDataManager.Instance;
             if (dm != null && dm.UserData != null && !string.IsNullOrEmpty(dm.UserData.selectedCharacterId))
@@ -77,7 +77,17 @@ namespace SkippingStones.Visuals
                 string savedId = dm.UserData.selectedCharacterId;
                 for (int i = 0; i < characterPrefabs.Count; i++)
                 {
-                    if (characterPrefabs[i] != null && characterPrefabs[i].name.Equals(savedId, StringComparison.OrdinalIgnoreCase))
+                    if (characterPrefabs[i] == null) continue;
+                    string pName = characterPrefabs[i].name;
+                    if (pName.Equals(savedId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetIndex = i;
+                        break;
+                    }
+
+                    // 카탈로그 ID ?�는 ?�리??경로?�???�치 검??
+                    var catItem = dm.characterCatalog?.Find(c => c.id.Equals(savedId, StringComparison.OrdinalIgnoreCase));
+                    if (catItem != null && !string.IsNullOrEmpty(catItem.prefabPath) && catItem.prefabPath.Contains(pName))
                     {
                         targetIndex = i;
                         break;
@@ -90,7 +100,7 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 계층 구조 내 Staging_Position 자동 탐색 (대소문자/오타 무관하게 STAGING_POSITION 또는 STAGINGPOSITION 검색)
+        /// 계층 구조 ??Staging_Position ?�동 ?�색 (?�?�문???��? 무�??�게 STAGING_POSITION ?�는 STAGINGPOSITION 검??
         /// </summary>
         public void FindStagingPosition()
         {
@@ -108,7 +118,7 @@ namespace SkippingStones.Visuals
                 }
             }
 
-            // 폴백: 못 찾으면 로비 루트 위치 사용
+            // ?�백: �?찾으�?로비 루트 ?�치 ?�용
             if (stagingPosition == null)
             {
                 stagingPosition = transform;
@@ -116,7 +126,7 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// GameDataManager의 characterCatalog에서 해금(isUnlocked == true)된 캐릭터 프리팹을 정식 로드
+        /// GameDataManager??characterCatalog?�서 ?�금(isUnlocked == true)??캐릭???�리?�을 ?�식 로드
         /// </summary>
         public void ScanCharacterPrefabs()
         {
@@ -127,7 +137,7 @@ namespace SkippingStones.Visuals
             {
                 foreach (var info in dm.characterCatalog)
                 {
-                    // 해금 여부 체크 (UserData or Catalog isUnlocked)
+                    // ?�금 ?��? 체크 (UserData or Catalog isUnlocked)
                     bool isUnlocked = info.isUnlocked;
                     if (dm.UserData != null && dm.UserData.unlockedCharacterIds != null)
                     {
@@ -146,7 +156,7 @@ namespace SkippingStones.Visuals
                         loadedPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(info.prefabPath);
                     }
 
-                    // 경로로 못 찾았을 경우 에셋 전체에서 검색 폴백
+                    // 경로�?�?찾았??경우 ?�셋 ?�체?�서 검???�백
                     if (loadedPrefab == null)
                     {
                         string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Character", "Assets" });
@@ -172,6 +182,12 @@ namespace SkippingStones.Visuals
                         if (rPath.StartsWith("Assets/prefab/")) rPath = rPath.Substring("Assets/prefab/".Length);
                         if (rPath.EndsWith(".prefab")) rPath = rPath.Substring(0, rPath.Length - ".prefab".Length);
                         loadedPrefab = Resources.Load<GameObject>(rPath);
+
+                        if (loadedPrefab == null)
+                        {
+                            string fileName = System.IO.Path.GetFileNameWithoutExtension(info.prefabPath);
+                            loadedPrefab = Resources.Load<GameObject>(fileName) ?? Resources.Load<GameObject>($"Character/{fileName}");
+                        }
                     }
 #endif
                     if (loadedPrefab != null && !characterPrefabs.Contains(loadedPrefab))
@@ -181,17 +197,11 @@ namespace SkippingStones.Visuals
                 }
             }
 
-            // 프리팹에 인스펙터로 사전 등록된 직렬화 목록이 이미 존재하면 그대로 보존
-            if (characterPrefabs != null && characterPrefabs.Count > 0)
-            {
-                return;
-            }
-
-            // 만약 아무것도 못 찾았을 경우 에셋 폴더 내 기본 캐릭터 폴백 등록
+            // 만약 ?�무것도 �?찾았??경우 ?�셋 ?�더 ??기본 캐릭???�백 ?�록
             if (characterPrefabs.Count == 0)
             {
 #if UNITY_EDITOR
-                string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Character" });
+                string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Character", "Assets/Resources/Character" });
                 foreach (string guid in guids)
                 {
                     string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
@@ -207,15 +217,17 @@ namespace SkippingStones.Visuals
 
         private void Update()
         {
-            // 인게임 화면에서는 쇼케이스 캐릭터를 안전하게 숨김 처리
+            // ?�게??�??�?��? ?�면?�서???��??�스 캐릭?��? ?�전?�게 ?��? 처리 (로비 ?�는 모달 ?�태?�서�??�시)
             if (SkippingStones.UI.MetaUIManager.Instance != null)
             {
-                bool isInGame = SkippingStones.UI.MetaUIManager.Instance.currentScreen == SkippingStones.UI.MetaScreen.InGame;
-                if (isInGame && currentSpawnedCharacter != null && currentSpawnedCharacter.activeSelf)
+                var screen = SkippingStones.UI.MetaUIManager.Instance.currentScreen;
+                bool shouldShow = (screen == SkippingStones.UI.MetaScreen.Lobby);
+
+                if (!shouldShow && currentSpawnedCharacter != null && currentSpawnedCharacter.activeSelf)
                 {
                     currentSpawnedCharacter.SetActive(false);
                 }
-                else if (!isInGame && currentSpawnedCharacter != null && !currentSpawnedCharacter.activeSelf)
+                else if (shouldShow && currentSpawnedCharacter != null && !currentSpawnedCharacter.activeSelf)
                 {
                     currentSpawnedCharacter.SetActive(true);
                 }
@@ -225,7 +237,7 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 캐릭터 360도 드래그 회전 처리 (캐릭터 콜라이더를 직접 터치했을 때만 활성화)
+        /// 캐릭??360???�래�??�전 처리 (캐릭??콜라?�더�?직접 ?�치?�을 ?�만 ?�성??
         /// </summary>
         private void HandleDragRotation()
         {
@@ -257,7 +269,7 @@ namespace SkippingStones.Visuals
 
             if (pointerDown)
             {
-                // Raycast로 캐릭터 본체 콜라이더를 터치했는지 확인
+                // Raycast�?캐릭??본체 콜라?�더�??�치?�는지 ?�인
                 Camera cam = targetCamera;
                 if (cam == null || !cam.gameObject.activeInHierarchy)
                 {
@@ -297,7 +309,7 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 다음 캐릭터로 전환 (+1)
+        /// ?�음 캐릭?�로 ?�환 (+1)
         /// </summary>
         public void NextCharacter()
         {
@@ -307,7 +319,7 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 이전 캐릭터로 전환 (-1)
+        /// ?�전 캐릭?�로 ?�환 (-1)
         /// </summary>
         public void PreviousCharacter()
         {
@@ -317,8 +329,8 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 캐릭터 슬라이드/걸어나오기 트랜지션 코루틴
-        /// direction: 1 = 다음(오른쪽으로 퇴장, 왼쪽에서 등장) / -1 = 이전
+        /// 캐릭???�라?�드/걸어?�오�??�랜지??코루??
+        /// direction: 1 = ?�음(?�른쪽으�??�장, ?�쪽?�서 ?�장) / -1 = ?�전
         /// </summary>
         private IEnumerator TransitionRoutine(int targetIndex, int direction)
         {
@@ -329,26 +341,26 @@ namespace SkippingStones.Visuals
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
             Quaternion finalFrontRot = stagingPosition != null ? stagingPosition.rotation : transform.rotation;
 
-            // 로비 룸 및 카메라 쿼터뷰에 맞춘 화면상 좌우 횡이동 축 계산 (기본 55도 적용)
+            // 로비 �?�?카메??쿼터뷰에 맞춘 ?�면??좌우 ?�이??�?계산 (기본 55???�용)
             Vector3 moveDir = (Quaternion.Euler(0f, entryAngleOffset, 0f) * transform.right).normalized;
 
             Vector3 exitPos = centerPos + moveDir * (direction * entryOffsetDistance);
             Vector3 enterPos = centerPos - moveDir * (direction * entryOffsetDistance);
 
-            // 진입 시 캐릭터가 바라볼 방향 (중앙을 향해 걸어오는 방향)
+            // 진입 ??캐릭?��? 바라�?방향 (중앙???�해 걸어?�는 방향)
             Vector3 enterLookDir = (centerPos - enterPos).normalized;
             Quaternion enterWalkRot = enterLookDir != Vector3.zero ? Quaternion.LookRotation(enterLookDir, Vector3.up) : finalFrontRot;
 
-            // 퇴장 시 캐릭터가 바라볼 방향 (화면 밖으로 나가는 방향)
+            // ?�장 ??캐릭?��? 바라�?방향 (?�면 밖으�??��???방향)
             Vector3 exitLookDir = (exitPos - centerPos).normalized;
             Quaternion exitWalkRot = exitLookDir != Vector3.zero ? Quaternion.LookRotation(exitLookDir, Vector3.up) : finalFrontRot;
 
-            // 새 캐릭터 스폰 (화면 밖, 걸어오는 방향을 바라보며 시작)
+            // ??캐릭???�폰 (?�면 �? 걸어?�는 방향??바라보며 ?�작)
             GameObject newPrefab = characterPrefabs[targetIndex];
             GameObject newChr = Instantiate(newPrefab, enterPos, enterWalkRot);
             SetupCharacterInstance(newChr);
 
-            // 걷기 모션이 있다면 트리거
+            // 걷기 모션???�다�??�리�?
             Animator newAnim = newChr.GetComponentInChildren<Animator>();
             if (newAnim != null) newAnim.SetBool("IsWalking", true);
 
@@ -362,14 +374,14 @@ namespace SkippingStones.Visuals
                 if (oldChr != null)
                 {
                     oldChr.transform.position = Vector3.Lerp(centerPos, exitPos, ease);
-                    // 퇴장 시 나가는 방향으로 회전하며 이동
+                    // ?�장 ???��???방향?�로 ?�전?�며 ?�동
                     oldChr.transform.rotation = Quaternion.Slerp(finalFrontRot, exitWalkRot, Mathf.Clamp01(t * 2f));
                 }
                 if (newChr != null)
                 {
                     newChr.transform.position = Vector3.Lerp(enterPos, centerPos, ease);
                     
-                    // 진입 시: 처음엔 걸어오는 방향 -> 중앙 도달(후반 50%~) 시 부드럽게 정면 카메라를 바라보도록 회전
+                    // 진입 ?? 처음??걸어?�는 방향 -> 중앙 ?�달(?�반 50%~) ??부?�럽�??�면 카메?��? 바라보도�??�전
                     float turnT = Mathf.Clamp01((t - 0.4f) / 0.6f);
                     float turnEase = Mathf.SmoothStep(0f, 1f, turnT);
                     newChr.transform.rotation = Quaternion.Slerp(enterWalkRot, finalFrontRot, turnEase);
@@ -427,7 +439,7 @@ namespace SkippingStones.Visuals
             if (chrInstance == null) return;
             chrInstance.name = $"[Showcase_Chr]_{chrInstance.name}";
 
-            // 쇼케이스용으로 안전 처리: StoneThrowerCharacter 컴포넌트를 제거하여 인게임 캐릭터 검색 시 절대 잡히지 않도록 분리
+            // ?��??�스?�으�??�전 처리: StoneThrowerCharacter 컴포?�트�??�거?�여 ?�게??캐릭??검?????��? ?�히지 ?�도�?분리
             var thrower = chrInstance.GetComponentInChildren<StoneThrowerCharacter>();
             if (thrower != null)
             {
@@ -435,7 +447,7 @@ namespace SkippingStones.Visuals
                 else DestroyImmediate(thrower);
             }
 
-            // 물리 연산(밀침/충돌)은 끄되, 레이캐스트 터치 감지를 위해 콜라이더는 Trigger로 유지
+            // 물리 ?�산(밀�?충돌)?� ?�되, ?�이캐스???�치 감�?�??�해 콜라?�더??Trigger�??��?
             var colliders = chrInstance.GetComponentsInChildren<Collider>();
             foreach (var col in colliders)
             {
@@ -457,11 +469,11 @@ namespace SkippingStones.Visuals
             var dm = GameDataManager.Instance;
             if (dm != null)
             {
-                // 유저 세이브 데이터 동기화
+                // ?��? ?�이�??�이???�기??
                 dm.UserData.selectedCharacterId = currentPrefab.name;
                 dm.SaveUserData();
 
-                // 카탈로그 데이터 검색
+                // 카탈로그 ?�이??검??
                 if (dm.characterCatalog != null)
                 {
                     catalogData = dm.characterCatalog.Find(c => c.id.Equals(currentPrefab.name, StringComparison.OrdinalIgnoreCase) || currentPrefab.name.Contains(c.id));

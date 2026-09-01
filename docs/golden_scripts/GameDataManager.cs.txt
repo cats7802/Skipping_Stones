@@ -10,15 +10,15 @@ namespace SkippingStones.Data
         public static GameDataManager Instance { get; private set; }
 
         private const string SAVE_KEY = "USER_SAVE_DATA_V1";
-        private const int STAMINA_RECOVERY_SECONDS = 600; // 10분당 1 스태미나
+        private const int STAMINA_RECOVERY_SECONDS = 600; // 10분당 1 ?�태미나
 
         public UserPersistentData UserData { get; private set; } = new UserPersistentData();
 
-        [Header("🛠️ 개발자 테스트 설정")]
-        [Tooltip("에디터 플레이 시 모든 캐릭터/돌/맵을 항상 ALL 해금 상태로 시작합니다.")]
+        [Header("?���?개발???�스???�정")]
+        [Tooltip("?�디???�레????모든 캐릭????맵을 ??�� ALL ?�금 ?�태�??�작?�니??")]
         [SerializeField] private bool devUnlockAllByDefault = true;
 
-        [Header("마스터 카탈로그")]
+        [Header("마스??카탈로그")]
         public List<CharacterInfoData> characterCatalog = new List<CharacterInfoData>();
         public List<MapInfoData> mapCatalog = new List<MapInfoData>();
         public List<StoneInfoData> stoneCatalog = new List<StoneInfoData>();
@@ -73,8 +73,8 @@ namespace SkippingStones.Data
                 {
                     id = "boy_default",
                     name = "민우",
-                    title = "호숫가 소년",
-                    description = "기본기가 탄탄하며 안정적인 투구 각도를 구사합니다.",
+                    title = "?�숫가 ?�년",
+                    description = "기본기�? ?�탄?�며 ?�정?�인 ?�구 각도�?구사?�니??",
                     prefabPath = "Assets/prefab/Character/Thrower_Minwoo.prefab",
                     powerBonus = 0f,
                     angleAssist = 2.0f,
@@ -85,29 +85,43 @@ namespace SkippingStones.Data
                 characterCatalog.Add(new CharacterInfoData
                 {
                     id = "girl_athlete",
-                    name = "수아",
-                    title = "투수 지망생",
-                    description = "강력한 어깨로 초속과 파워를 극대화합니다.",
+                    name = "?�아",
+                    title = "?�수 지망생",
+                    description = "강력???�깨�?초속�??�워�?극�??�합?�다.",
                     prefabPath = "Assets/prefab/Character/Thrower_001.prefab",
                     powerBonus = 0.12f,
                     angleAssist = 0f,
                     perfectTimingAssist = 0.08f,
                     unlockGoldCost = 3000,
-                    isUnlocked = true // 테스트 편의를 위해 기본 해금
+                    isUnlocked = true // ?�스???�의�??�해 기본 ?�금
                 });
 
                 characterCatalog.Add(new CharacterInfoData
                 {
                     id = "master_old",
-                    name = "도사님",
-                    title = "물수제비 은둔 고수",
-                    description = "바람과 수면의 흐름을 읽어 모든 바운스에 보너스를 받습니다.",
+                    name = "?�사??,
+                    title = "물수?�비 ?�??고수",
+                    description = "바람�??�면???�름???�어 모든 바운?�에 보너?��? 받습?�다.",
                     prefabPath = "Assets/prefab/Character/Thrower_Test.prefab",
                     powerBonus = 0.20f,
                     angleAssist = 5.0f,
                     perfectTimingAssist = 0.15f,
                     unlockGoldCost = 10000,
-                    isUnlocked = true // 테스트 편의를 위해 기본 해금
+                    isUnlocked = true // ?�스???�의�??�해 기본 ?�금
+                });
+
+                characterCatalog.Add(new CharacterInfoData
+                {
+                    id = "kai_hero",
+                    name = "카이",
+                    title = "?�숫가???�렵???�전??,
+                    description = "경쾌???�텝�??�렵???�목 ?�냅?�로 ?�벽???�키밍을 구사?�니??",
+                    prefabPath = "Assets/prefab/Character/Thrower_Kai.prefab",
+                    powerBonus = 0.15f,
+                    angleAssist = 3.0f,
+                    perfectTimingAssist = 0.10f,
+                    unlockGoldCost = 5000,
+                    isUnlocked = true // ?�스?�용 ?�금 지??
                 });
             }
 
@@ -116,8 +130,8 @@ namespace SkippingStones.Data
                 mapCatalog.Add(new MapInfoData
                 {
                     id = "emerald_lake",
-                    name = "에메랄드 호숫가 (기본)",
-                    description = "물결이 잔잔하여 물수제비를 던지기에 가장 이상적인 호수",
+                    name = "?�메?�드 ?�숫가 (기본)",
+                    description = "물결???�잔?�여 물수?�비�??��?기에 가???�상?�인 ?�수",
                     difficultyStars = 1,
                     courseLength = 1500f,
                     isUnlocked = true
@@ -126,8 +140,8 @@ namespace SkippingStones.Data
                 mapCatalog.Add(new MapInfoData
                 {
                     id = "sunset_river",
-                    name = "노을빛 굽이치는 강",
-                    description = "바람과 유속이 있어 정밀한 각도 조절이 요구되는 중급 코스",
+                    name = "?�을�?굽이치는 �?,
+                    description = "바람�??�속???�어 ?��???각도 조절???�구?�는 중급 코스",
                     difficultyStars = 3,
                     courseLength = 2500f,
                     isUnlocked = true
@@ -136,8 +150,8 @@ namespace SkippingStones.Data
                 mapCatalog.Add(new MapInfoData
                 {
                     id = "misty_valley",
-                    name = "안개 낀 비경 계곡",
-                    description = "수많은 기암괴석과 장애물이 도사리는 상급자 전용 계곡",
+                    name = "?�개 ?� 비경 계곡",
+                    description = "?�많?� 기암괴석�??�애물이 ?�사리는 ?�급???�용 계곡",
                     difficultyStars = 5,
                     courseLength = 4000f,
                     isUnlocked = false
@@ -161,7 +175,7 @@ namespace SkippingStones.Data
                 }
                 catch (Exception ex)
                 {
-                    Debug.LogWarning($"[GameDataManager] 세이브 로드 실패, 기본값 사용: {ex.Message}");
+                    Debug.LogWarning($"[GameDataManager] ?�이�?로드 ?�패, 기본�??�용: {ex.Message}");
                     UserData = CreateDefaultUserData();
                 }
             }
@@ -170,36 +184,36 @@ namespace SkippingStones.Data
                 UserData = CreateDefaultUserData();
             }
 
-            // 카탈로그 동기화: 유저의 unlocked 목록에 맞춰 카탈로그 isUnlocked 일치
+            // 카탈로그 ?�기?? ?��???unlocked 목록??맞춰 카탈로그 isUnlocked ?�치
             SyncCatalogWithUserData();
 
-            // 스태미나 시간 정산
+            // ?�태미나 ?�간 ?�산
             UpdateStaminaRegeneration();
             OnUserDataChanged?.Invoke(UserData);
         }
 
         /// <summary>
-        /// 기본 신규 유저 세이브 데이터 생성 (에디터 테스트 환경에서는 모든 해금 상태 지원)
+        /// 기본 ?�규 ?��? ?�이�??�이???�성 (?�디???�스???�경?�서??모든 ?�금 ?�태 지??
         /// </summary>
         private UserPersistentData CreateDefaultUserData()
         {
             var data = new UserPersistentData();
             if (devUnlockAllByDefault)
             {
-                // 🌟 테스트 모드: 모든 캐릭터/돌/맵 ALL 해금 + 테스트 골드 지급
+                // ?�� ?�스??모드: 모든 캐릭????�?ALL ?�금 + ?�스??골드 지�?
                 data.userId = "dev_tester_local";
-                data.nickname = "개발자(QA)";
+                data.nickname = "개발??QA)";
                 data.gold = 999999;
                 data.diamonds = 9999;
-                data.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old" };
+                data.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old", "kai_hero" };
                 data.unlockedStoneIds = new List<string> { "default", "flat_slate", "emerald_pebble", "crimson_flint" };
-                Debug.Log("🛠️ [GameDataManager] 테스트 모드 활성화: 모든 캐릭터/돌/맵 ALL 해금 프로필이 로드되었습니다.");
+                Debug.Log("?���?[GameDataManager] ?�스??모드 ?�성?? 모든 캐릭????�?ALL ?�금 ?�로?�이 로드?�었?�니??");
             }
             else
             {
-                // 상용 배포: 순정 신규 유저 기본값
+                // ?�용 배포: ?�정 ?�규 ?��? 기본�?
                 data.userId = "local_guest";
-                data.nickname = "조약돌 달인";
+                data.nickname = "조약???�인";
                 data.gold = 1200;
                 data.diamonds = 50;
                 data.unlockedCharacterIds = new List<string> { "boy_default" };
@@ -209,7 +223,7 @@ namespace SkippingStones.Data
         }
 
         /// <summary>
-        /// 유저 세이브 데이터의 해금 목록을 마스터 카탈로그에 동기화
+        /// ?��? ?�이�??�이?�의 ?�금 목록??마스??카탈로그???�기??
         /// </summary>
         public void SyncCatalogWithUserData()
         {
@@ -232,27 +246,27 @@ namespace SkippingStones.Data
             }
         }
 
-        [ContextMenu("🛠️ [DEV] 모든 캐릭터/돌 해금 (All Unlock)")]
+        [ContextMenu("?���?[DEV] 모든 캐릭?????�금 (All Unlock)")]
         public void DevUnlockAll()
         {
             if (UserData == null) UserData = new UserPersistentData();
-            UserData.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old" };
+            UserData.unlockedCharacterIds = new List<string> { "boy_default", "girl_athlete", "master_old", "kai_hero" };
             UserData.unlockedStoneIds = new List<string> { "default", "flat_slate", "emerald_pebble", "crimson_flint" };
             UserData.gold = 999999;
             UserData.diamonds = 9999;
             SyncCatalogWithUserData();
             SaveUserData();
-            Debug.Log("✅ [DEV] 모든 캐릭터/돌 해금 완료!");
+            Debug.Log("??[DEV] 모든 캐릭?????�금 ?�료!");
         }
 
-        [ContextMenu("🔄 [DEV] 신규 유저 순정 상태로 리셋 (Clean Reset)")]
+        [ContextMenu("?�� [DEV] ?�규 ?��? ?�정 ?�태�?리셋 (Clean Reset)")]
         public void DevResetToCleanUser()
         {
             PlayerPrefs.DeleteKey(SAVE_KEY);
             UserData = new UserPersistentData
             {
                 userId = "local_guest",
-                nickname = "조약돌 달인",
+                nickname = "조약???�인",
                 gold = 1200,
                 diamonds = 50,
                 unlockedCharacterIds = new List<string> { "boy_default" },
@@ -260,7 +274,7 @@ namespace SkippingStones.Data
             };
             SyncCatalogWithUserData();
             SaveUserData();
-            Debug.Log("🔄 [DEV] 신규 유저 순정 상태로 초기화 완료!");
+            Debug.Log("?�� [DEV] ?�규 ?��? ?�정 ?�태�?초기???�료!");
         }
 
         public void SaveUserData()

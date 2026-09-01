@@ -28,6 +28,9 @@
 | 16 | **연잎 군락 프리팹** | `Assets/prefab/LilyPadCluster.prefab` | `Assets/Resources/LilyPadCluster.prefab` | ✅ 등록 완료 |
 | 17 | **스타일라이즈드 수면 머티리얼** | `Assets/Materials/M_StylizedWater.mat` | `Assets/Resources/M_StylizedWater.mat` | ✅ 동기화됨 |
 | 18 | **터치 버튼 스프라이트 (L/O/R)** | `Assets/2D/UI/Touch_Button_*.png` | `Assets/Resources/Touch_Button_*.png` | ✅ 동기화됨 |
+| 19 | **로비 쇼케이스 프리팹** | `Assets/prefab/Lobby.prefab` | `Assets/Resources/Lobby.prefab` | ✅ 동기화됨 |
+| 20 | **캐릭터 프리팹 일체 (4종)** | `Assets/prefab/Character/*.prefab` (Kai 추가) | `Assets/Resources/Character/*.prefab` | ✅ 동기화됨 |
+| 21 | **돌 프리팹 일체 (4종)** | `Assets/prefab/Stone/*.prefab` | `Assets/Resources/Stone/*.prefab` | ✅ 동기화됨 |
 
 ---
 

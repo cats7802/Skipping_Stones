@@ -6,27 +6,27 @@ public class RhythmRingIndicator : MonoBehaviour
     public SkippingStone stone;
     public SkippingStones.Arcade.ArcadeSkippingStone arcadeStone;
 
-    [Header("링 크기 및 설정")]
-    [Header("링 크기 및 설정")]
-    public float targetRingRadius = 0.15f; // 1/2로 콤팩트하게 축소된 정밀 타깃 반경
-    public float maxRingMultiplier = 8.5f; // 바깥 링 시작 영역 유지
+    [Header("�??�기 �??�정")]
+    [Header("�??�기 �??�정")]
+    public float targetRingRadius = 0.15f; // 1/2�?콤팩?�하�?축소???��? ?��?반경
+    public float maxRingMultiplier = 8.5f; // 바깥 �??�작 ?�역 ?��?
     public int segments = 56;
     public float lineWidth = 0.022f;
 
-    [Header("색상 테마 (불투명 중앙 붉은색 퍼펙트 코어 & 수축 열기 그라데이션)")]
-    [Tooltip("중앙 퍼펙트 과녁 코어 색상 (진하고 선명한 붉은색 솔리드 불투명 컬러)")]
-    public Color innerCoreColor = new Color(0.95f, 0.15f, 0.22f, 0.95f); // 강렬하고 진한 루비 레드 코어
-    public Color innerRingBorderColor = new Color(1.0f, 0.35f, 0.40f, 1.0f); // 중앙 붉은 테두리 링
+    [Header("?�상 ?�마 (불투�?중앙 붉�????�펙??코어 & ?�축 ?�기 그라?�이??")]
+    [Tooltip("중앙 ?�펙??과녁 코어 ?�상 (진하�??�명??붉�????�리??불투�?컬러)")]
+    public Color innerCoreColor = new Color(0.95f, 0.15f, 0.22f, 0.95f); // 강렬?�고 진한 루비 ?�드 코어
+    public Color innerRingBorderColor = new Color(1.0f, 0.35f, 0.40f, 1.0f); // 중앙 붉�? ?�두�?�?
 
-    [Tooltip("바깥 수축 링 초기 색상 (원거리 - 옐로우)")]
-    public Color shrinkingColorStart = new Color(1.0f, 0.92f, 0.20f, 1.0f); // 옐로우
-    [Tooltip("바깥 수축 링 중거리 색상 (오렌지)")]
-    public Color shrinkingColorMid = new Color(1.0f, 0.55f, 0.15f, 1.0f);   // 오렌지
-    [Tooltip("바깥 수축 링 초근접 색상 (근거리 - 레드)")]
-    public Color shrinkingColorEnd = new Color(1.0f, 0.15f, 0.22f, 1.0f);   // 레드
+    [Tooltip("바깥 ?�축 �?초기 ?�상 (?�거�?- ?�로??")]
+    public Color shrinkingColorStart = new Color(1.0f, 0.92f, 0.20f, 1.0f); // ?�로??
+    [Tooltip("바깥 ?�축 �?중거�??�상 (?�렌지)")]
+    public Color shrinkingColorMid = new Color(1.0f, 0.55f, 0.15f, 1.0f);   // ?�렌지
+    [Tooltip("바깥 ?�축 �?초근???�상 (근거�?- ?�드)")]
+    public Color shrinkingColorEnd = new Color(1.0f, 0.15f, 0.22f, 1.0f);   // ?�드
 
     [Range(0.05f, 0.6f)]
-    public float shrinkingDiscAlpha = 0.28f; // 바깥 수축 디스크 반투명 채움 농도
+    public float shrinkingDiscAlpha = 0.28f; // 바깥 ?�축 ?�스??반투�?채�? ?�도
 
     private GameObject innerCoreObj;
     private GameObject innerBorderObj;
@@ -71,7 +71,7 @@ public class RhythmRingIndicator : MonoBehaviour
 
         if (arcadeStone != null && arcadeStone.enabled)
         {
-            stone = null; // 아케이드 모드에서는 레거시 stone 참조 강제 해제
+            stone = null; // ?��??�드 모드?�서???�거??stone 참조 강제 ?�제
             return;
         }
 
@@ -125,7 +125,7 @@ public class RhythmRingIndicator : MonoBehaviour
         innerCoreMat = (rippleShader != null) ? new Material(rippleShader) : (unlitShader != null ? new Material(unlitShader) : new Material(Shader.Find("Standard")));
         shrinkingDiscMat = (rippleShader != null) ? new Material(rippleShader) : (unlitShader != null ? new Material(unlitShader) : new Material(Shader.Find("Standard")));
 
-        // 🌟 실제 씬의 수면 머티리얼(M_StylizedWater)에서 실제 물 노멀 텍스처와 파동 파라미터 1:1 직결
+        // ?�� ?�제 ?�의 ?�면 머티리얼(M_StylizedWater)?�서 ?�제 �??��? ?�스처�? ?�동 ?�라미터 1:1 직결
         Material waterMat = Resources.Load<Material>("M_StylizedWater");
 #if UNITY_EDITOR
         if (waterMat == null)
@@ -144,7 +144,7 @@ public class RhythmRingIndicator : MonoBehaviour
                 if (waterNormal != null) innerCoreMat.SetTexture("_NormalMap", waterNormal);
                 innerCoreMat.SetFloat("_NormalScale", normalScale);
                 innerCoreMat.SetFloat("_NormalSpeed", 0.5f);
-                innerCoreMat.SetFloat("_DistortionStrength", 0.15f); // 은은한 0.15 수면 싱크 일렁임
+                innerCoreMat.SetFloat("_DistortionStrength", 0.15f); // ?�?�??0.15 ?�면 ?�크 ?�렁??
             }
             if (shrinkingDiscMat != null)
             {
@@ -162,7 +162,7 @@ public class RhythmRingIndicator : MonoBehaviour
             }
         }
 
-        // 🌟 1. [안쪽] 진하고 불투명한 퍼펙트 타깃 코어 디스크 (Inner Target Core)
+        // ?�� 1. [?�쪽] 진하�?불투명한 ?�펙???��?코어 ?�스??(Inner Target Core)
         innerCoreObj = new GameObject("InnerTargetCore_SolidWaterFixed");
         innerCoreFilter = innerCoreObj.AddComponent<MeshFilter>();
         innerCoreRenderer = innerCoreObj.AddComponent<MeshRenderer>();
@@ -174,15 +174,15 @@ public class RhythmRingIndicator : MonoBehaviour
         innerCoreObj.transform.position = Vector3.zero;
         innerCoreObj.transform.rotation = Quaternion.identity;
 
-        // 🌟 2. [안쪽] 퍼펙트 타깃 테두리 링
+        // ?�� 2. [?�쪽] ?�펙???��??�두�?�?
         innerBorderObj = new GameObject("InnerTargetBorder_WaterFixed");
         innerRingBorder = innerBorderObj.AddComponent<LineRenderer>();
         ConfigureLineRenderer(innerRingBorder, lineMat, innerRingBorderColor, lineWidth);
-        innerRingBorder.alignment = LineAlignment.View;
+        innerRingBorder.alignment = LineAlignment.TransformZ;
         innerBorderObj.transform.position = Vector3.zero;
-        innerBorderObj.transform.rotation = Quaternion.identity;
+        innerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
-        // 🌟 3. [바깥쪽] 옐로우->오렌지->레드로 수축하는 반투명 디스크 (Shrinking Disc)
+        // ?�� 3. [바깥�? ?�로??>?�렌지->?�드�??�축?�는 반투�??�스??(Shrinking Disc)
         shrinkingDiscObj = new GameObject("ShrinkingDisc_FilledWaterFixed");
         shrinkingDiscFilter = shrinkingDiscObj.AddComponent<MeshFilter>();
         shrinkingDiscRenderer = shrinkingDiscObj.AddComponent<MeshRenderer>();
@@ -194,13 +194,13 @@ public class RhythmRingIndicator : MonoBehaviour
         shrinkingDiscObj.transform.position = Vector3.zero;
         shrinkingDiscObj.transform.rotation = Quaternion.identity;
 
-        // 🌟 4. [바깥쪽] 수축 링 테두리 라인
+        // ?�� 4. [바깥�? ?�축 �??�두�??�인
         outerBorderObj = new GameObject("OuterShrinkingBorder_WaterFixed");
         outerRingBorder = outerBorderObj.AddComponent<LineRenderer>();
         ConfigureLineRenderer(outerRingBorder, lineMat, shrinkingColorStart, lineWidth * 1.2f);
-        outerRingBorder.alignment = LineAlignment.View;
+        outerRingBorder.alignment = LineAlignment.TransformZ;
         outerBorderObj.transform.position = Vector3.zero;
-        outerBorderObj.transform.rotation = Quaternion.identity;
+        outerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
     }
 
     private void ConfigureLineRenderer(LineRenderer lr, Material mat, Color col, float width)
@@ -248,7 +248,7 @@ public class RhythmRingIndicator : MonoBehaviour
             return;
         }
 
-        // 🎵 1. 리듬 아케이드 모드 전용 (BPM 고정 주기 기반 정확한 수학적 링 수축)
+        // ?�� 1. 리듬 ?��??�드 모드 ?�용 (BPM 고정 주기 기반 ?�확???�학??�??�축)
         if (arcadeStone != null && arcadeStone.enabled)
         {
             int curSkip = arcadeStone.skipCount;
@@ -258,7 +258,7 @@ public class RhythmRingIndicator : MonoBehaviour
                 isTargetLocked = false;
             }
 
-            // 수축 비율 계산 (0.0: 정박 착수 순간, 1.0: 바운스 시작 상공)
+            // ?�축 비율 계산 (0.0: ?�박 착수 ?�간, 1.0: 바운???�작 ?�공)
             float normRemaining = (arcadeStone.currentCycleDuration > 0.001f) 
                 ? (arcadeStone.currentCycleDuration - arcadeStone.CycleElapsedTime) / arcadeStone.currentCycleDuration 
                 : 0f;
@@ -271,7 +271,7 @@ public class RhythmRingIndicator : MonoBehaviour
             return;
         }
 
-        // 🌊 2. 롱디스턴스 물리 모드 전용 로직
+        // ?�� 2. 롱디?�턴??물리 모드 ?�용 로직
         if (stone == null || !stone.enabled)
         {
             SetRingsActive(false);
@@ -289,7 +289,7 @@ public class RhythmRingIndicator : MonoBehaviour
         Vector3 vel = rb.linearVelocity;
         float currentWaterY = (stone != null && stone.waterLevel > 0.1f) ? stone.waterLevel : waterLevel;
 
-        // 새 바운스 주기 시작 시 타깃 락 리셋
+        // ??바운??주기 ?�작 ???��???리셋
         if (stone.skipCount != lastSkipIndex)
         {
             lastSkipIndex = stone.skipCount;
@@ -302,7 +302,7 @@ public class RhythmRingIndicator : MonoBehaviour
         float deltaY = stonePos.y - currentWaterY;
         float timeToImpact = 0f;
 
-        // 🌟 바운스/정점 상승 구간에서 최초 1회만 착수 예상 지점을 계산하여 수면에 말뚝 고정(Target Lock)
+        // ?�� 바운???�점 ?�승 구간?�서 최초 1?�만 착수 ?�상 지?�을 계산?�여 ?�면??말뚝 고정(Target Lock)
         if (deltaY > 0.05f)
         {
             float a = 0.5f * effGravity;
@@ -340,7 +340,7 @@ public class RhythmRingIndicator : MonoBehaviour
             isTargetLocked = false;
         }
 
-        // 표시 가시거리 및 판정 윈도우 계산
+        // ?�시 가?�거�?�??�정 ?�도??계산
         float dynWindow = (stone != null) ? Mathf.Lerp(stone.timingWindowHeight, 1.4f, Mathf.Clamp01(stone.skipCount / 30f)) : 2.4f;
         bool shouldShow = (deltaY <= dynWindow * 1.5f || (timeToImpact > 0f && timeToImpact < 0.65f && vel.y < 2.5f));
         SetRingsActive(shouldShow);
@@ -364,8 +364,8 @@ public class RhythmRingIndicator : MonoBehaviour
     {
         SetRingsActive(true);
 
-        if (innerBorderObj != null) innerBorderObj.transform.rotation = Quaternion.identity;
-        if (outerBorderObj != null) outerBorderObj.transform.rotation = Quaternion.identity;
+        if (innerBorderObj != null) innerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
+        if (outerBorderObj != null) outerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
         float compensatedTargetRadius = (stone != null && stone.ringTargetRadius > 0.01f) ? stone.ringTargetRadius : targetRingRadius;
         float compensatedLineWidth = (stone != null && stone.ringLineWidth > 0.001f) ? stone.ringLineWidth : lineWidth;
@@ -382,7 +382,7 @@ public class RhythmRingIndicator : MonoBehaviour
             outerRingBorder.endWidth = compensatedLineWidth * 1.25f;
         }
 
-        // 🌟 1. [바깥 수축 링] 옐로우(1.0) ➔ 오렌지(0.5) ➔ 레드(0.0) 열기 그라데이션
+        // ?�� 1. [바깥 ?�축 �? ?�로??1.0) ???�렌지(0.5) ???�드(0.0) ?�기 그라?�이??
         Color currentOuterColor;
         if (ratio > 0.5f)
         {
@@ -398,17 +398,17 @@ public class RhythmRingIndicator : MonoBehaviour
         Color discFillColor = currentOuterColor;
         discFillColor.a = shrinkingDiscAlpha;
 
-        // 🎯 [안쪽] 1. 불투명하고 진한 퍼펙트 타깃 코어 디스크 (수면 고정)
+        // ?�� [?�쪽] 1. 불투명하�?진한 ?�펙???��?코어 ?�스??(?�면 고정)
         DrawFilledDisc(innerCoreObj, innerCoreFilter, innerCoreRenderer, innerCoreMesh, innerCoreMat, impactPos + Vector3.up * 0.002f, compensatedTargetRadius, innerCoreColor);
 
-        // 🎯 [안쪽] 2. 퍼펙트 타깃 테두리 링
+        // ?�� [?�쪽] 2. ?�펙???��??�두�?�?
         DrawFlatCircle(innerBorderObj, innerRingBorder, impactPos + Vector3.up * 0.003f, compensatedTargetRadius, innerRingBorderColor);
 
-        // ⏱️ [바깥쪽] 3. 옐로우/오렌지/레드로 좁혀지는 반투명 수축 디스크
+        // ?�️ [바깥�? 3. ?�로???�렌지/?�드�?좁�?지??반투�??�축 ?�스??
         float currentOuterRadius = compensatedTargetRadius * Mathf.Lerp(1.0f, curMaxMultiplier, ratio);
         DrawFilledDisc(shrinkingDiscObj, shrinkingDiscFilter, shrinkingDiscRenderer, shrinkingDiscMesh, shrinkingDiscMat, impactPos + Vector3.up * 0.001f, currentOuterRadius, discFillColor);
 
-        // ⏱️ [바깥쪽] 4. 수축 외곽 테두리 링
+        // ?�️ [바깥�? 4. ?�축 ?�곽 ?�두�?�?
         DrawFlatCircle(outerBorderObj, outerRingBorder, impactPos + Vector3.up * 0.004f, currentOuterRadius, currentOuterColor);
     }
 
@@ -426,10 +426,10 @@ public class RhythmRingIndicator : MonoBehaviour
         }
 
         Vector3[] vertices = new Vector3[segments + 1];
-        int[] triangles = new int[segments * 6]; // 양면 렌더링 (Double-sided)
+        int[] triangles = new int[segments * 6]; // ?�면 ?�더�?(Double-sided)
         Color[] colors = new Color[segments + 1];
 
-        vertices[0] = Vector3.zero; // 로컬 원점 (center에 hostObj 배치)
+        vertices[0] = Vector3.zero; // 로컬 ?�점 (center??hostObj 배치)
         colors[0] = color;
 
         float angleStep = 360f / segments;
@@ -442,12 +442,12 @@ public class RhythmRingIndicator : MonoBehaviour
             colors[i + 1] = color;
 
             int next = (i + 1) % segments;
-            // 윗면 (상향 노멀)
+            // ?�면 (?�향 ?��?)
             triangles[i * 6] = 0;
             triangles[i * 6 + 1] = next + 1;
             triangles[i * 6 + 2] = i + 1;
 
-            // 아랫면 (하향 노멀)
+            // ?�랫�?(?�향 ?��?)
             triangles[i * 6 + 3] = 0;
             triangles[i * 6 + 4] = i + 1;
             triangles[i * 6 + 5] = next + 1;
@@ -465,7 +465,7 @@ public class RhythmRingIndicator : MonoBehaviour
         if (lr == null || hostObj == null) return;
         lr.enabled = true;
         hostObj.transform.position = Vector3.zero;
-        hostObj.transform.rotation = Quaternion.identity;
+        hostObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
         lr.startColor = color;
         lr.endColor = color;
 

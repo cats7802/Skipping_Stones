@@ -11,12 +11,21 @@
 ### ✅ 1. 스탠드얼론 빌드(EXE/APK) 단일 진실 공급원 직렬화 아키텍처 완성
 - **배경 및 원인**: Resources 복제본 의존 및 `#if UNITY_EDITOR` 분기 편중으로 인해 스탠드얼론 빌드시 로비 쇼케이스, 맵 프리팹, 해금 데이터가 증발하던 문제 원천 해결.
 - **해결 내역**:
-  - `Lobby.prefab`: 원본 프리팹 4종 돌(`Stone`, `Stone_Blue`, `Stone_Green`, `Stone_red`) 및 캐릭터 3종(`Thrower_001`, `Thrower_Test`, `Thrower_Minwoo`)을 인스펙터에 직접 직렬화 연결하여 원본 수정 시 빌드에 100% 즉시 반영되도록 구현.
+  - `Lobby.prefab`: 원본 프리팹 4종 돌(`Stone`, `Stone_Blue`, `Stone_Green`, `Stone_red`) 및 캐릭터 4종(`Thrower_001`, `Thrower_Test`, `Thrower_Minwoo`, `Thrower_Kai`)을 인스펙터에 직접 직렬화 연결하여 원본 수정 시 빌드에 100% 즉시 반영되도록 구현.
   - `MetaUIManager.cs`: 맵 프리팹 직렬화 리스트 및 다중 폴백 스캔 체계 구축.
   - `SampleScene.unity`: `GameController`의 `defaultMapPrefab`을 최신 `New_TestEnvMgr`로 직접 연결.
   - `GameDataManager.cs`: 빌드본에서도 `devUnlockAllByDefault` 설정 시 모든 캐릭터 및 돌 4종 전체 해금 상태로 안전 로드 보장.
 
-### ✅ 2. 판정 링 시각 효과(VFX)와 물리 돌의 완전 독립화 (`RhythmRingIndicator.cs`, `SkippingStone.cs`, `ArcadeSkippingStone.cs`)
+### ✅ 2. 신규 캐릭터 카이(Kai) 로비 3D 쇼케이스 및 애니메이터 정상화
+- **배경 및 원인**:
+  - `Kai_CTRL.controller`의 기본 상태가 골반부터 시작하는 FBX 클립을 참조하던 결함으로 인해 캐릭터가 90도 회전되어 누운 채 대기하던 현상 발생.
+  - 로비 프리팹의 캐릭터 목록에 일부 슬롯이 `null`로 비어 있어 슬라이드 넘김 시 캐릭터 소실 및 에러 발생.
+- **해결 내역**:
+  - `Kai_CTRL.controller` 기본 상태를 `Kai_Idle` 기반의 안정된 대기 모션으로 재구축.
+  - `Lobby.prefab` 및 `Resources/Lobby.prefab`에 캐릭터 4종(`Thrower_001`, `Thrower_Test`, `Thrower_Minwoo`, `Thrower_Kai`)을 완전 동기화.
+  - 로비에서 캐릭터 좌우 넘기기, 360도 회전, 이름/스탯 UI 연동 완료.
+
+### ✅ 3. 판정 링 시각 효과(VFX)와 물리 돌의 완전 독립화 (`RhythmRingIndicator.cs`, `SkippingStone.cs`, `ArcadeSkippingStone.cs`)
 - **배경 및 원인**: 판정 링(`RhythmRingIndicator`)이 돌의 하위 자식(`transform.SetParent(transform)`)으로 묶여 있어, 돌의 실시간 3축 회전(피치 각도 및 초당 1440도 스핀)을 상속받아 링이 공중에 서 버리는 결함 발생.
 - **해결 내역**:
   - `RhythmRingIndicator`를 돌의 하위 자식이 아닌 **독립된 최상위 월드 루트 오브젝트(`[RhythmRingIndicator_WorldEffect]`)**로 완전 분리.

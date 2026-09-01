@@ -77,7 +77,17 @@ namespace SkippingStones.Visuals
                 string savedId = dm.UserData.selectedCharacterId;
                 for (int i = 0; i < characterPrefabs.Count; i++)
                 {
-                    if (characterPrefabs[i] != null && characterPrefabs[i].name.Equals(savedId, StringComparison.OrdinalIgnoreCase))
+                    if (characterPrefabs[i] == null) continue;
+                    string pName = characterPrefabs[i].name;
+                    if (pName.Equals(savedId, StringComparison.OrdinalIgnoreCase))
+                    {
+                        targetIndex = i;
+                        break;
+                    }
+
+                    // 카탈로그 ID 또는 프리팹 경로와의 일치 검사
+                    var catItem = dm.characterCatalog?.Find(c => c.id.Equals(savedId, StringComparison.OrdinalIgnoreCase));
+                    if (catItem != null && !string.IsNullOrEmpty(catItem.prefabPath) && catItem.prefabPath.Contains(pName))
                     {
                         targetIndex = i;
                         break;
@@ -172,6 +182,12 @@ namespace SkippingStones.Visuals
                         if (rPath.StartsWith("Assets/prefab/")) rPath = rPath.Substring("Assets/prefab/".Length);
                         if (rPath.EndsWith(".prefab")) rPath = rPath.Substring(0, rPath.Length - ".prefab".Length);
                         loadedPrefab = Resources.Load<GameObject>(rPath);
+
+                        if (loadedPrefab == null)
+                        {
+                            string fileName = System.IO.Path.GetFileNameWithoutExtension(info.prefabPath);
+                            loadedPrefab = Resources.Load<GameObject>(fileName) ?? Resources.Load<GameObject>($"Character/{fileName}");
+                        }
                     }
 #endif
                     if (loadedPrefab != null && !characterPrefabs.Contains(loadedPrefab))
@@ -181,17 +197,11 @@ namespace SkippingStones.Visuals
                 }
             }
 
-            // 프리팹에 인스펙터로 사전 등록된 직렬화 목록이 이미 존재하면 그대로 보존
-            if (characterPrefabs != null && characterPrefabs.Count > 0)
-            {
-                return;
-            }
-
             // 만약 아무것도 못 찾았을 경우 에셋 폴더 내 기본 캐릭터 폴백 등록
             if (characterPrefabs.Count == 0)
             {
 #if UNITY_EDITOR
-                string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Character" });
+                string[] guids = UnityEditor.AssetDatabase.FindAssets("t:Prefab", new[] { "Assets/prefab/Character", "Assets/Resources/Character" });
                 foreach (string guid in guids)
                 {
                     string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guid);
@@ -207,15 +217,17 @@ namespace SkippingStones.Visuals
 
         private void Update()
         {
-            // 인게임 화면에서는 쇼케이스 캐릭터를 안전하게 숨김 처리
+            // 인게임 및 타이틀 화면에서는 쇼케이스 캐릭터를 안전하게 숨김 처리 (로비 또는 모달 상태에서만 표시)
             if (SkippingStones.UI.MetaUIManager.Instance != null)
             {
-                bool isInGame = SkippingStones.UI.MetaUIManager.Instance.currentScreen == SkippingStones.UI.MetaScreen.InGame;
-                if (isInGame && currentSpawnedCharacter != null && currentSpawnedCharacter.activeSelf)
+                var screen = SkippingStones.UI.MetaUIManager.Instance.currentScreen;
+                bool shouldShow = (screen == SkippingStones.UI.MetaScreen.Lobby);
+
+                if (!shouldShow && currentSpawnedCharacter != null && currentSpawnedCharacter.activeSelf)
                 {
                     currentSpawnedCharacter.SetActive(false);
                 }
-                else if (!isInGame && currentSpawnedCharacter != null && !currentSpawnedCharacter.activeSelf)
+                else if (shouldShow && currentSpawnedCharacter != null && !currentSpawnedCharacter.activeSelf)
                 {
                     currentSpawnedCharacter.SetActive(true);
                 }

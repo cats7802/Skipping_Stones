@@ -80,9 +80,10 @@ MonoBehaviour:
   targetCamera: {fileID: 5510438674477548156}
   stagingPosition: {fileID: 8958744429749833219}
   characterPrefabs:
-  - {fileID: 1123660413367043095, guid: 31a1e07c8895f704e990d5e8f83aad68, type: 3}
-  - {fileID: 1123660413367043095, guid: be5b98db32eaffb4ca59e516f6ed073d, type: 3}
-  - {fileID: 1123660413367043095, guid: c6c8a086a072e414fb5c97067589ec87, type: 3}
+  - {fileID: 4424490057512640635, guid: 31a1e07c8895f704e990d5e8f83aad68, type: 3}
+  - {fileID: 4424490057512640635, guid: be5b98db32eaffb4ca59e516f6ed073d, type: 3}
+  - {fileID: 4424490057512640635, guid: c6c8a086a072e414fb5c97067589ec87, type: 3}
+  - {fileID: 3307212811502473416, guid: 980041f97f3429d4388064c82f870594, type: 3}
   transitionDuration: 1
   entryOffsetDistance: 3.5
   entryAngleOffset: 55

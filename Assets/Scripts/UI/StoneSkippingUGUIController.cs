@@ -478,6 +478,7 @@ public class StoneSkippingUGUIController : MonoBehaviour
         if (aimingObj != null) aimingObj.SetActive(false);
         if (chargingObj != null) chargingObj.SetActive(false);
         if (flightHudObj != null) flightHudObj.SetActive(false);
+        if (flightTouchButtonsContainer != null) flightTouchButtonsContainer.SetActive(false);
         if (replayObj != null) replayObj.SetActive(false);
         if (resultObj != null) resultObj.SetActive(false);
         if (aquariumModalObj != null) aquariumModalObj.SetActive(false);
@@ -548,6 +549,7 @@ public class StoneSkippingUGUIController : MonoBehaviour
             if (aimingObj != null) aimingObj.SetActive(false);
             if (chargingObj != null) chargingObj.SetActive(false);
             if (flightHudObj != null) flightHudObj.SetActive(false);
+            if (flightTouchButtonsContainer != null) flightTouchButtonsContainer.SetActive(false);
             if (replayObj != null) replayObj.SetActive(false);
             if (resultObj != null) resultObj.SetActive(false);
             if (aquariumModalObj != null) aquariumModalObj.SetActive(false);
