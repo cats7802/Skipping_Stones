@@ -61,9 +61,9 @@ namespace SkippingStones.Arcade
         public float baseBPM = 60f;
         public int currentCombo = 0;
         public float currentBPM = 60f;
-        public float currentCycleDuration = 1.00f; // BPM 60 = 정확히 120 BPM 원곡의 2박 정박(1.00s) 싱크
-        [Tooltip("콤보에 따른 점진적 BPM 가속 활성화 여부")]
-        public bool enableComboAcceleration = false;
+        public float currentCycleDuration = 1.00f; // BPM 60 = 1.00s
+        [Tooltip("콤보에 따른 점진적 BPM 가속 활성화 여부 (음악은 원곡 유지, 돌 타이밍만 가속)")]
+        public bool enableComboAcceleration = true;
 
         [Header("🌊 모멘텀 (스태미나/라이프)")]
         public float currentMomentum = 60f;
@@ -632,16 +632,15 @@ namespace SkippingStones.Arcade
         {
             if (enableComboAcceleration)
             {
-                // 🎵 10콤보 단위 점진적 가속 테이블 (옵션 활성화 시)
-                if (currentCombo >= 40) currentBPM = 120f;
-                else if (currentCombo >= 30) currentBPM = 100f;
-                else if (currentCombo >= 20) currentBPM = 85f;
-                else if (currentCombo >= 10) currentBPM = 72f;
-                else currentBPM = baseBPM;
+                // 🎵 콤보 단위 점진적 가속 테이블 (음악은 1.0x 유지, 돌 타이밍만 쫄깃하게 가속)
+                if (currentCombo >= 40) currentBPM = 120f;      // 0.50초 (극강의 1박 질주)
+                else if (currentCombo >= 30) currentBPM = 100f; // 0.60초 (스피디 템포)
+                else if (currentCombo >= 20) currentBPM = 85f;  // 0.70초 (쾌속 가속)
+                else if (currentCombo >= 10) currentBPM = 72f;  // 0.83초 (경쾌한 긴장감)
+                else currentBPM = baseBPM;                      // 1.00초 (기본 60 BPM 편안한 출발)
             }
             else
             {
-                // 🎵 기본: 템포 고정 모드 (거리만 증가)
                 currentBPM = baseBPM;
             }
 
