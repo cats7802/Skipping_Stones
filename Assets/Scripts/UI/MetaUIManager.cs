@@ -176,6 +176,12 @@ namespace SkippingStones.UI
 
             if (screen == MetaScreen.Lobby)
             {
+                // 0. 인게임 캐릭터 및 찌꺼기 완전 정리
+                if (GameController.Instance != null)
+                {
+                    GameController.Instance.ClearInGameCharacter();
+                }
+
                 // 1. 로비 3D 프리팹 스폰 (미스폰 시)
                 if (spawnedLobbyInstance == null)
                 {

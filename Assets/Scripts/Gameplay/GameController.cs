@@ -616,6 +616,9 @@ public class GameController : MonoBehaviour
         requireTouchRelease = true;
         if (MapPIPManager.Instance != null) MapPIPManager.Instance.UpdatePIPState(false);
 
+        // 🌟 인게임 캐릭터 및 잔존 오브젝트 정리하여 로비 쇼케이스와 겹침 방지
+        ClearInGameCharacter();
+
         if (SkippingStones.UI.MetaUIManager.Instance != null)
         {
             SkippingStones.UI.MetaUIManager.Instance.ShowScreen(SkippingStones.UI.MetaScreen.Lobby);
@@ -1277,11 +1280,42 @@ public class GameController : MonoBehaviour
             if (Application.isPlaying) Destroy(mgrObj);
             else DestroyImmediate(mgrObj);
         }
+
+        // 🌟 인게임 캐릭터 완전 정리
+        ClearInGameCharacter();
+
         currentState = GameState.ModeSelect;
 
         if (SkippingStones.UI.MetaUIManager.Instance != null)
         {
             SkippingStones.UI.MetaUIManager.Instance.ShowScreen(SkippingStones.UI.MetaScreen.MapSelect);
+        }
+    }
+
+    /// <summary>
+    /// 로비 또는 맵 선택 복귀 시 씬에 남겨진 인게임 투구 캐릭터 완전 파괴/정리
+    /// </summary>
+    public void ClearInGameCharacter()
+    {
+        if (character != null)
+        {
+            var rootObj = character.transform.root.gameObject;
+            character = null;
+            if (Application.isPlaying) Destroy(rootObj);
+            else DestroyImmediate(rootObj);
+        }
+
+        // 씬 내에 잔존하는 모든 인게임 투구 캐릭터(쇼케이스 제외) 일괄 파괴
+        var allCharacters = FindObjectsByType<StoneThrowerCharacter>(FindObjectsInactive.Include);
+        foreach (var c in allCharacters)
+        {
+            if (c == null) continue;
+            if (c.gameObject.name.Contains("[Showcase") || c.gameObject.name.Contains("Showcase_Ctrl") ||
+                c.transform.root.name.Contains("[Lobby") || c.transform.root.name.Contains("[Showcase")) continue;
+
+            var root = c.transform.root.gameObject;
+            if (Application.isPlaying) Destroy(root);
+            else DestroyImmediate(root);
         }
     }
 

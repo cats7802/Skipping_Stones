@@ -21,11 +21,12 @@
   - `Kai_CTRL.controller`의 기본 상태가 골반부터 시작하는 FBX 클립을 참조하던 결함으로 누운 채 대기하던 현상 발생.
   - 프리팹 루트에 `Animator`가 붙어 클립의 본 경로를 찾지 못해 걷지 않고 미끄러져 들어오던 현상 발생.
   - 로비 카메라가 대각선(Y=73°)에 위치함에도 스테이징 고정 각도(30°)로 안착하여 카메라 정면을 보지 않던 현상 해결.
+  - 게임 플레이 후 로비 복귀 시 인게임 투구 캐릭터가 씬에 남아 쇼케이스 캐릭터와 겹쳐서 보이던 현상 발생.
 - **해결 내역**:
-  - `Thrower_Kai.prefab`의 `Animator`를 자식 모델(`Kai_Model`)로 이동시켜 `IsWalking` 걷기 및 `Idle` 호흡 애니메이션 100% 정상 구동.
+  - `Thrower_Kai.prefab` 및 `Resources/Thrower_Kai.prefab`의 `Animator`에 `Kai_IdleAvatar` 휴머노이드 아바타 연결 완료.
   - `LobbyCharacterShowcaseController.cs`에 `GetCameraFacingRotation()`을 도입하여 캐릭터 등장 및 안착 시 로비 뷰 카메라(`Lobby_CAM`)를 똑바로 응시하도록 자동 정렬.
+  - `GameController.ClearInGameCharacter()`를 구현하여 게임 종료/로비 복귀 시 인게임 캐릭터를 즉시 파괴/소멸시켜 로비 쇼케이스와 완벽 분리.
   - [🚀 GO! (맵 선택)] 클릭 시 캐릭터가 환호(`Select`) 애니메이션을 재생한 뒤 맵 선택으로 전환되도록 연동.
-  - 인게임 진입 시 `ReadyPose` 대기 및 투구 시 `Throw` 모션이 매끄럽게 연계되도록 단일 진실 고정.
 
 ### ✅ 3. 판정 링 시각 효과(VFX)와 물리 돌의 완전 독립화 (`RhythmRingIndicator.cs`, `SkippingStone.cs`, `ArcadeSkippingStone.cs`)
 - **배경 및 원인**: 판정 링(`RhythmRingIndicator`)이 돌의 하위 자식(`transform.SetParent(transform)`)으로 묶여 있어, 돌의 실시간 3축 회전(피치 각도 및 초당 1440도 스핀)을 상속받아 링이 공중에 서 버리는 결함 발생.
