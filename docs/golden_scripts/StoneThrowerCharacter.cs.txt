@@ -28,6 +28,16 @@ public class StoneThrowerCharacter : MonoBehaviour
     public Vector3 basePosition = new Vector3(0f, 0.9f, -3.8f);
     public float moveSpeed = 10f;
 
+    [Header("로비 쇼케이스 연출 설정 (캐릭터별 맞춤)")]
+    [Tooltip("걷기 모션 보유 여부 (true면 발걸음 싱크, false면 슬라이드 진입)")]
+    public bool hasWalkAnimation = false;
+    [Tooltip("쇼케이스 등장/퇴장 이동 거리 (m)")]
+    public float showcaseDistance = 2.5f;
+    [Tooltip("쇼케이스 등장/퇴장 이동 시간 (s)")]
+    public float showcaseDuration = 0.55f;
+    [Tooltip("쇼케이스 걷기 애니메이션 재생 속도 배율")]
+    public float showcaseWalkSpeed = 1.0f;
+
     [Header("실시간 상태")]
     public bool isThrowing = false;
     public bool isStoneReleased = false;

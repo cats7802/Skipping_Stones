@@ -377,7 +377,7 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 캐릭터 슬라이드/걸어나오기 트랜지션 코루틴
+        /// 캐릭터 슬라이드/걸어나오기 트랜지션 코루틴 (캐릭터별 독립 보폭/속도 동적 적용)
         /// direction: 1 = 다음(오른쪽으로 퇴장, 왼쪽에서 등장) / -1 = 이전
         /// </summary>
         private IEnumerator TransitionRoutine(int targetIndex, int direction)
@@ -389,11 +389,20 @@ namespace SkippingStones.Visuals
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
             Quaternion finalFrontRot = GetCameraFacingRotation(centerPos);
 
+            // 🌟 새 캐릭터 프리팹에서 캐릭터별 고유 쇼케이스 세팅 읽기
+            GameObject newPrefab = characterPrefabs[targetIndex];
+            var newThrowerSetting = newPrefab.GetComponentInChildren<StoneThrowerCharacter>(true);
+
+            float curDuration = (newThrowerSetting != null) ? newThrowerSetting.showcaseDuration : transitionDuration;
+            float curDistance = (newThrowerSetting != null) ? newThrowerSetting.showcaseDistance : entryOffsetDistance;
+            float curWalkSpeed = (newThrowerSetting != null) ? newThrowerSetting.showcaseWalkSpeed : 1.45f;
+            bool curHasWalk = (newThrowerSetting != null) ? newThrowerSetting.hasWalkAnimation : true;
+
             // 로비 룸 및 카메라 쿼터뷰에 맞춘 화면상 좌우 횡이동 축 계산 (기본 55도 적용)
             Vector3 moveDir = (Quaternion.Euler(0f, entryAngleOffset, 0f) * transform.right).normalized;
 
-            Vector3 exitPos = centerPos + moveDir * (direction * entryOffsetDistance);
-            Vector3 enterPos = centerPos - moveDir * (direction * entryOffsetDistance);
+            Vector3 exitPos = centerPos + moveDir * (direction * curDistance);
+            Vector3 enterPos = centerPos - moveDir * (direction * curDistance);
 
             // 진입 시 캐릭터가 바라볼 방향 (중앙을 향해 걸어오는 방향)
             Vector3 enterLookDir = (centerPos - enterPos).normalized;
@@ -404,33 +413,38 @@ namespace SkippingStones.Visuals
             Quaternion exitWalkRot = exitLookDir != Vector3.zero ? Quaternion.LookRotation(exitLookDir, Vector3.up) : finalFrontRot;
 
             // 새 캐릭터 스폰 (화면 밖, 걸어오는 방향을 바라보며 시작)
-            GameObject newPrefab = characterPrefabs[targetIndex];
             GameObject newChr = Instantiate(newPrefab, enterPos, enterWalkRot, stagingPosition != null ? stagingPosition : transform);
             SetupCharacterInstance(newChr);
 
-            // 걷기 모션 강제 활성화 및 물리 보폭 싱크 (0.70m / 1.4s = 0.50m/s -> 1.45x)
+            // 걷기 모션이 있는 캐릭터는 걷기 모션 활성화 및 보폭 싱크 속도 적용
             Animator newAnim = newChr.GetComponentInChildren<Animator>();
             if (newAnim != null)
             {
                 newAnim.enabled = true;
-                newAnim.speed = 1.45f;
-                if (HasParameter(newAnim, "IsWalking")) newAnim.SetBool("IsWalking", true);
+                newAnim.speed = curWalkSpeed;
+                if (curHasWalk && HasParameter(newAnim, "IsWalking"))
+                {
+                    newAnim.SetBool("IsWalking", true);
+                }
             }
 
-            // 퇴장 캐릭터도 걸어서 퇴장
+            // 퇴장 캐릭터도 걷기 모션 지원 시 활성화
             Animator oldAnim = oldChr != null ? oldChr.GetComponentInChildren<Animator>() : null;
             if (oldAnim != null)
             {
                 oldAnim.enabled = true;
-                oldAnim.speed = 1.45f;
-                if (HasParameter(oldAnim, "IsWalking")) oldAnim.SetBool("IsWalking", true);
+                oldAnim.speed = curWalkSpeed;
+                if (curHasWalk && HasParameter(oldAnim, "IsWalking"))
+                {
+                    oldAnim.SetBool("IsWalking", true);
+                }
             }
 
             float elapsed = 0f;
-            while (elapsed < transitionDuration)
+            while (elapsed < curDuration)
             {
                 elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / transitionDuration);
+                float t = Mathf.Clamp01(elapsed / curDuration);
                 float ease = Mathf.SmoothStep(0f, 1f, t);
 
                 if (oldChr != null)

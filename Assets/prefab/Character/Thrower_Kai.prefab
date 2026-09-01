@@ -55,6 +55,10 @@ MonoBehaviour:
   stoneDummyRotationEuler: {x: 90, y: 0, z: 0}
   basePosition: {x: 0, y: 0.9, z: -3.8}
   moveSpeed: 10
+  hasWalkAnimation: 1
+  showcaseDistance: 0.7
+  showcaseDuration: 1.4
+  showcaseWalkSpeed: 1.45
   isThrowing: 0
   isStoneReleased: 0
   currentPosition: {x: 0, y: 0, z: 0}
