@@ -182,7 +182,7 @@ namespace SkippingStones.UI
                     GameController.Instance.ClearInGameCharacter();
                 }
 
-                // 1. 로비 3D 프리팹 스폰 (미스폰 시)
+                // 1. 로비 3D 프리팹 스폰 (항상 단일 진실로 완전 초기화)
                 if (spawnedLobbyInstance == null)
                 {
                     GameObject prefabToUse = lobbyPrefab;
@@ -228,6 +228,7 @@ namespace SkippingStones.UI
                     spawnedCharacterController = spawnedLobbyInstance.GetComponentInChildren<SkippingStones.Visuals.LobbyCharacterShowcaseController>();
                     if (spawnedCharacterController != null)
                     {
+                        spawnedCharacterController.ClearAllShowcaseCharacters();
                         spawnedCharacterController.InitializeShowcase();
                     }
                 }
@@ -652,9 +653,19 @@ namespace SkippingStones.UI
                 if (spawnedCharacterController != null)
                 {
                     spawnedCharacterController.PlaySelectAnimation();
+                    StartCoroutine(GoToMapSelectWithDelay(0.45f));
                 }
-                ShowScreen(MetaScreen.MapSelect);
+                else
+                {
+                    ShowScreen(MetaScreen.MapSelect);
+                }
             }
+        }
+
+        private System.Collections.IEnumerator GoToMapSelectWithDelay(float delay)
+        {
+            yield return new WaitForSeconds(delay);
+            ShowScreen(MetaScreen.MapSelect);
         }
         #endregion
 

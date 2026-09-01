@@ -22,11 +22,11 @@ namespace SkippingStones.Visuals
         [Header("캐릭터 프리팹 목록 (자동 스캔)")]
         [SerializeField] private List<GameObject> characterPrefabs = new List<GameObject>();
 
-        [Header("트랜지션 및 회전 설정")]
-        [SerializeField] private float transitionDuration = 0.55f;
-        [SerializeField] private float entryOffsetDistance = 3.5f; // 스테이징 기준 좌/우 스폰 거리
-        [SerializeField] private float entryAngleOffset = 55f;     // 진입/퇴장 각도 보정 (기존 45도 + 10도 = 55도)
-        [SerializeField] private float rotationSensitivity = 0.4f; // 드래그 회전 감도
+        [Header("트랜지션 및 회전 설정 (보폭 23.2cm 물리 싱크)")]
+        [SerializeField] private float transitionDuration = 1.4f;   // 3걸음 진입 시간 (1.4초)
+        [SerializeField] private float entryOffsetDistance = 0.70f; // 보폭 기준 3걸음 실제 물리 이동 거리 (0.70m)
+        [SerializeField] private float entryAngleOffset = 55f;      // 진입/퇴장 각도 보정 (55도)
+        [SerializeField] private float rotationSensitivity = 0.4f;  // 드래그 회전 감도
 
         [Header("상태 모니터링")]
         [SerializeField] private int currentCharacterIndex = 0;
@@ -405,12 +405,26 @@ namespace SkippingStones.Visuals
 
             // 새 캐릭터 스폰 (화면 밖, 걸어오는 방향을 바라보며 시작)
             GameObject newPrefab = characterPrefabs[targetIndex];
-            GameObject newChr = Instantiate(newPrefab, enterPos, enterWalkRot);
+            GameObject newChr = Instantiate(newPrefab, enterPos, enterWalkRot, stagingPosition != null ? stagingPosition : transform);
             SetupCharacterInstance(newChr);
 
-            // 걷기 모션이 있다면 트리거
+            // 걷기 모션 강제 활성화 및 물리 보폭 싱크 (0.70m / 1.4s = 0.50m/s -> 1.45x)
             Animator newAnim = newChr.GetComponentInChildren<Animator>();
-            if (newAnim != null) newAnim.SetBool("IsWalking", true);
+            if (newAnim != null)
+            {
+                newAnim.enabled = true;
+                newAnim.speed = 1.45f;
+                if (HasParameter(newAnim, "IsWalking")) newAnim.SetBool("IsWalking", true);
+            }
+
+            // 퇴장 캐릭터도 걸어서 퇴장
+            Animator oldAnim = oldChr != null ? oldChr.GetComponentInChildren<Animator>() : null;
+            if (oldAnim != null)
+            {
+                oldAnim.enabled = true;
+                oldAnim.speed = 1.45f;
+                if (HasParameter(oldAnim, "IsWalking")) oldAnim.SetBool("IsWalking", true);
+            }
 
             float elapsed = 0f;
             while (elapsed < transitionDuration)
@@ -438,7 +452,11 @@ namespace SkippingStones.Visuals
                 yield return null;
             }
 
-            if (oldChr != null) Destroy(oldChr);
+            if (oldChr != null)
+            {
+                if (Application.isPlaying) Destroy(oldChr);
+                else DestroyImmediate(oldChr);
+            }
 
             currentSpawnedCharacter = newChr;
             if (currentSpawnedCharacter != null)
@@ -450,8 +468,9 @@ namespace SkippingStones.Visuals
 
             if (newAnim != null)
             {
-                newAnim.SetBool("IsWalking", false);
-                newAnim.SetTrigger("Idle");
+                newAnim.speed = 1f;
+                if (HasParameter(newAnim, "IsWalking")) newAnim.SetBool("IsWalking", false);
+                if (HasParameter(newAnim, "Idle")) newAnim.SetTrigger("Idle");
             }
 
             currentCharacterIndex = targetIndex;
@@ -460,13 +479,19 @@ namespace SkippingStones.Visuals
             isTransitioning = false;
         }
 
+        private bool HasParameter(Animator anim, string paramName)
+        {
+            if (anim == null || anim.runtimeAnimatorController == null) return false;
+            foreach (var p in anim.parameters)
+            {
+                if (p.name.Equals(paramName, StringComparison.OrdinalIgnoreCase)) return true;
+            }
+            return false;
+        }
+
         private void SpawnCharacterInstant(int index)
         {
-            if (currentSpawnedCharacter != null)
-            {
-                Destroy(currentSpawnedCharacter);
-                currentSpawnedCharacter = null;
-            }
+            ClearAllShowcaseCharacters();
 
             if (index < 0 || index >= characterPrefabs.Count) return;
 
@@ -482,17 +507,50 @@ namespace SkippingStones.Visuals
             NotifyCharacterChanged();
         }
 
+        public void ClearAllShowcaseCharacters()
+        {
+            if (currentSpawnedCharacter != null)
+            {
+                if (Application.isPlaying) Destroy(currentSpawnedCharacter);
+                else DestroyImmediate(currentSpawnedCharacter);
+                currentSpawnedCharacter = null;
+            }
+
+            // 하위의 모든 [Showcase_Chr] 오브젝트 일괄 정리
+            var allShowcase = GetComponentsInChildren<Transform>(true);
+            foreach (var t in allShowcase)
+            {
+                if (t != null && t.gameObject.name.StartsWith("[Showcase_Chr]"))
+                {
+                    if (Application.isPlaying) Destroy(t.gameObject);
+                    else DestroyImmediate(t.gameObject);
+                }
+            }
+        }
+
         private void SetupCharacterInstance(GameObject chrInstance)
         {
             if (chrInstance == null) return;
             chrInstance.name = $"[Showcase_Chr]_{chrInstance.name}";
 
-            // 쇼케이스용으로 안전 처리: StoneThrowerCharacter 컴포넌트를 제거하여 인게임 캐릭터 검색 시 절대 잡히지 않도록 분리
-            var thrower = chrInstance.GetComponentInChildren<StoneThrowerCharacter>();
-            if (thrower != null)
+            // 쇼케이스용으로 안전 처리: StoneThrowerCharacter 컴포넌트를 즉시 제거
+            var throwers = chrInstance.GetComponentsInChildren<StoneThrowerCharacter>(true);
+            foreach (var th in throwers)
             {
-                if (Application.isPlaying) Destroy(thrower);
-                else DestroyImmediate(thrower);
+                if (th != null)
+                {
+                    if (Application.isPlaying) Destroy(th);
+                    else DestroyImmediate(th);
+                }
+            }
+
+            // 애니메이터 정상화
+            var anim = chrInstance.GetComponentInChildren<Animator>(true);
+            if (anim != null)
+            {
+                anim.enabled = true;
+                anim.speed = 1f;
+                anim.cullingMode = AnimatorCullingMode.AlwaysAnimate;
             }
 
             // 물리 연산(밀침/충돌)은 끄되, 레이캐스트 터치 감지를 위해 콜라이더는 Trigger로 유지
