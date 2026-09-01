@@ -657,7 +657,7 @@ public class StoneThrowerCharacter : MonoBehaviour
     }
 
     /// <summary>
-    /// 캐릭터를 0프레임 상태(투구 시작 대기 포즈)로 고정 (0~2단계 파워 선택 완료 전까지 유지)
+    /// 캐릭터를 투구 전 대기 상태(Idle 또는 0프레임 준비 포즈)로 유지 (0~2단계 파워 선택 완료 전까지 유지)
     /// </summary>
     public void HoldZeroFramePose()
     {
@@ -666,16 +666,29 @@ public class StoneThrowerCharacter : MonoBehaviour
         if (animator != null && animator.runtimeAnimatorController != null && animator.layerCount > 0)
         {
             animator.applyRootMotion = false;
-            animator.speed = 0f;
-            if (HasState(animator, "ReadyPose"))
+            
+            // 🌟 카이(Kai) 등 Idle 애니메이션을 보유한 캐릭터는 Idle 모션으로 자연스럽게 호흡 대기!
+            if (HasState(animator, "Idle"))
             {
+                animator.speed = 1f;
+                var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+                if (!stateInfo.IsName("Idle") && !stateInfo.IsName("Walk") && !stateInfo.IsName("Select"))
+                {
+                    animator.Play("Idle", 0, 0f);
+                }
+            }
+            else if (HasState(animator, "ReadyPose"))
+            {
+                animator.speed = 0f;
                 animator.Play("ReadyPose", 0, 0f);
+                animator.Update(0f);
             }
             else if (HasState(animator, "Throw"))
             {
+                animator.speed = 0f;
                 animator.Play("Throw", 0, 0f);
+                animator.Update(0f);
             }
-            animator.Update(0f);
         }
     }
 

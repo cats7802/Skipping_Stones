@@ -657,7 +657,7 @@ public class StoneThrowerCharacter : MonoBehaviour
     }
 
     /// <summary>
-    /// 캐릭터를 0프레임 상태(투구 시작 대기 포즈)로 고정 (0~2단계 파워 선택 완료 전까지 유지)
+    /// 캐릭터를 투구 전 대기 상태(Idle 또는 0프레임 준비 포즈)로 유지 (0~2단계 파워 선택 완료 전까지 유지)
     /// </summary>
     public void HoldZeroFramePose()
     {
@@ -666,16 +666,29 @@ public class StoneThrowerCharacter : MonoBehaviour
         if (animator != null && animator.runtimeAnimatorController != null && animator.layerCount > 0)
         {
             animator.applyRootMotion = false;
-            animator.speed = 0f;
-            if (HasState(animator, "ReadyPose"))
+            
+            // 🌟 카이(Kai) 등 Idle 애니메이션을 보유한 캐릭터는 Idle 모션으로 자연스럽게 호흡 대기!
+            if (HasState(animator, "Idle"))
             {
+                animator.speed = 1f;
+                var stateInfo = animator.GetCurrentAnimatorStateInfo(0);
+                if (!stateInfo.IsName("Idle") && !stateInfo.IsName("Walk") && !stateInfo.IsName("Select"))
+                {
+                    animator.Play("Idle", 0, 0f);
+                }
+            }
+            else if (HasState(animator, "ReadyPose"))
+            {
+                animator.speed = 0f;
                 animator.Play("ReadyPose", 0, 0f);
+                animator.Update(0f);
             }
             else if (HasState(animator, "Throw"))
             {
+                animator.speed = 0f;
                 animator.Play("Throw", 0, 0f);
+                animator.Update(0f);
             }
-            animator.Update(0f);
         }
     }
 
@@ -758,25 +771,25 @@ public class StoneThrowerCharacter : MonoBehaviour
     /// <summary>
     /// 3단계: 방향 및 파워 선택 완료 -> 캐릭터 투구 애니메이션 실행 -> 30~55프레임 페이드아웃 -> 45프레임 55f 발사 앵커 기준 카메라 선행 가속 -> 55프레임 발사
     /// </summary>
-    public void PlayThrowAnimation(System.Action<Vector3, Vector3> onCameraLeadInCallback = null, System.Action onReleaseCallback = null)
+    public void PlayThrowAnimation(System.Action<Vector3, Vector3> onCameraLeadInCallback = null, System.Action onReleaseCallback = null, float speedMultiplier = 1f)
     {
-        StartCoroutine(ThrowRoutine(onCameraLeadInCallback, onReleaseCallback));
+        StartCoroutine(ThrowRoutine(onCameraLeadInCallback, onReleaseCallback, speedMultiplier));
     }
 
-    private IEnumerator ThrowRoutine(System.Action<Vector3, Vector3> onCameraLeadInCallback, System.Action onReleaseCallback)
+    private IEnumerator ThrowRoutine(System.Action<Vector3, Vector3> onCameraLeadInCallback, System.Action onReleaseCallback, float speedMultiplier = 1f)
     {
         isThrowing = true;
         isStoneReleased = false;
         transform.rotation = currentAimRotation;
         RestoreVisibility();
 
-        // 1. 0프레임 정지 해제 및 투구 애니메이션 0프레임부터 재생 시작
+        // 1. 0프레임 정지 해제 및 투구 애니메이션 0프레임부터 재생 시작 (BPM 속도 연동)
         if (animator != null && animator.runtimeAnimatorController != null)
         {
             animator.enabled = true;
             animator.applyRootMotion = false;
             animator.cullingMode = AnimatorCullingMode.AlwaysAnimate;
-            animator.speed = 1f;
+            animator.speed = Mathf.Max(0.1f, speedMultiplier);
             if (animator.layerCount > 0) animator.SetLayerWeight(0, 1f);
 
             if (HasState(animator, "Throw"))
@@ -791,9 +804,10 @@ public class StoneThrowerCharacter : MonoBehaviour
         }
 
         float fps = (animationFps > 0f) ? animationFps : 30f;
-        float frame30Time = 30f / fps;
-        float frame45Time = 45f / fps;
-        float frame55Time = 55f / fps;
+        float actualSpeed = Mathf.Max(0.1f, speedMultiplier);
+        float frame30Time = (30f / fps) / actualSpeed;
+        float frame45Time = (45f / fps) / actualSpeed;
+        float frame55Time = (55f / fps) / actualSpeed;
 
         bool cameraLeadInTriggered = false;
         var charRenderers = GetComponentsInChildren<Renderer>(true);
