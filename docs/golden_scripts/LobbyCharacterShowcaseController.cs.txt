@@ -377,8 +377,9 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 캐릭터 슬라이드/걸어나오기 트랜지션 코루틴 (캐릭터별 독립 보폭/속도 동적 적용)
-        /// direction: 1 = 다음(오른쪽으로 퇴장, 왼쪽에서 등장) / -1 = 이전
+        /// <summary>
+        /// 캐릭터 슬라이드/걸어나오기 트랜지션 코루틴 (퇴장 완료 후 등장 순차 분리 연출)
+        /// direction: 1 = 다음(우측으로 퇴장, 좌측에서 등장) / -1 = 이전(좌측으로 퇴장, 우측에서 등장)
         /// </summary>
         private IEnumerator TransitionRoutine(int targetIndex, int direction)
         {
@@ -389,87 +390,125 @@ namespace SkippingStones.Visuals
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
             Quaternion finalFrontRot = GetCameraFacingRotation(centerPos);
 
-            // 🌟 새 캐릭터 프리팹에서 캐릭터별 고유 쇼케이스 세팅 읽기
-            GameObject newPrefab = characterPrefabs[targetIndex];
-            var newThrowerSetting = newPrefab.GetComponentInChildren<StoneThrowerCharacter>(true);
-
-            float curDuration = (newThrowerSetting != null) ? newThrowerSetting.showcaseDuration : transitionDuration;
-            float curDistance = (newThrowerSetting != null) ? newThrowerSetting.showcaseDistance : entryOffsetDistance;
-            float curWalkSpeed = (newThrowerSetting != null) ? newThrowerSetting.showcaseWalkSpeed : 1.45f;
-            bool curHasWalk = (newThrowerSetting != null) ? newThrowerSetting.hasWalkAnimation : true;
-
             // 로비 룸 및 카메라 쿼터뷰에 맞춘 화면상 좌우 횡이동 축 계산 (기본 55도 적용)
             Vector3 moveDir = (Quaternion.Euler(0f, entryAngleOffset, 0f) * transform.right).normalized;
 
-            Vector3 exitPos = centerPos + moveDir * (direction * curDistance);
-            Vector3 enterPos = centerPos - moveDir * (direction * curDistance);
+            // ==========================================
+            // [Phase 1] 기존 캐릭터 퇴장 (화면 밖으로 이동 후 완전 파괴)
+            // ==========================================
+            if (oldChr != null)
+            {
+                // 기존 캐릭터의 고유 쇼케이스 설정 확인
+                var oldThrowerSetting = oldChr.GetComponentInChildren<StoneThrowerCharacter>(true);
+                float oldDuration = (oldThrowerSetting != null) ? oldThrowerSetting.showcaseDuration : transitionDuration;
+                float oldDistance = (oldThrowerSetting != null) ? oldThrowerSetting.showcaseDistance : entryOffsetDistance;
+                float oldWalkSpeed = (oldThrowerSetting != null) ? oldThrowerSetting.showcaseWalkSpeed : 1.45f;
+                bool oldHasWalk = (oldThrowerSetting != null) ? oldThrowerSetting.hasWalkAnimation : true;
 
-            // 진입 시 캐릭터가 바라볼 방향 (중앙을 향해 걸어오는 방향)
+                // 화면 밖 안전 거리 보장 (최소 2.2m)
+                if (oldDistance < 2.0f)
+                {
+                    // 걷기 모션의 경우 보폭(약 0.5m/s) 속도 비례하여 이동 시간 자동 연장
+                    float distRatio = 2.2f / Mathf.Max(0.1f, oldDistance);
+                    oldDistance = 2.2f;
+                    if (oldHasWalk) oldDuration = Mathf.Clamp(oldDuration * distRatio, 1.2f, 2.4f);
+                }
+
+                Vector3 exitPos = centerPos + moveDir * (direction * oldDistance);
+                Vector3 exitLookDir = (exitPos - centerPos).normalized;
+                Quaternion exitWalkRot = exitLookDir != Vector3.zero ? Quaternion.LookRotation(exitLookDir, Vector3.up) : finalFrontRot;
+
+                Animator oldAnim = oldChr.GetComponentInChildren<Animator>();
+                if (oldAnim != null)
+                {
+                    oldAnim.enabled = true;
+                    oldAnim.speed = oldWalkSpeed;
+                    if (oldHasWalk && HasParameter(oldAnim, "IsWalking"))
+                    {
+                        oldAnim.SetBool("IsWalking", true);
+                    }
+                }
+
+                float elapsedExit = 0f;
+                while (elapsedExit < oldDuration)
+                {
+                    elapsedExit += Time.deltaTime;
+                    float t = Mathf.Clamp01(elapsedExit / oldDuration);
+                    float ease = Mathf.SmoothStep(0f, 1f, t);
+
+                    if (oldChr != null)
+                    {
+                        oldChr.transform.position = Vector3.Lerp(centerPos, exitPos, ease);
+                        // 퇴장 시 나가는 방향으로 회전하며 이동
+                        oldChr.transform.rotation = Quaternion.Slerp(finalFrontRot, exitWalkRot, Mathf.Clamp01(t * 2.5f));
+                    }
+                    yield return null;
+                }
+
+                if (oldChr != null)
+                {
+                    if (Application.isPlaying) Destroy(oldChr);
+                    else DestroyImmediate(oldChr);
+                    oldChr = null;
+                }
+            }
+
+            // ==========================================
+            // [Phase 2] 새 캐릭터 등장 (화면 밖에서 스폰 후 중앙으로 진입)
+            // ==========================================
+            GameObject newPrefab = characterPrefabs[targetIndex];
+            var newThrowerSetting = newPrefab.GetComponentInChildren<StoneThrowerCharacter>(true);
+
+            float newDuration = (newThrowerSetting != null) ? newThrowerSetting.showcaseDuration : transitionDuration;
+            float newDistance = (newThrowerSetting != null) ? newThrowerSetting.showcaseDistance : entryOffsetDistance;
+            float newWalkSpeed = (newThrowerSetting != null) ? newThrowerSetting.showcaseWalkSpeed : 1.45f;
+            bool newHasWalk = (newThrowerSetting != null) ? newThrowerSetting.hasWalkAnimation : true;
+
+            // 새 캐릭터도 화면 밖 안전 거리 보장 (최소 2.2m)
+            if (newDistance < 2.0f)
+            {
+                float distRatio = 2.2f / Mathf.Max(0.1f, newDistance);
+                newDistance = 2.2f;
+                if (newHasWalk) newDuration = Mathf.Clamp(newDuration * distRatio, 1.2f, 2.4f);
+            }
+
+            Vector3 enterPos = centerPos - moveDir * (direction * newDistance);
             Vector3 enterLookDir = (centerPos - enterPos).normalized;
             Quaternion enterWalkRot = enterLookDir != Vector3.zero ? Quaternion.LookRotation(enterLookDir, Vector3.up) : finalFrontRot;
 
-            // 퇴장 시 캐릭터가 바라볼 방향 (화면 밖으로 나가는 방향)
-            Vector3 exitLookDir = (exitPos - centerPos).normalized;
-            Quaternion exitWalkRot = exitLookDir != Vector3.zero ? Quaternion.LookRotation(exitLookDir, Vector3.up) : finalFrontRot;
-
-            // 새 캐릭터 스폰 (화면 밖, 걸어오는 방향을 바라보며 시작)
+            // 새 캐릭터 스폰 (화면 밖, 중앙을 향해 걸어오는 방향)
             GameObject newChr = Instantiate(newPrefab, enterPos, enterWalkRot, stagingPosition != null ? stagingPosition : transform);
             SetupCharacterInstance(newChr);
 
-            // 걷기 모션이 있는 캐릭터는 걷기 모션 활성화 및 보폭 싱크 속도 적용
             Animator newAnim = newChr.GetComponentInChildren<Animator>();
             if (newAnim != null)
             {
                 newAnim.enabled = true;
-                newAnim.speed = curWalkSpeed;
-                if (curHasWalk && HasParameter(newAnim, "IsWalking"))
+                newAnim.speed = newWalkSpeed;
+                if (newHasWalk && HasParameter(newAnim, "IsWalking"))
                 {
                     newAnim.SetBool("IsWalking", true);
                 }
             }
 
-            // 퇴장 캐릭터도 걷기 모션 지원 시 활성화
-            Animator oldAnim = oldChr != null ? oldChr.GetComponentInChildren<Animator>() : null;
-            if (oldAnim != null)
+            float elapsedEnter = 0f;
+            while (elapsedEnter < newDuration)
             {
-                oldAnim.enabled = true;
-                oldAnim.speed = curWalkSpeed;
-                if (curHasWalk && HasParameter(oldAnim, "IsWalking"))
-                {
-                    oldAnim.SetBool("IsWalking", true);
-                }
-            }
-
-            float elapsed = 0f;
-            while (elapsed < curDuration)
-            {
-                elapsed += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsed / curDuration);
+                elapsedEnter += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsedEnter / newDuration);
                 float ease = Mathf.SmoothStep(0f, 1f, t);
 
-                if (oldChr != null)
-                {
-                    oldChr.transform.position = Vector3.Lerp(centerPos, exitPos, ease);
-                    // 퇴장 시 나가는 방향으로 회전하며 이동
-                    oldChr.transform.rotation = Quaternion.Slerp(finalFrontRot, exitWalkRot, Mathf.Clamp01(t * 2f));
-                }
                 if (newChr != null)
                 {
                     newChr.transform.position = Vector3.Lerp(enterPos, centerPos, ease);
-                    
+
                     // 진입 시: 처음엔 걸어오는 방향 -> 중앙 도달(후반 40%~) 시 부드럽게 정면 카메라를 바라보도록 회전
-                    float turnT = Mathf.Clamp01((t - 0.4f) / 0.6f);
+                    float turnT = Mathf.Clamp01((t - 0.45f) / 0.55f);
                     float turnEase = Mathf.SmoothStep(0f, 1f, turnT);
                     newChr.transform.rotation = Quaternion.Slerp(enterWalkRot, finalFrontRot, turnEase);
                 }
 
                 yield return null;
-            }
-
-            if (oldChr != null)
-            {
-                if (Application.isPlaying) Destroy(oldChr);
-                else DestroyImmediate(oldChr);
             }
 
             currentSpawnedCharacter = newChr;
