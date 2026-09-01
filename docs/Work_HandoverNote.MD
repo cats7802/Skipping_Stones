@@ -1,6 +1,6 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
-**작성 일시**: 2026-09-01 19:00  
+**작성 일시**: 2026-09-02 00:09  
 **현재 브랜치**: `feature/sandbox-momentum-rhythm`  
 **빌드 검증**: `0 Errors, 0 Warnings` (골든 스크립트 100% 동기화)
 
@@ -8,13 +8,19 @@
 
 ## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
 
-### ✅ 1. 스탠드얼론 빌드(EXE/APK) 단일 진실 공급원 직렬화 아키텍처 완성
-- **배경 및 원인**: Resources 복제본 의존 및 `#if UNITY_EDITOR` 분기 편중으로 인해 스탠드얼론 빌드시 로비 쇼케이스, 맵 프리팹, 해금 데이터가 증발하던 문제 원천 해결.
+### ✅ 1. 유니티 표준 Foot IK 및 캐릭터별 보폭(Stride) 기반 물리 보행 동기화 완성
+- **배경 및 원인**: 
+  - 캐릭터가 바닥을 딛지 못하고 골반(Bip001)에 매달려 발이 허공에 뜨는 현상 발생.
+  - 전역 고정 트랜지션 속도로 인해 애니메이션 보폭(23.2cm)과 스크립트 이동 속도가 어긋나 스케이트 타듯 미끄러지는 현상 발생.
 - **해결 내역**:
-  - `Lobby.prefab`: 원본 프리팹 4종 돌(`Stone`, `Stone_Blue`, `Stone_Green`, `Stone_red`) 및 캐릭터 4종(`Thrower_001`, `Thrower_Test`, `Thrower_Minwoo`, `Thrower_Kai`)을 인스펙터에 직접 직렬화 연결하여 원본 수정 시 빌드에 100% 즉시 반영되도록 구현.
-  - `MetaUIManager.cs`: 맵 프리팹 직렬화 리스트 및 다중 폴백 스캔 체계 구축.
-  - `SampleScene.unity`: `GameController`의 `defaultMapPrefab`을 최신 `New_TestEnvMgr`로 직접 연결.
-  - `GameDataManager.cs`: 빌드본에서도 `devUnlockAllByDefault` 설정 시 모든 캐릭터 및 돌 4종 전체 해금 상태로 안전 로드 보장.
+  - `Kai_CTRL.controller` Base Layer에 `IK Pass = True`, 모든 스테이트에 `Foot IK (iKOnFeet) = True` 적용 및 `Thrower_Kai.prefab`에 `Stabilize Feet = True` 활성화.
+  - 임시 꼼수 코드를 전면 걷어내고, `StoneThrowerCharacter`에 캐릭터별 고유 쇼케이스 세팅(`hasWalkAnimation`, `showcaseDistance`, `showcaseDuration`, `showcaseWalkSpeed`) 탑재.
+  - 카이 전용 보폭(`0.70m / 1.40s / 1.45x`) 동기화로 미끄러짐 0(Zero-Slip Foot Planting) 달성 및 캐릭터별 독립 등장 속도 지원.
+
+### ✅ 2. `Kai_CTRL.controller` 트랜지션 조건 완벽 잠금 & 찌꺼기 겹침 해결
+- `Idle ➔ Throw`, `Idle ➔ Select`의 `HasExitTime`을 제거하고 조건 트리거로만 동작하도록 수정하여 스폰 직후 쓰로우 0프레임으로 굳던 현상 해결.
+- 로비 진입 시 `ClearAllShowcaseCharacters()`를 통해 기존 쇼케이스 캐릭터 중복 생성을 원천 차단.
+- 로비 [🚀 GO!] 버튼 클릭 시 0.45초 딜레이(`GoToMapSelectWithDelay`)를 주어 환호(Select) 동작을 온전히 연출 후 맵 선택으로 전환.
 
 ### ✅ 2. 신규 캐릭터 카이(Kai) 로비 3D 쇼케이스, 애니메이터 및 카메라 정렬 완성
 - **배경 및 원인**:
