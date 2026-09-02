@@ -18,7 +18,6 @@ namespace SkippingStones.Visuals
         [Header("하이어라키 참조 (카메라 & 스테이징)")]
         [SerializeField] private Camera targetCamera;          // 로비 뷰 카메라 (직접 할당 또는 자동 검색)
         [SerializeField] private Transform stagingPosition; // Staging_Position 포함된 더미
-        [SerializeField] private GameObject standPrefab;       // 캐릭터 스탠드 (Character_Stand) 발판 프리팹
 
         [Header("캐릭터 프리팹 목록 (자동 스캔)")]
         [SerializeField] private List<GameObject> characterPrefabs = new List<GameObject>();
@@ -49,7 +48,6 @@ namespace SkippingStones.Visuals
         private void Awake()
         {
             FindStagingPosition();
-            LoadStandPrefab();
             ScanCharacterPrefabs();
         }
 
@@ -69,7 +67,6 @@ namespace SkippingStones.Visuals
         public void InitializeShowcase()
         {
             FindStagingPosition();
-            LoadStandPrefab();
             ScanCharacterPrefabs();
 
             if (characterPrefabs.Count == 0) return;
@@ -102,32 +99,6 @@ namespace SkippingStones.Visuals
 
             currentCharacterIndex = targetIndex;
             SpawnCharacterInstant(currentCharacterIndex);
-        }
-
-        /// <summary>
-        /// Assets/3D/bg/Character_Stand.fbx 발판 자동 탐색 및 로드
-        /// </summary>
-        private void LoadStandPrefab()
-        {
-            if (standPrefab != null) return;
-
-#if UNITY_EDITOR
-            standPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/bg/Character_Stand.fbx");
-            if (standPrefab == null)
-            {
-                string[] guids = UnityEditor.AssetDatabase.FindAssets("Character_Stand t:Model");
-                if (guids.Length == 0) guids = UnityEditor.AssetDatabase.FindAssets("Character_Stand t:GameObject");
-                if (guids.Length > 0)
-                {
-                    string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
-                    standPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                }
-            }
-#endif
-            if (standPrefab == null)
-            {
-                standPrefab = Resources.Load<GameObject>("Character_Stand") ?? Resources.Load<GameObject>("3D/bg/Character_Stand");
-            }
         }
 
         /// <summary>
@@ -411,7 +382,7 @@ namespace SkippingStones.Visuals
         /// 캐릭터 + 발판 캐주얼 슬라이드 트랜지션 코루틴
         /// - Phase 1: 기존 캐릭터+발판이 화면 밖으로 슉 미끄러져 나감 (EaseInQuad)
         /// - Phase 2: 새 캐릭터+발판이 화면 밖에서 중앙으로 스윽 미끄러져 들어와 안착 (EaseOutCubic)
-        /// - 안착 즉시 Select 트리거를 발동하여 환호 포즈 재생 후 자연스럽게 Idle 복귀
+        /// - 안착 즉시 Select 트리거를 발동하여 환호 포즈를 0.5초 정지 취한 뒤 자연스럽게 Idle 복귀
         /// direction: 1 = 다음(우측으로 퇴장, 좌측에서 등장) / -1 = 이전(좌측으로 퇴장, 우측에서 등장)
         /// </summary>
         private IEnumerator TransitionRoutine(int targetIndex, int direction)
@@ -420,7 +391,6 @@ namespace SkippingStones.Visuals
             GameObject oldRoot = currentSpawnedRoot;
 
             FindStagingPosition();
-            LoadStandPrefab();
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
             Quaternion finalFrontRot = GetCameraFacingRotation(centerPos);
 
@@ -468,7 +438,6 @@ namespace SkippingStones.Visuals
             GameObject newChr = newRoot.GetComponentInChildren<StoneThrowerCharacter>(true)?.gameObject;
             if (newChr == null)
             {
-                // StoneThrowerCharacter가 컴포넌트 정리 전에 자식 오브젝트 탐색
                 var animRef = newRoot.GetComponentInChildren<Animator>(true);
                 newChr = animRef != null ? animRef.gameObject : newRoot;
             }
@@ -500,7 +469,7 @@ namespace SkippingStones.Visuals
             }
             currentModelRotationY = 0f;
 
-            // 중앙 도착 직후 시그니처 환호(Select) 애니메이션 1회 재생 후 자연스러운 Idle 전환
+            // 중앙 도착 직후 시그니처 환호(Select) 애니메이션 1회 재생 (0.5초 포즈 유지 후 Idle 자동 전환)
             if (newAnim != null)
             {
                 newAnim.speed = 1f;
@@ -538,7 +507,6 @@ namespace SkippingStones.Visuals
             if (index < 0 || index >= characterPrefabs.Count) return;
 
             FindStagingPosition();
-            LoadStandPrefab();
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
             Quaternion centerRot = GetCameraFacingRotation(centerPos);
 
@@ -551,7 +519,7 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// [Showcase_Unit] 컨테이너에 Character_Stand 발판과 캐릭터 프리팹을 결합하여 생성
+        /// [Showcase_Unit] 컨테이너에 캐릭터 프리팹과 해당 캐릭터의 lobbyStandPrefab 발판을 결합하여 생성
         /// </summary>
         private GameObject CreateShowcaseUnit(GameObject chrPrefab, Vector3 worldPos, Quaternion worldRot)
         {
@@ -560,19 +528,20 @@ namespace SkippingStones.Visuals
             unitRoot.transform.position = worldPos;
             unitRoot.transform.rotation = worldRot;
 
-            Transform characterParent = unitRoot.transform;
-            Vector3 charLocalPos = Vector3.zero;
-            Quaternion charLocalRot = Quaternion.identity;
+            Transform targetAttachParent = unitRoot.transform;
 
-            // 1. 발판(Stand) 생성
-            if (standPrefab != null)
+            // 1. 캐릭터의 고유 발판(lobbyStandPrefab) 확인 및 생성
+            var throwerSetting = chrPrefab.GetComponentInChildren<StoneThrowerCharacter>(true);
+            GameObject standPrefabToSpawn = throwerSetting != null ? throwerSetting.lobbyStandPrefab : null;
+
+            if (standPrefabToSpawn != null)
             {
-                GameObject standInstance = Instantiate(standPrefab, unitRoot.transform);
+                GameObject standInstance = Instantiate(standPrefabToSpawn, unitRoot.transform);
                 standInstance.name = "Character_Stand";
                 standInstance.transform.localPosition = Vector3.zero;
                 standInstance.transform.localRotation = Quaternion.identity;
 
-                // 발판 하위에 더미(Dummy, Point, Socket 등)가 있으면 그 위치에 캐릭터 결합
+                // 발판 하위에 더미(Dummy, Point, Socket 등)가 있으면 바로 그 더미 노드를 부모로 지정
                 Transform[] standChildren = standInstance.GetComponentsInChildren<Transform>(true);
                 foreach (var child in standChildren)
                 {
@@ -580,9 +549,7 @@ namespace SkippingStones.Visuals
                     string nUpper = child.name.ToUpperInvariant();
                     if (nUpper.Contains("DUMMY") || nUpper.Contains("POINT") || nUpper.Contains("SOCKET") || nUpper.Contains("POS") || nUpper.Contains("CHAR"))
                     {
-                        characterParent = child;
-                        charLocalPos = Vector3.zero;
-                        charLocalRot = Quaternion.identity;
+                        targetAttachParent = child;
                         break;
                     }
                 }
@@ -592,11 +559,11 @@ namespace SkippingStones.Visuals
                 foreach (var col in standCols) col.isTrigger = true;
             }
 
-            // 2. 캐릭터 생성
-            GameObject chrInstance = Instantiate(chrPrefab, characterParent);
+            // 2. 캐릭터 생성 (발판 더미 노드 또는 유닛 루트에 결합)
+            GameObject chrInstance = Instantiate(chrPrefab, targetAttachParent);
             chrInstance.name = chrPrefab.name;
-            chrInstance.transform.localPosition = charLocalPos;
-            chrInstance.transform.localRotation = charLocalRot;
+            chrInstance.transform.localPosition = Vector3.zero;
+            chrInstance.transform.localRotation = Quaternion.identity;
 
             SetupCharacterInstance(chrInstance);
 
@@ -628,6 +595,7 @@ namespace SkippingStones.Visuals
         private void SetupCharacterInstance(GameObject chrInstance)
         {
             if (chrInstance == null) return;
+            chrInstance.name = $"[Showcase_Chr]_{chrInstance.name}";
 
             // 쇼케이스용으로 안전 처리: StoneThrowerCharacter 컴포넌트를 즉시 제거
             var throwers = chrInstance.GetComponentsInChildren<StoneThrowerCharacter>(true);

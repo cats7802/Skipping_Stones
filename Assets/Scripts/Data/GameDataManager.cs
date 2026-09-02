@@ -63,6 +63,50 @@ namespace SkippingStones.Data
         private void Update()
         {
             UpdateStaminaRegeneration();
+            HandleDevUnlockInput();
+        }
+
+        private float lastSecretTapTime = 0f;
+        private int secretTapCount = 0;
+
+        /// <summary>
+        /// 🛠️ 개발자 해금 단축키 (PC: F5 키 / 모바일: 화면 상단 헤더 영역 5연속 탭)
+        /// </summary>
+        private void HandleDevUnlockInput()
+        {
+#if ENABLE_INPUT_SYSTEM
+            var kb = UnityEngine.InputSystem.Keyboard.current;
+            if (kb != null && kb.f5Key.wasPressedThisFrame)
+            {
+                DevUnlockAll();
+            }
+#else
+            if (Input.GetKeyDown(KeyCode.F5))
+            {
+                DevUnlockAll();
+            }
+#endif
+        }
+
+        /// <summary>
+        /// 모바일용 시크릿 5연속 탭 (상단 프로필/헤더 영역)
+        /// </summary>
+        public void TriggerSecretTap()
+        {
+            if (Time.unscaledTime - lastSecretTapTime > 0.8f)
+            {
+                secretTapCount = 1;
+            }
+            else
+            {
+                secretTapCount++;
+                if (secretTapCount >= 5)
+                {
+                    secretTapCount = 0;
+                    DevUnlockAll();
+                }
+            }
+            lastSecretTapTime = Time.unscaledTime;
         }
 
         private void InitializeCatalog()
@@ -256,6 +300,21 @@ namespace SkippingStones.Data
             UserData.diamonds = 9999;
             SyncCatalogWithUserData();
             SaveUserData();
+            OnUserDataChanged?.Invoke(UserData);
+
+            // 로비 쇼케이스 컨트롤러 실시간 갱신
+            var charShowcase = FindAnyObjectByType<SkippingStones.Visuals.LobbyCharacterShowcaseController>();
+            if (charShowcase != null)
+            {
+                charShowcase.ScanCharacterPrefabs();
+            }
+
+            var stoneShowcase = FindAnyObjectByType<SkippingStones.Visuals.LobbyStoneShowcaseController>();
+            if (stoneShowcase != null)
+            {
+                stoneShowcase.InitializeShowcase();
+            }
+
             Debug.Log("✅ [DEV] 모든 캐릭터/돌 해금 완료!");
         }
 

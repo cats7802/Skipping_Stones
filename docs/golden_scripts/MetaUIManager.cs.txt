@@ -873,6 +873,11 @@ namespace SkippingStones.UI
             int stam = dm != null ? dm.UserData.stamina : 10;
             int maxStam = dm != null ? dm.UserData.maxStamina : 10;
 
+            if (DrawResponsiveButton(new Rect(30, 25, 400, 85), string.Empty, GUIStyle.none))
+            {
+                dm?.TriggerSecretTap();
+            }
+
             GUI.Label(new Rect(40, 30, 220, 40), $"👤 {nick}", _labelStyle);
             GUI.Label(new Rect(40, 65, 220, 40), $"🪙 {gold:N0}  💎 {dia}", _labelStyle);
             GUI.Label(new Rect(450, 35, 160, 40), $"⚡ {stam}/{maxStam}", _labelStyle);

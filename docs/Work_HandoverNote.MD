@@ -8,24 +8,31 @@
 
 ## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
 
-### ✅ 1. 원형 스탠드(Character_Stand) 발판 더미 탑승 및 캐주얼 슬라이드 쇼케이스 연출 구축
+### ✅ 1. 캐릭터별 고유 발판(lobbyStandPrefab) 커스텀 & 캐주얼 슬라이드 쇼케이스 아키텍처 완성
 - **배경 및 원인**:
-  - 화면 밖에서 캐릭터가 걸어 들어오는 연출이 실제 보폭 속도에 맞추다 보니 전환 시간이 길고(3~4초) 모바일 캐주얼 템포에 비해 루즈하게 느껴짐.
-  - `Character_Stand.fbx`에 포함된 더미(Dummy) 소켓에 캐릭터가 정확히 탑승하여 스탠드와 함께 등장/퇴장/회전해야 함.
-  - 환호(Select) 포즈 완료 후 즉시 넘어가기보다 약 0.5초 동안 멋진 마무리 포즈를 멈춘(Pause) 후 부드럽게 Idle로 블렌딩 전환 연출 필요.
+  - 로비 컨트롤러에 고정 발판을 바인딩하던 기존 방식은 캐릭터마다 발판을 다양하게 꾸밀 수 없고(단일 발판 강제), 불필요한 검색 및 복잡한 결합 로직이 누적됨.
+  - 디렉터님 제안에 따라 **캐릭터 프리팹 인스펙터(`StoneThrowerCharacter`)에 `lobbyStandPrefab` 슬롯을 제공**하여 캐릭터마다 자유롭게 전용 발판을 장착할 수 있는 유연한 구조로 전면 개편.
 - **해결 내역**:
-  - `Assets/3D/bg/Character_Stand.fbx` 발판과 캐릭터를 `[Showcase_Unit]` 컨테이너로 결합하여 생성.
-  - 발판 인스턴스 내 더미(Dummy/Point/Socket) 노드를 자동 탐색하여 캐릭터의 부모(Parent)로 지정, 발판 윗면의 정확한 소켓 위치에 탑승하도록 완성.
-  - `Lobby.prefab` 및 `Resources/Lobby.prefab`의 `LobbyCharacterShowcaseController`에 `Character_Stand`를 영구 바인딩.
-  - 슬라이드 고속 전환: 퇴장(`EaseInQuad`, 0.22s) ➔ 등장(`EaseOutCubic`, 0.28s)으로 템포 대폭 가속.
-  - `Kai_CTRL.controller`: `Select ➔ Idle` 트랜지션 설정을 `ExitTime = 1.60`(모션 100% 완료 후 끝 프레임에서 약 0.5초 정지 홀드), `TransitionDuration = 0.35s`로 설정하여 시그니처 포즈를 0.5초 뽐낸 후 스르륵 Idle로 크로스페이드 복귀.
-  - 360도 자유 드래그 시 발판과 캐릭터가 함께 회전하도록 동기화.
+  - `StoneThrowerCharacter.cs`에 `[Header("로비 쇼케이스 연출 설정")] public GameObject lobbyStandPrefab;` 슬롯 추가.
+  - `Thrower_Kai.prefab`의 `lobbyStandPrefab`에 `Character_Stand.fbx` 할당 완료.
+  - `LobbyCharacterShowcaseController.cs`에서 임시/복잡한 경로 탐색 코드를 전면 걷어내고, 캐릭터 프리팹의 `lobbyStandPrefab` 유무에 따라 자동으로 발판을 생성하여 깔끔하게 결합하는 직관적인 구조로 슬림화.
+  - 슬라이드 고속 전환: 퇴장(`EaseInQuad`, 0.22s) ➔ 등장(`EaseOutCubic`, 0.28s) & 0.5초 셀렉트 포즈 홀드 & 360도 동기화 드래그 완벽 유지.
 
-### ✅ 2. 유니티 표준 Foot IK 및 캐릭터별 보폭(Stride) 기반 물리 보행 동기화 완성
-- **배경 및 원인**: 
-  - 캐릭터가 바닥을 딛지 못하고 골반(Bip001)에 매달려 발이 허공에 뜨는 현상 발생.
-  - 전역 고정 트랜지션 속도로 인해 애니메이션 보폭(23.2cm)과 스크립트 이동 속도가 어긋나 스케이트 타듯 미끄러지는 현상 발생.
+### ✅ 2. 카이(Kai) 투구(Throw) 모션 상체 찌그러짐 해결 및 Foot IK 최적화
+- **배경 및 원인**:
+  - 애니메이션 프리뷰에서는 정상이나 인게임 투구 시 발바닥을 바닥에 강제 고정하려는 Foot IK(`IKOnFeet = 1`) 간섭으로 골반과 상체가 목 쪽으로 압축/찌그러지는 결함 발생.
 - **해결 내역**:
+  - `Kai_CTRL.controller`의 `Throw` 상태에서 `IKOnFeet = 0`으로 해제하여 맥스 원본 투구 모션이 왜곡 없이 자유롭게 재생되도록 최적화.
+  - `Idle ➔ Throw` 트랜지션 시간을 0.05초로 단축하여 즉각적이고 정확한 투구 폼으로 전환.
+  - `Walk / Idle`은 `IKOnFeet = 1`을 유지하여 로비와 대기 상태에서 바닥 접지 안정성 보장.
+
+### ✅ 3. 개발/테스트용 ALL 해금 치트(PC F5키 / 모바일 상단 5탭) 및 배포 안전장치 구축
+- **배경 및 원인**:
+  - 빌드 배포 시 유저에게 미해금 캐릭터/돌이 실수로 노출되지 않도록 하는 안전장치와 개발/QA 테스트 편의성 양립 필요.
+- **해결 내역**:
+  - 신규 빌드 기본값은 1개 캐릭터(민우) + 2개 돌로 안전하게 시작.
+  - **PC (윈도우 빌드)**: `F5` 키를 누르면 즉시 모든 캐릭터 4종 + 돌 4종 + 99만 재화 ALL 해금 및 로비 쇼케이스 실시간 갱신.
+  - **모바일 (스마트폰 빌드)**: 로비 좌상단 `👤 닉네임 영역`을 5연속 탭하면 ALL 해금 치트 발동 및 로비 쇼케이스 실시간 갱신.
   - `Kai_CTRL.controller` Base Layer에 `IK Pass = True`, 모든 스테이트에 `Foot IK (iKOnFeet) = True` 적용 및 `Thrower_Kai.prefab`에 `Stabilize Feet = True` 활성화.
   - 임시 꼼수 코드를 전면 걷어내고, `StoneThrowerCharacter`에 캐릭터별 고유 쇼케이스 세팅(`hasWalkAnimation`, `showcaseDistance`, `showcaseDuration`, `showcaseWalkSpeed`) 탑재.
   - 카이 전용 보폭(`0.70m / 1.40s / 1.45x`) 동기화로 미끄러짐 0(Zero-Slip Foot Planting) 달성 및 캐릭터별 독립 등장 속도 지원.

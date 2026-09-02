@@ -55,6 +55,7 @@ MonoBehaviour:
   stoneDummyRotationEuler: {x: 90, y: 0, z: 0}
   basePosition: {x: 0, y: 0.9, z: -3.8}
   moveSpeed: 10
+  lobbyStandPrefab: {fileID: 8860214084885858626, guid: 18c9a6ea86d2e4a428232ad77d8d22aa, type: 3}
   hasWalkAnimation: 1
   showcaseDistance: 0.7
   showcaseDuration: 1.4
