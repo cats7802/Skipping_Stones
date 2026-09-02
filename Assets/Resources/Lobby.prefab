@@ -79,6 +79,7 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Visuals.LobbyCharacterShowcaseController
   targetCamera: {fileID: 5510438674477548156}
   stagingPosition: {fileID: 8958744429749833219}
+  standPrefab: {fileID: 1827226128182048838, guid: faf82f0fc445e6148b54ee37d4f0b3de, type: 3}
   characterPrefabs:
   - {fileID: 4424490057512640635, guid: 31a1e07c8895f704e990d5e8f83aad68, type: 3}
   - {fileID: 4424490057512640635, guid: be5b98db32eaffb4ca59e516f6ed073d, type: 3}

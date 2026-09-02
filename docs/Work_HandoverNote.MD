@@ -1,6 +1,6 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
-**작성 일시**: 2026-09-02 00:09  
+**작성 일시**: 2026-09-02 22:05  
 **현재 브랜치**: `feature/sandbox-momentum-rhythm`  
 **빌드 검증**: `0 Errors, 0 Warnings` (골든 스크립트 100% 동기화)
 
@@ -8,13 +8,18 @@
 
 ## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
 
-### ✅ 1. 로비 캐릭터 교체 트랜지션 시차(퇴장 완료 후 등장) 분리 및 카메라 화각 밖 진입 보장
+### ✅ 1. 원형 스탠드(Character_Stand) 발판 더미 탑승 및 캐주얼 슬라이드 쇼케이스 연출 구축
 - **배경 및 원인**:
-  - 기존에는 `oldChr`과 `newChr`이 한 번에 교차 이동하여 캐릭터끼리 겹치거나 부자연스럽게 스위칭되는 현상 발생.
-  - 카이 등 일부 맞춤 캐릭터의 이동 거리가 짧아(0.7m) 카메라 앵글 안에서 뿅 하고 생성되는 문제 발생.
+  - 화면 밖에서 캐릭터가 걸어 들어오는 연출이 실제 보폭 속도에 맞추다 보니 전환 시간이 길고(3~4초) 모바일 캐주얼 템포에 비해 루즈하게 느껴짐.
+  - `Character_Stand.fbx`에 포함된 더미(Dummy) 소켓에 캐릭터가 정확히 탑승하여 스탠드와 함께 등장/퇴장/회전해야 함.
+  - 환호(Select) 포즈 완료 후 즉시 넘어가기보다 약 0.5초 동안 멋진 마무리 포즈를 멈춘(Pause) 후 부드럽게 Idle로 블렌딩 전환 연출 필요.
 - **해결 내역**:
-  - `LobbyCharacterShowcaseController.cs`의 `TransitionRoutine`을 2단계 순차(Phase 1 기존 캐릭터 퇴장 ➔ 완전 삭제 ➔ Phase 2 새 캐릭터 등장) 구조로 분리.
-  - 캐릭터가 카메라 화각 밖(최소 2.2m 이상)에서 출발/도착하도록 안전 거리를 보장하고, 걷기 애니메이션 유무 및 캐릭터별 속도/시간 설정에 맞춰 독립적으로 스위칭되도록 완성.
+  - `Assets/3D/bg/Character_Stand.fbx` 발판과 캐릭터를 `[Showcase_Unit]` 컨테이너로 결합하여 생성.
+  - 발판 인스턴스 내 더미(Dummy/Point/Socket) 노드를 자동 탐색하여 캐릭터의 부모(Parent)로 지정, 발판 윗면의 정확한 소켓 위치에 탑승하도록 완성.
+  - `Lobby.prefab` 및 `Resources/Lobby.prefab`의 `LobbyCharacterShowcaseController`에 `Character_Stand`를 영구 바인딩.
+  - 슬라이드 고속 전환: 퇴장(`EaseInQuad`, 0.22s) ➔ 등장(`EaseOutCubic`, 0.28s)으로 템포 대폭 가속.
+  - `Kai_CTRL.controller`: `Select ➔ Idle` 트랜지션 설정을 `ExitTime = 1.60`(모션 100% 완료 후 끝 프레임에서 약 0.5초 정지 홀드), `TransitionDuration = 0.35s`로 설정하여 시그니처 포즈를 0.5초 뽐낸 후 스르륵 Idle로 크로스페이드 복귀.
+  - 360도 자유 드래그 시 발판과 캐릭터가 함께 회전하도록 동기화.
 
 ### ✅ 2. 유니티 표준 Foot IK 및 캐릭터별 보폭(Stride) 기반 물리 보행 동기화 완성
 - **배경 및 원인**: 

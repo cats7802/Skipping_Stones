@@ -18,13 +18,15 @@ namespace SkippingStones.Visuals
         [Header("하이어라키 참조 (카메라 & 스테이징)")]
         [SerializeField] private Camera targetCamera;          // 로비 뷰 카메라 (직접 할당 또는 자동 검색)
         [SerializeField] private Transform stagingPosition; // Staging_Position 포함된 더미
+        [SerializeField] private GameObject standPrefab;       // 캐릭터 스탠드 (Character_Stand) 발판 프리팹
 
         [Header("캐릭터 프리팹 목록 (자동 스캔)")]
         [SerializeField] private List<GameObject> characterPrefabs = new List<GameObject>();
 
-        [Header("트랜지션 및 회전 설정 (보폭 23.2cm 물리 싱크)")]
-        [SerializeField] private float transitionDuration = 1.4f;   // 3걸음 진입 시간 (1.4초)
-        [SerializeField] private float entryOffsetDistance = 0.70f; // 보폭 기준 3걸음 실제 물리 이동 거리 (0.70m)
+        [Header("트랜지션 및 회전 설정 (캐주얼 슬라이드 & 발판)")]
+        [SerializeField] private float slideExitDuration = 0.22f;   // 퇴장 슬라이드 시간 (0.22초)
+        [SerializeField] private float slideEnterDuration = 0.28f;  // 등장 슬라이드 시간 (0.28초)
+        [SerializeField] private float slideDistance = 3.2f;        // 화면 밖 슬라이드 이동 거리 (3.2m)
         [SerializeField] private float entryAngleOffset = 55f;      // 진입/퇴장 각도 보정 (55도)
         [SerializeField] private float rotationSensitivity = 0.4f;  // 드래그 회전 감도
 
@@ -32,6 +34,7 @@ namespace SkippingStones.Visuals
         [SerializeField] private int currentCharacterIndex = 0;
         [SerializeField] private bool isTransitioning = false;
 
+        private GameObject currentSpawnedRoot; // 캐릭터 + 스탠드를 담고 있는 컨테이너 또는 루트
         private GameObject currentSpawnedCharacter;
         private Animator currentAnimator;
 
@@ -46,6 +49,7 @@ namespace SkippingStones.Visuals
         private void Awake()
         {
             FindStagingPosition();
+            LoadStandPrefab();
             ScanCharacterPrefabs();
         }
 
@@ -65,6 +69,7 @@ namespace SkippingStones.Visuals
         public void InitializeShowcase()
         {
             FindStagingPosition();
+            LoadStandPrefab();
             ScanCharacterPrefabs();
 
             if (characterPrefabs.Count == 0) return;
@@ -97,6 +102,32 @@ namespace SkippingStones.Visuals
 
             currentCharacterIndex = targetIndex;
             SpawnCharacterInstant(currentCharacterIndex);
+        }
+
+        /// <summary>
+        /// Assets/3D/bg/Character_Stand.fbx 발판 자동 탐색 및 로드
+        /// </summary>
+        private void LoadStandPrefab()
+        {
+            if (standPrefab != null) return;
+
+#if UNITY_EDITOR
+            standPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/bg/Character_Stand.fbx");
+            if (standPrefab == null)
+            {
+                string[] guids = UnityEditor.AssetDatabase.FindAssets("Character_Stand t:Model");
+                if (guids.Length == 0) guids = UnityEditor.AssetDatabase.FindAssets("Character_Stand t:GameObject");
+                if (guids.Length > 0)
+                {
+                    string path = UnityEditor.AssetDatabase.GUIDToAssetPath(guids[0]);
+                    standPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
+                }
+            }
+#endif
+            if (standPrefab == null)
+            {
+                standPrefab = Resources.Load<GameObject>("Character_Stand") ?? Resources.Load<GameObject>("3D/bg/Character_Stand");
+            }
         }
 
         /// <summary>
@@ -255,13 +286,13 @@ namespace SkippingStones.Visuals
                 var screen = SkippingStones.UI.MetaUIManager.Instance.currentScreen;
                 bool shouldShow = (screen == SkippingStones.UI.MetaScreen.Lobby);
 
-                if (!shouldShow && currentSpawnedCharacter != null && currentSpawnedCharacter.activeSelf)
+                if (!shouldShow && currentSpawnedRoot != null && currentSpawnedRoot.activeSelf)
                 {
-                    currentSpawnedCharacter.SetActive(false);
+                    currentSpawnedRoot.SetActive(false);
                 }
-                else if (shouldShow && currentSpawnedCharacter != null && !currentSpawnedCharacter.activeSelf)
+                else if (shouldShow && currentSpawnedRoot != null && !currentSpawnedRoot.activeSelf)
                 {
-                    currentSpawnedCharacter.SetActive(true);
+                    currentSpawnedRoot.SetActive(true);
                 }
             }
 
@@ -269,11 +300,11 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// 캐릭터 360도 드래그 회전 처리 (캐릭터 콜라이더를 직접 터치했을 때만 활성화)
+        /// 캐릭터 360도 드래그 회전 처리 (캐릭터 또는 발판 콜라이더를 터치했을 때 활성화)
         /// </summary>
         private void HandleDragRotation()
         {
-            if (isTransitioning || currentSpawnedCharacter == null) return;
+            if (isTransitioning || currentSpawnedRoot == null) return;
 
             Vector2 pointerPos = Vector2.zero;
             bool pointerDown = false;
@@ -301,7 +332,7 @@ namespace SkippingStones.Visuals
 
             if (pointerDown)
             {
-                // Raycast로 캐릭터 본체 콜라이더를 터치했는지 확인
+                // Raycast로 캐릭터 또는 발판 콜라이더를 터치했는지 확인
                 Camera cam = targetCamera;
                 if (cam == null || !cam.gameObject.activeInHierarchy)
                 {
@@ -313,7 +344,7 @@ namespace SkippingStones.Visuals
                     Ray ray = cam.ScreenPointToRay(pointerPos);
                     if (Physics.Raycast(ray, out RaycastHit hit, 50f))
                     {
-                        if (hit.collider != null && hit.collider.transform.IsChildOf(currentSpawnedCharacter.transform))
+                        if (hit.collider != null && (hit.collider.transform.IsChildOf(currentSpawnedRoot.transform)))
                         {
                             isDragging = true;
                             lastPointerPos = pointerPos;
@@ -332,11 +363,11 @@ namespace SkippingStones.Visuals
                 currentModelRotationY -= deltaX * rotationSensitivity;
                 lastPointerPos = pointerPos;
 
-                if (currentSpawnedCharacter != null)
+                if (currentSpawnedRoot != null)
                 {
                     Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
                     Quaternion baseRot = GetCameraFacingRotation(centerPos);
-                    currentSpawnedCharacter.transform.rotation = baseRot * Quaternion.Euler(0f, currentModelRotationY, 0f);
+                    currentSpawnedRoot.transform.rotation = baseRot * Quaternion.Euler(0f, currentModelRotationY, 0f);
                 }
             }
         }
@@ -377,153 +408,111 @@ namespace SkippingStones.Visuals
         }
 
         /// <summary>
-        /// <summary>
-        /// 캐릭터 슬라이드/걸어나오기 트랜지션 코루틴 (퇴장 완료 후 등장 순차 분리 연출)
+        /// 캐릭터 + 발판 캐주얼 슬라이드 트랜지션 코루틴
+        /// - Phase 1: 기존 캐릭터+발판이 화면 밖으로 슉 미끄러져 나감 (EaseInQuad)
+        /// - Phase 2: 새 캐릭터+발판이 화면 밖에서 중앙으로 스윽 미끄러져 들어와 안착 (EaseOutCubic)
+        /// - 안착 즉시 Select 트리거를 발동하여 환호 포즈 재생 후 자연스럽게 Idle 복귀
         /// direction: 1 = 다음(우측으로 퇴장, 좌측에서 등장) / -1 = 이전(좌측으로 퇴장, 우측에서 등장)
         /// </summary>
         private IEnumerator TransitionRoutine(int targetIndex, int direction)
         {
             isTransitioning = true;
-            GameObject oldChr = currentSpawnedCharacter;
+            GameObject oldRoot = currentSpawnedRoot;
 
             FindStagingPosition();
+            LoadStandPrefab();
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
             Quaternion finalFrontRot = GetCameraFacingRotation(centerPos);
 
-            // 로비 룸 및 카메라 쿼터뷰에 맞춘 화면상 좌우 횡이동 축 계산 (기본 55도 적용)
+            // 로비 룸 및 카메라 쿼터뷰에 맞춘 화면상 좌우 횡이동 축 계산 (55도)
             Vector3 moveDir = (Quaternion.Euler(0f, entryAngleOffset, 0f) * transform.right).normalized;
 
             // ==========================================
-            // [Phase 1] 기존 캐릭터 퇴장 (화면 밖으로 이동 후 완전 파괴)
+            // [Phase 1] 기존 캐릭터+발판 퇴장 (화면 밖으로 가속 슬라이드)
             // ==========================================
-            if (oldChr != null)
+            if (oldRoot != null)
             {
-                // 기존 캐릭터의 고유 쇼케이스 설정 확인
-                var oldThrowerSetting = oldChr.GetComponentInChildren<StoneThrowerCharacter>(true);
-                float oldDuration = (oldThrowerSetting != null) ? oldThrowerSetting.showcaseDuration : transitionDuration;
-                float oldDistance = (oldThrowerSetting != null) ? oldThrowerSetting.showcaseDistance : entryOffsetDistance;
-                float oldWalkSpeed = (oldThrowerSetting != null) ? oldThrowerSetting.showcaseWalkSpeed : 1.45f;
-                bool oldHasWalk = (oldThrowerSetting != null) ? oldThrowerSetting.hasWalkAnimation : true;
-
-                // 화면 밖 안전 거리 보장 (최소 2.2m)
-                if (oldDistance < 2.0f)
-                {
-                    // 걷기 모션의 경우 보폭(약 0.5m/s) 속도 비례하여 이동 시간 자동 연장
-                    float distRatio = 2.2f / Mathf.Max(0.1f, oldDistance);
-                    oldDistance = 2.2f;
-                    if (oldHasWalk) oldDuration = Mathf.Clamp(oldDuration * distRatio, 1.2f, 2.4f);
-                }
-
-                Vector3 exitPos = centerPos + moveDir * (direction * oldDistance);
-                Vector3 exitLookDir = (exitPos - centerPos).normalized;
-                Quaternion exitWalkRot = exitLookDir != Vector3.zero ? Quaternion.LookRotation(exitLookDir, Vector3.up) : finalFrontRot;
-
-                Animator oldAnim = oldChr.GetComponentInChildren<Animator>();
-                if (oldAnim != null)
-                {
-                    oldAnim.enabled = true;
-                    oldAnim.speed = oldWalkSpeed;
-                    if (oldHasWalk && HasParameter(oldAnim, "IsWalking"))
-                    {
-                        oldAnim.SetBool("IsWalking", true);
-                    }
-                }
-
+                Vector3 exitPos = centerPos + moveDir * (direction * slideDistance);
                 float elapsedExit = 0f;
-                while (elapsedExit < oldDuration)
+
+                while (elapsedExit < slideExitDuration)
                 {
                     elapsedExit += Time.deltaTime;
-                    float t = Mathf.Clamp01(elapsedExit / oldDuration);
-                    float ease = Mathf.SmoothStep(0f, 1f, t);
+                    float t = Mathf.Clamp01(elapsedExit / slideExitDuration);
+                    // EaseInQuad: 부드럽게 출발해 빠르게 밖으로 휙 빠짐
+                    float ease = t * t;
 
-                    if (oldChr != null)
+                    if (oldRoot != null)
                     {
-                        oldChr.transform.position = Vector3.Lerp(centerPos, exitPos, ease);
-                        // 퇴장 시 나가는 방향으로 회전하며 이동
-                        oldChr.transform.rotation = Quaternion.Slerp(finalFrontRot, exitWalkRot, Mathf.Clamp01(t * 2.5f));
+                        oldRoot.transform.position = Vector3.Lerp(centerPos, exitPos, ease);
                     }
                     yield return null;
                 }
 
-                if (oldChr != null)
+                if (oldRoot != null)
                 {
-                    if (Application.isPlaying) Destroy(oldChr);
-                    else DestroyImmediate(oldChr);
-                    oldChr = null;
+                    if (Application.isPlaying) Destroy(oldRoot);
+                    else DestroyImmediate(oldRoot);
+                    oldRoot = null;
                 }
             }
 
             // ==========================================
-            // [Phase 2] 새 캐릭터 등장 (화면 밖에서 스폰 후 중앙으로 진입)
+            // [Phase 2] 새 캐릭터+발판 등장 (화면 밖에서 중앙으로 감속 슬라이드)
             // ==========================================
             GameObject newPrefab = characterPrefabs[targetIndex];
-            var newThrowerSetting = newPrefab.GetComponentInChildren<StoneThrowerCharacter>(true);
+            Vector3 enterPos = centerPos - moveDir * (direction * slideDistance);
 
-            float newDuration = (newThrowerSetting != null) ? newThrowerSetting.showcaseDuration : transitionDuration;
-            float newDistance = (newThrowerSetting != null) ? newThrowerSetting.showcaseDistance : entryOffsetDistance;
-            float newWalkSpeed = (newThrowerSetting != null) ? newThrowerSetting.showcaseWalkSpeed : 1.45f;
-            bool newHasWalk = (newThrowerSetting != null) ? newThrowerSetting.hasWalkAnimation : true;
-
-            // 새 캐릭터도 화면 밖 안전 거리 보장 (최소 2.2m)
-            if (newDistance < 2.0f)
+            // 새 쇼케이스 유닛(루트 + 스탠드 + 캐릭터) 생성
+            GameObject newRoot = CreateShowcaseUnit(newPrefab, enterPos, finalFrontRot);
+            GameObject newChr = newRoot.GetComponentInChildren<StoneThrowerCharacter>(true)?.gameObject;
+            if (newChr == null)
             {
-                float distRatio = 2.2f / Mathf.Max(0.1f, newDistance);
-                newDistance = 2.2f;
-                if (newHasWalk) newDuration = Mathf.Clamp(newDuration * distRatio, 1.2f, 2.4f);
+                // StoneThrowerCharacter가 컴포넌트 정리 전에 자식 오브젝트 탐색
+                var animRef = newRoot.GetComponentInChildren<Animator>(true);
+                newChr = animRef != null ? animRef.gameObject : newRoot;
             }
 
-            Vector3 enterPos = centerPos - moveDir * (direction * newDistance);
-            Vector3 enterLookDir = (centerPos - enterPos).normalized;
-            Quaternion enterWalkRot = enterLookDir != Vector3.zero ? Quaternion.LookRotation(enterLookDir, Vector3.up) : finalFrontRot;
-
-            // 새 캐릭터 스폰 (화면 밖, 중앙을 향해 걸어오는 방향)
-            GameObject newChr = Instantiate(newPrefab, enterPos, enterWalkRot, stagingPosition != null ? stagingPosition : transform);
-            SetupCharacterInstance(newChr);
-
-            Animator newAnim = newChr.GetComponentInChildren<Animator>();
-            if (newAnim != null)
-            {
-                newAnim.enabled = true;
-                newAnim.speed = newWalkSpeed;
-                if (newHasWalk && HasParameter(newAnim, "IsWalking"))
-                {
-                    newAnim.SetBool("IsWalking", true);
-                }
-            }
+            Animator newAnim = newRoot.GetComponentInChildren<Animator>();
 
             float elapsedEnter = 0f;
-            while (elapsedEnter < newDuration)
+            while (elapsedEnter < slideEnterDuration)
             {
                 elapsedEnter += Time.deltaTime;
-                float t = Mathf.Clamp01(elapsedEnter / newDuration);
-                float ease = Mathf.SmoothStep(0f, 1f, t);
+                float t = Mathf.Clamp01(elapsedEnter / slideEnterDuration);
+                // EaseOutCubic: 빠르게 들어와서 중앙에 착- 감기듯 멈춤
+                float ease = 1f - Mathf.Pow(1f - t, 3f);
 
-                if (newChr != null)
+                if (newRoot != null)
                 {
-                    newChr.transform.position = Vector3.Lerp(enterPos, centerPos, ease);
-
-                    // 진입 시: 처음엔 걸어오는 방향 -> 중앙 도달(후반 40%~) 시 부드럽게 정면 카메라를 바라보도록 회전
-                    float turnT = Mathf.Clamp01((t - 0.45f) / 0.55f);
-                    float turnEase = Mathf.SmoothStep(0f, 1f, turnT);
-                    newChr.transform.rotation = Quaternion.Slerp(enterWalkRot, finalFrontRot, turnEase);
+                    newRoot.transform.position = Vector3.Lerp(enterPos, centerPos, ease);
                 }
 
                 yield return null;
             }
 
+            currentSpawnedRoot = newRoot;
             currentSpawnedCharacter = newChr;
-            if (currentSpawnedCharacter != null)
+            if (currentSpawnedRoot != null)
             {
-                currentSpawnedCharacter.transform.position = centerPos;
-                currentSpawnedCharacter.transform.rotation = finalFrontRot;
+                currentSpawnedRoot.transform.position = centerPos;
+                currentSpawnedRoot.transform.rotation = finalFrontRot;
             }
             currentModelRotationY = 0f;
 
+            // 중앙 도착 직후 시그니처 환호(Select) 애니메이션 1회 재생 후 자연스러운 Idle 전환
             if (newAnim != null)
             {
                 newAnim.speed = 1f;
                 if (HasParameter(newAnim, "IsWalking")) newAnim.SetBool("IsWalking", false);
-                if (HasParameter(newAnim, "Idle")) newAnim.SetTrigger("Idle");
+                if (HasParameter(newAnim, "Select"))
+                {
+                    newAnim.SetTrigger("Select");
+                }
+                else if (HasParameter(newAnim, "Idle"))
+                {
+                    newAnim.SetTrigger("Idle");
+                }
             }
 
             currentCharacterIndex = targetIndex;
@@ -549,31 +538,86 @@ namespace SkippingStones.Visuals
             if (index < 0 || index >= characterPrefabs.Count) return;
 
             FindStagingPosition();
+            LoadStandPrefab();
             Vector3 centerPos = stagingPosition != null ? stagingPosition.position : transform.position;
             Quaternion centerRot = GetCameraFacingRotation(centerPos);
 
             GameObject prefab = characterPrefabs[index];
-            currentSpawnedCharacter = Instantiate(prefab, centerPos, centerRot, stagingPosition != null ? stagingPosition : transform);
-            SetupCharacterInstance(currentSpawnedCharacter);
+            currentSpawnedRoot = CreateShowcaseUnit(prefab, centerPos, centerRot);
+            currentSpawnedCharacter = currentSpawnedRoot.GetComponentInChildren<Animator>()?.gameObject ?? currentSpawnedRoot;
 
             currentModelRotationY = 0f;
             NotifyCharacterChanged();
         }
 
+        /// <summary>
+        /// [Showcase_Unit] 컨테이너에 Character_Stand 발판과 캐릭터 프리팹을 결합하여 생성
+        /// </summary>
+        private GameObject CreateShowcaseUnit(GameObject chrPrefab, Vector3 worldPos, Quaternion worldRot)
+        {
+            GameObject unitRoot = new GameObject($"[Showcase_Unit]_{chrPrefab.name}");
+            unitRoot.transform.SetParent(stagingPosition != null ? stagingPosition : transform);
+            unitRoot.transform.position = worldPos;
+            unitRoot.transform.rotation = worldRot;
+
+            Transform characterParent = unitRoot.transform;
+            Vector3 charLocalPos = Vector3.zero;
+            Quaternion charLocalRot = Quaternion.identity;
+
+            // 1. 발판(Stand) 생성
+            if (standPrefab != null)
+            {
+                GameObject standInstance = Instantiate(standPrefab, unitRoot.transform);
+                standInstance.name = "Character_Stand";
+                standInstance.transform.localPosition = Vector3.zero;
+                standInstance.transform.localRotation = Quaternion.identity;
+
+                // 발판 하위에 더미(Dummy, Point, Socket 등)가 있으면 그 위치에 캐릭터 결합
+                Transform[] standChildren = standInstance.GetComponentsInChildren<Transform>(true);
+                foreach (var child in standChildren)
+                {
+                    if (child == null || child == standInstance.transform) continue;
+                    string nUpper = child.name.ToUpperInvariant();
+                    if (nUpper.Contains("DUMMY") || nUpper.Contains("POINT") || nUpper.Contains("SOCKET") || nUpper.Contains("POS") || nUpper.Contains("CHAR"))
+                    {
+                        characterParent = child;
+                        charLocalPos = Vector3.zero;
+                        charLocalRot = Quaternion.identity;
+                        break;
+                    }
+                }
+
+                // 발판 콜라이더가 있다면 트리거로 설정하여 드래그 터치 영역 지원
+                var standCols = standInstance.GetComponentsInChildren<Collider>();
+                foreach (var col in standCols) col.isTrigger = true;
+            }
+
+            // 2. 캐릭터 생성
+            GameObject chrInstance = Instantiate(chrPrefab, characterParent);
+            chrInstance.name = chrPrefab.name;
+            chrInstance.transform.localPosition = charLocalPos;
+            chrInstance.transform.localRotation = charLocalRot;
+
+            SetupCharacterInstance(chrInstance);
+
+            return unitRoot;
+        }
+
         public void ClearAllShowcaseCharacters()
         {
-            if (currentSpawnedCharacter != null)
+            if (currentSpawnedRoot != null)
             {
-                if (Application.isPlaying) Destroy(currentSpawnedCharacter);
-                else DestroyImmediate(currentSpawnedCharacter);
+                if (Application.isPlaying) Destroy(currentSpawnedRoot);
+                else DestroyImmediate(currentSpawnedRoot);
+                currentSpawnedRoot = null;
                 currentSpawnedCharacter = null;
             }
 
-            // 하위의 모든 [Showcase_Chr] 오브젝트 일괄 정리
-            var allShowcase = GetComponentsInChildren<Transform>(true);
-            foreach (var t in allShowcase)
+            // 하위의 모든 [Showcase_Unit] 및 [Showcase_Chr] 오브젝트 일괄 정리
+            var allChildren = GetComponentsInChildren<Transform>(true);
+            foreach (var t in allChildren)
             {
-                if (t != null && t.gameObject.name.StartsWith("[Showcase_Chr]"))
+                if (t != null && (t.gameObject.name.StartsWith("[Showcase_Unit]") || t.gameObject.name.StartsWith("[Showcase_Chr]")))
                 {
                     if (Application.isPlaying) Destroy(t.gameObject);
                     else DestroyImmediate(t.gameObject);
@@ -584,7 +628,6 @@ namespace SkippingStones.Visuals
         private void SetupCharacterInstance(GameObject chrInstance)
         {
             if (chrInstance == null) return;
-            chrInstance.name = $"[Showcase_Chr]_{chrInstance.name}";
 
             // 쇼케이스용으로 안전 처리: StoneThrowerCharacter 컴포넌트를 즉시 제거
             var throwers = chrInstance.GetComponentsInChildren<StoneThrowerCharacter>(true);
