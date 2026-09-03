@@ -62,11 +62,8 @@ public class RiverSpawner : MonoBehaviour
         }
     }
 
-    [Header("수면 높이 및 영역 연동")]
-    public float defaultWaterHeight = 16.0f;
-
     /// <summary>
-    /// 수면 오브젝트(WaterSurface / Water_Surface)의 BoxCollider로부터 실시간 가로폭(minX, maxX), 세로길이(minZ, maxZ)와 수면 높이(waterY)를 100% 신뢰성 있게 획득
+    /// 수면 오브젝트(WaterSurface / Water_Surface)로부터 실시간 가로폭(minX, maxX), 세로길이(minZ, maxZ)와 수면 높이(waterY)를 100% 신뢰성 있게 획득
     /// </summary>
     public bool GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float waterY)
     {
@@ -75,14 +72,19 @@ public class RiverSpawner : MonoBehaviour
         if (ws != null)
         {
             bc = ws.GetComponent<BoxCollider>();
+            waterY = (bc != null) ? bc.bounds.max.y : ws.transform.position.y;
         }
-
-        if (bc == null)
+        else
         {
             GameObject waterObj = GameObject.Find("WaterSurface") ?? GameObject.Find("Water_Surface") ?? GameObject.Find("RS_Surface");
             if (waterObj != null)
             {
                 bc = waterObj.GetComponent<BoxCollider>();
+                waterY = (bc != null) ? bc.bounds.max.y : waterObj.transform.position.y;
+            }
+            else
+            {
+                waterY = 0f;
             }
         }
 
@@ -93,16 +95,14 @@ public class RiverSpawner : MonoBehaviour
             maxX = b.max.x;
             minZ = b.min.z;
             maxZ = b.max.z;
-            waterY = b.max.y;
             return true;
         }
 
-        // BoxCollider가 없을 경우 안전 폴백 (Transform / default)
+        // BoxCollider가 없을 경우 안전 폴백 (Transform / default 0)
         minX = -100f;
         maxX = 100f;
         minZ = 0f;
         maxZ = riverLength;
-        waterY = defaultWaterHeight;
         return false;
     }
 
@@ -113,6 +113,12 @@ public class RiverSpawner : MonoBehaviour
 
     private float GetCurrentWaterLevel()
     {
+        WaterSurface ws = FindAnyObjectByType<WaterSurface>();
+        if (ws != null)
+        {
+            BoxCollider bc = ws.GetComponent<BoxCollider>();
+            return (bc != null) ? bc.bounds.max.y : ws.transform.position.y;
+        }
         GetWaterColliderBounds(out _, out _, out float waterY);
         return waterY;
     }
@@ -259,8 +265,8 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        // 3. 🐟 튀어오르는 물고기 (갈라진 물길 및 강폭 적응형 스폰)
-        for (float fDist = startZ + 40f; fDist < endZ - 40f; fDist += Random.Range(45f, 85f))
+        // 3. 🐟 튀어오르는 물고기 (갈라진 물길 및 강폭 적응형 스폰 - 개체 수 대폭 증가)
+        for (float fDist = startZ + 25f; fDist < endZ - 25f; fDist += Random.Range(20f, 42f))
         {
             if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(fDist, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
@@ -271,10 +277,15 @@ public class RiverSpawner : MonoBehaviour
 
                 if (splitChannels.Count > 1)
                 {
-                    // 갈라진 양쪽 물길마다 물고기 1마리씩 스폰
+                    // 갈라진 양쪽 물길마다 물고기 1~2마리씩 스폰
                     for (int chIdx = 0; chIdx < splitChannels.Count; chIdx++)
                     {
-                        TrySpawnFish(splitChannels[chIdx], fDist + (chIdx * 10f), startZ, endZ);
+                        TrySpawnFish(splitChannels[chIdx], fDist + (chIdx * 6f), startZ, endZ);
+                        if (Random.value < 0.45f)
+                        {
+                            Vector3 sidePos = splitChannels[chIdx] + normal * Random.Range(-2.5f, 2.5f);
+                            TrySpawnFish(sidePos, fDist + (chIdx * 6f) + Random.Range(3f, 8f), startZ, endZ);
+                        }
                     }
                 }
                 else
@@ -282,22 +293,22 @@ public class RiverSpawner : MonoBehaviour
                     float effectiveWidth = halfW * 2f;
                     if (effectiveWidth < 15f)
                     {
-                        Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.4f, halfW * 0.4f);
+                        Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.5f, halfW * 0.5f);
                         fPos.y = wY;
                         TrySpawnFish(fPos, fDist, startZ, endZ);
                     }
                     else
                     {
-                        Vector3 fPos1 = cPos - normal * (halfW * 0.6f);
-                        Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
-                        Vector3 fPos3 = cPos + normal * (halfW * 0.6f);
+                        Vector3 fPos1 = cPos - normal * (halfW * 0.65f);
+                        Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.25f, halfW * 0.25f);
+                        Vector3 fPos3 = cPos + normal * (halfW * 0.65f);
                         fPos1.y = wY;
                         fPos2.y = wY;
                         fPos3.y = wY;
 
                         TrySpawnFish(fPos1, fDist, startZ, endZ);
-                        TrySpawnFish(fPos2, fDist + Random.Range(6f, 16f), startZ, endZ);
-                        TrySpawnFish(fPos3, fDist + Random.Range(12f, 24f), startZ, endZ);
+                        TrySpawnFish(fPos2, fDist + Random.Range(4f, 10f), startZ, endZ);
+                        TrySpawnFish(fPos3, fDist + Random.Range(8f, 16f), startZ, endZ);
                     }
                 }
             }
@@ -307,8 +318,8 @@ public class RiverSpawner : MonoBehaviour
                 float fX2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
                 float fX3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
                 TrySpawnFish(new Vector3(fX1, curWaterY, fDist), fDist, startZ, endZ);
-                TrySpawnFish(new Vector3(fX2, curWaterY, fDist + Random.Range(6f, 16f)), fDist, startZ, endZ);
-                TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(12f, 24f)), fDist, startZ, endZ);
+                TrySpawnFish(new Vector3(fX2, curWaterY, fDist + Random.Range(4f, 10f)), fDist, startZ, endZ);
+                TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(8f, 16f)), fDist, startZ, endZ);
             }
         }
 
@@ -436,8 +447,7 @@ public class RiverSpawner : MonoBehaviour
     public GameObject targetZonePrefab;
     [Tooltip("친구 랭킹 깃발 프리팹")]
     public GameObject friendFlagPrefab;
-    [Tooltip("튀어오르는 물고기 프리팹")]
-    public GameObject jumpingFishPrefab;
+    [Tooltip("토종 강물고기 10종 프리팹 배열")]
     public GameObject[] fishPrefabs = new GameObject[10];
     [Tooltip("연잎/연꽃 군락 프리팹")]
     public GameObject lilyPadClusterPrefab;
@@ -450,7 +460,6 @@ public class RiverSpawner : MonoBehaviour
         if (obstacleRockPrefab == null) obstacleRockPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/ObstacleRock.prefab");
         if (targetZonePrefab == null) targetZonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/TargetZone.prefab");
         if (friendFlagPrefab == null) friendFlagPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/FriendFlag.prefab");
-        if (jumpingFishPrefab == null) jumpingFishPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/JumpingFish.prefab");
         if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/LilyPadCluster.prefab");
 
         for (int i = 1; i <= 10; i++)
@@ -467,7 +476,6 @@ public class RiverSpawner : MonoBehaviour
         if (obstacleRockPrefab == null) obstacleRockPrefab = Resources.Load<GameObject>("ObstacleRock");
         if (targetZonePrefab == null) targetZonePrefab = Resources.Load<GameObject>("TargetZone");
         if (friendFlagPrefab == null) friendFlagPrefab = Resources.Load<GameObject>("FriendFlag");
-        if (jumpingFishPrefab == null) jumpingFishPrefab = Resources.Load<GameObject>("JumpingFish");
         if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = Resources.Load<GameObject>("LilyPadCluster");
 
         for (int i = 1; i <= 10; i++)
@@ -598,9 +606,9 @@ public class RiverSpawner : MonoBehaviour
         }
 
         int chosenIdx = Random.Range(minFishIdx, maxFishIdx + 1);
-        GameObject chosenPrefab = (fishPrefabs != null && chosenIdx < fishPrefabs.Length && fishPrefabs[chosenIdx] != null) 
+        GameObject chosenPrefab = (fishPrefabs != null && chosenIdx < fishPrefabs.Length) 
             ? fishPrefabs[chosenIdx] 
-            : jumpingFishPrefab;
+            : null;
 
         GameObject fishObj;
         if (chosenPrefab != null)
@@ -625,7 +633,9 @@ public class RiverSpawner : MonoBehaviour
             jf.speciesName = preset.nameKor;
             jf.jumpHeight = Random.Range(preset.minJumpHeight, preset.maxJumpHeight);
             jf.jumpDuration = preset.jumpDuration;
-            jf.scaleFactor = preset.scaleFactor;
+            // 🐟 개체별 1.0 ~ 2.5 범위의 시원하고 눈에 잘 띄는 스케일 적용
+            float randomVariation = Random.Range(0.95f, 1.1f);
+            jf.scaleFactor = Mathf.Clamp(preset.scaleFactor * randomVariation, 1.0f, 2.6f);
             jf.rewardCoins = preset.rewardCoins;
         }
     }
@@ -829,8 +839,8 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        // 3. 🐟 물고기 (갈라진 물길 및 강폭 적응형 스폰)
-        for (float z = curveStartDist + 35f; z < curveEndDist - 35f; z += Random.Range(45f, 85f))
+        // 3. 🐟 물고기 (갈라진 물길 및 강폭 적응형 스폰 - 개체 수 대폭 증가)
+        for (float z = curveStartDist + 25f; z < curveEndDist - 25f; z += Random.Range(20f, 42f))
         {
             if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
@@ -843,7 +853,12 @@ public class RiverSpawner : MonoBehaviour
                 {
                     for (int chIdx = 0; chIdx < splitChannels.Count; chIdx++)
                     {
-                        TrySpawnFish(splitChannels[chIdx], z + (chIdx * 10f), chunkStartZ, chunkEndZ);
+                        TrySpawnFish(splitChannels[chIdx], z + (chIdx * 6f), chunkStartZ, chunkEndZ);
+                        if (Random.value < 0.45f)
+                        {
+                            Vector3 sidePos = splitChannels[chIdx] + normal * Random.Range(-2.5f, 2.5f);
+                            TrySpawnFish(sidePos, z + (chIdx * 6f) + Random.Range(3f, 8f), chunkStartZ, chunkEndZ);
+                        }
                     }
                 }
                 else
@@ -851,22 +866,22 @@ public class RiverSpawner : MonoBehaviour
                     float effectiveWidth = halfW * 2f;
                     if (effectiveWidth < 15f)
                     {
-                        Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.4f, halfW * 0.4f);
+                        Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.5f, halfW * 0.5f);
                         fPos.y = wY;
                         TrySpawnFish(fPos, z, chunkStartZ, chunkEndZ);
                     }
                     else
                     {
-                        Vector3 fPos1 = cPos - normal * (halfW * 0.6f);
-                        Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
-                        Vector3 fPos3 = cPos + normal * (halfW * 0.6f);
+                        Vector3 fPos1 = cPos - normal * (halfW * 0.65f);
+                        Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.25f, halfW * 0.25f);
+                        Vector3 fPos3 = cPos + normal * (halfW * 0.65f);
                         fPos1.y = wY;
                         fPos2.y = wY;
                         fPos3.y = wY;
 
                         TrySpawnFish(fPos1, z, chunkStartZ, chunkEndZ);
-                        TrySpawnFish(fPos2, z + Random.Range(6f, 16f), chunkStartZ, chunkEndZ);
-                        TrySpawnFish(fPos3, z + Random.Range(12f, 24f), chunkStartZ, chunkEndZ);
+                        TrySpawnFish(fPos2, z + Random.Range(4f, 10f), chunkStartZ, chunkEndZ);
+                        TrySpawnFish(fPos3, z + Random.Range(8f, 16f), chunkStartZ, chunkEndZ);
                     }
                 }
             }
@@ -876,8 +891,8 @@ public class RiverSpawner : MonoBehaviour
                 float x2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
                 float x3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
                 TrySpawnFish(new Vector3(x1, curWaterY, z), z, chunkStartZ, chunkEndZ);
-                TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(6f, 16f)), z, chunkStartZ, chunkEndZ);
-                TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(12f, 24f)), z, chunkStartZ, chunkEndZ);
+                TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(4f, 10f)), z, chunkStartZ, chunkEndZ);
+                TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(8f, 16f)), z, chunkStartZ, chunkEndZ);
             }
         }
 
@@ -1058,7 +1073,7 @@ public class RiverSpawner : MonoBehaviour
     private void TrySpawnFish(Vector3 pos, float dist, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
         if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
-        if (HasNearbySpawnedEntity(pos, 3.5f)) return;
+        if (HasNearbySpawnedEntity(pos, 2.0f)) return;
         SpawnSingleFish(pos, dist);
     }
 

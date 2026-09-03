@@ -19,12 +19,13 @@
   - `RiverSpawner.cs`: 구간 거리 및 확률 기반 10종 물고기 인게임 랜덤 스폰.
   - `FishSetupTool.cs`: 에디터 원클릭 2D 스프라이트 슬라이스 & 10종 프리팹/애니메이터 컨트롤러 빌더 제작 완료.
 
-### ✅ 2. 🌀 랜덤 링(Random Ring) 베이킹 강심(Centerline) 궤적 발사 & 전 코스 스폰 확장
+### ✅ 3. 🐟 토종 물고기 스폰 구조 정리, 수면 단일화 & 시원한 크기(1.0~2.5) 업스케일
 - **배경 및 원인**:
-  - 기존에는 링 탈출 시 이전 진입 방향 그대로 단순 직선 발사되어, 커브 구간이나 강변 쪽을 향해 들어갔을 때 3바운스 거리로 쓩 날아가며 땅이나 둑에 처박히는 문제 발생.
+  - `defaultWaterHeight: 16` 하드코딩 및 레거시 단일 슬롯(`jumpingFishPrefab`)으로 인해 수심 검증이 왜곡되어 물고기가 스폰되지 않던 문제 해결.
+  - 실측 크기(0.75~1.2)가 인게임 카메라 뷰에서 너무 작아 시인성이 떨어지는 문제 개선 요청.
 - **해결 내역**:
-  - `ArcadeSkippingStone.cs`: `GlobalRiverPath`를 통해 돌의 현재 속도/거리(`launchDistance = 3 * currentBounceDistance`) 기반 목표 지점 강심 위치(`targetRiverCenter`) 및 접선(`targetRiverTangent`)을 계산. 1박자 비행 루프 동안 강심선 곡선 궤적을 따라 부드럽게 유도 비행 후 정박 착수 및 접선 방향(`currentForwardDir`) 자동 정렬.
-  - `RiverSpawner.cs`: 링이 곡선 궤적 유도 발사를 완벽 지원하므로, 기존 15도 이상 곡률 스폰 제한 필터를 제거하여 급커브 코스에서도 자유롭게 링이 등장하도록 확장.
+  - `RiverSpawner.cs`: `defaultWaterHeight` 및 레거시 슬롯 완전 삭제. `WaterSurface` 직접 실시간 쿼리 단일화. 스폰 간격(45~85m ➔ 20~42m) 대폭 단축하여 개체 수 2.5배 증량.
+  - `FishData.cs` & `JumpingFish.cs`: 물고기 크기를 **`1.05 ~ 2.50`** 배율로 시원하게 확대. 수심 `0.35m ~ 4.5m`까지 입체적 깊이 부여 및 `Start()` 스케일 동적 갱신 보장.
 
 ---
 

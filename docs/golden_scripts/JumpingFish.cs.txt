@@ -1,4 +1,4 @@
-﻿using UnityEngine;
+using UnityEngine;
 
 public enum FishAIState
 {
@@ -28,6 +28,8 @@ public class JumpingFish : MonoBehaviour
     public FishAIState currentState = FishAIState.UnderwaterIdle;
 
     private Vector3 baseOriginPos;
+    private float waterY = 0f;
+    private float depthOffset = 0.4f; // 개체별 수심 깊이 (0.3m ~ 3.5m)
     private Vector3 currentPatrolTarget;
     private float stateTimer = 0f;
     private float nextStateDuration = 2f;
@@ -42,6 +44,7 @@ public class JumpingFish : MonoBehaviour
     private void Awake()
     {
         baseOriginPos = transform.position;
+        waterY = transform.position.y;
 
         if (modelTransform == null)
         {
@@ -61,12 +64,15 @@ public class JumpingFish : MonoBehaviour
             modelTransform.localScale = Vector3.one * scaleFactor;
         }
 
-        // 각 물고기마다 타이머 및 초기 위상 랜덤화 (모든 물고기가 동시에 멈추거나 움직이지 않도록 분산)
+        // 각 물고기마다 타이머 및 초기 위상 랜덤화
         idleBobbingTimer = Random.Range(0f, 100f);
         stateTimer = Random.Range(0f, 1.5f);
 
-        // 초기 위치는 수면 아래 (-0.4m ~ -0.7m)
-        baseOriginPos.y = -0.5f;
+        // 🌊 어종 크기 및 개체별로 수심 0.35m ~ 3.2m(대형어종 최대 4.5m)까지 입체적 수심 부여
+        float maxDepthByScale = Mathf.Lerp(0.8f, 3.8f, Mathf.Clamp01((scaleFactor - 0.7f) / 1.2f));
+        depthOffset = Random.Range(0.35f, maxDepthByScale);
+
+        baseOriginPos.y = waterY - depthOffset;
         transform.position = baseOriginPos;
 
         // 랜덤하게 50% 확률로 수중 유영 상태로 시작
@@ -77,6 +83,15 @@ public class JumpingFish : MonoBehaviour
         else
         {
             SwitchState(FishAIState.UnderwaterIdle);
+        }
+    }
+
+    private void Start()
+    {
+        // Spawner에서 주입된 scaleFactor를 3D 모델에 확실하게 적용
+        if (modelTransform != null)
+        {
+            modelTransform.localScale = Vector3.one * scaleFactor;
         }
     }
 
@@ -157,19 +172,19 @@ public class JumpingFish : MonoBehaviour
                 leapProgress = 0f;
                 leapStartPos = transform.position;
                 Vector3 forwardDir = transform.forward;
-                leapEndPos = leapStartPos + forwardDir * Random.Range(3.5f, 5.5f);
-                leapEndPos.y = -0.5f;
+                leapEndPos = leapStartPos + forwardDir * Random.Range(3.5f, 6.0f);
+                leapEndPos.y = waterY - depthOffset;
 
                 if (SplashEffectSpawner.Instance != null)
                 {
-                    SplashEffectSpawner.Instance.SpawnSplash(new Vector3(leapStartPos.x, 0f, leapStartPos.z), 1.2f * scaleFactor);
+                    SplashEffectSpawner.Instance.SpawnSplash(new Vector3(leapStartPos.x, waterY, leapStartPos.z), 1.2f * scaleFactor);
                 }
                 break;
             case FishAIState.Submerge:
                 nextStateDuration = 0.5f;
                 if (SplashEffectSpawner.Instance != null)
                 {
-                    SplashEffectSpawner.Instance.SpawnSplash(new Vector3(transform.position.x, 0f, transform.position.z), 1.5f * scaleFactor);
+                    SplashEffectSpawner.Instance.SpawnSplash(new Vector3(transform.position.x, waterY, transform.position.z), 1.5f * scaleFactor);
                 }
                 break;
         }
@@ -181,7 +196,7 @@ public class JumpingFish : MonoBehaviour
         idleBobbingTimer += Time.deltaTime * 2.5f;
 
         // 제자리에서 살랑살랑 상하좌우 미세 부유 운동
-        float bobbingY = -0.5f + Mathf.Sin(idleBobbingTimer) * 0.08f;
+        float bobbingY = (waterY - depthOffset) + Mathf.Sin(idleBobbingTimer) * 0.08f;
         transform.position = new Vector3(transform.position.x, bobbingY, transform.position.z);
 
         if (stateTimer >= nextStateDuration)
@@ -208,7 +223,7 @@ public class JumpingFish : MonoBehaviour
             transform.position += transform.forward * (moveSpeed * Time.deltaTime);
         }
 
-        transform.position = new Vector3(transform.position.x, -0.5f, transform.position.z);
+        transform.position = new Vector3(transform.position.x, waterY - depthOffset, transform.position.z);
 
         if (stateTimer >= nextStateDuration || dir.magnitude < 0.5f)
         {
@@ -222,7 +237,10 @@ public class JumpingFish : MonoBehaviour
         float t = Mathf.Clamp01(leapProgress);
 
         Vector3 currentHorizontal = Vector3.Lerp(leapStartPos, leapEndPos, t);
-        float currentY = -0.5f + Mathf.Sin(t * Mathf.PI) * (jumpHeight + 0.5f);
+        // 깊은 곳(waterY - depthOffset)에서 출발하여 수면 위(waterY + jumpHeight)로 시원하게 솟구침
+        float startY = waterY - depthOffset;
+        float peakY = waterY + jumpHeight;
+        float currentY = Mathf.Lerp(startY, peakY, Mathf.Sin(t * Mathf.PI));
         transform.position = new Vector3(currentHorizontal.x, currentY, currentHorizontal.z);
 
         float pitchAngle = Mathf.Cos(t * Mathf.PI) * 45f;
@@ -252,7 +270,7 @@ public class JumpingFish : MonoBehaviour
     private void UpdateSubmerge()
     {
         stateTimer += Time.deltaTime;
-        transform.position = new Vector3(transform.position.x, -0.6f, transform.position.z);
+        transform.position = new Vector3(transform.position.x, waterY - (depthOffset + 0.2f), transform.position.z);
 
         if (stateTimer >= nextStateDuration)
         {
@@ -269,7 +287,7 @@ public class JumpingFish : MonoBehaviour
     private void PickNextPatrolPoint()
     {
         Vector2 circle = Random.insideUnitCircle * Random.Range(2.5f, 5.0f);
-        currentPatrolTarget = new Vector3(baseOriginPos.x + circle.x, -0.5f, baseOriginPos.z + circle.y);
+        currentPatrolTarget = new Vector3(baseOriginPos.x + circle.x, waterY - depthOffset, baseOriginPos.z + circle.y);
     }
 
     private void SnipeHit()
