@@ -438,6 +438,7 @@ public class RiverSpawner : MonoBehaviour
     public GameObject friendFlagPrefab;
     [Tooltip("튀어오르는 물고기 프리팹")]
     public GameObject jumpingFishPrefab;
+    public GameObject[] fishPrefabs = new GameObject[10];
     [Tooltip("연잎/연꽃 군락 프리팹")]
     public GameObject lilyPadClusterPrefab;
 
@@ -451,6 +452,15 @@ public class RiverSpawner : MonoBehaviour
         if (friendFlagPrefab == null) friendFlagPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/FriendFlag.prefab");
         if (jumpingFishPrefab == null) jumpingFishPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/JumpingFish.prefab");
         if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/LilyPadCluster.prefab");
+
+        for (int i = 1; i <= 10; i++)
+        {
+            if (fishPrefabs[i - 1] == null)
+            {
+                string p = $"Assets/Resources/FishPrefabs/River_Fish_{i:D2}.prefab";
+                fishPrefabs[i - 1] = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(p);
+            }
+        }
 #endif
         if (boostPadPrefab == null) boostPadPrefab = Resources.Load<GameObject>("BoostPad");
         if (randomRingPrefab == null) randomRingPrefab = Resources.Load<GameObject>("Random_Ring");
@@ -459,6 +469,14 @@ public class RiverSpawner : MonoBehaviour
         if (friendFlagPrefab == null) friendFlagPrefab = Resources.Load<GameObject>("FriendFlag");
         if (jumpingFishPrefab == null) jumpingFishPrefab = Resources.Load<GameObject>("JumpingFish");
         if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = Resources.Load<GameObject>("LilyPadCluster");
+
+        for (int i = 1; i <= 10; i++)
+        {
+            if (fishPrefabs[i - 1] == null)
+            {
+                fishPrefabs[i - 1] = Resources.Load<GameObject>($"FishPrefabs/River_Fish_{i:D2}");
+            }
+        }
     }
 
     private void CreateTargetRing(Vector3 pos)
@@ -552,15 +570,47 @@ public class RiverSpawner : MonoBehaviour
     private void SpawnSingleFish(Vector3 pos, float dist)
     {
         EnsurePrefabsLoaded();
-        GameObject fishObj;
-        if (jumpingFishPrefab != null)
+
+        // 10종 물고기 프리팹 중 거리와 랜덤성을 고려하여 선택
+        // 앞쪽은 소/중형 어종(1~5번), 뒤쪽으로 갈수록 대형 어종(6~10번) 확률 증가
+        int minFishIdx = 0;
+        int maxFishIdx = 9;
+
+        if (dist < 150f)
         {
-            fishObj = Instantiate(jumpingFishPrefab, pos, Quaternion.identity, transform);
-            fishObj.name = $"JumpingFish_{pos.x:F0}x{pos.z:F0}";
+            minFishIdx = 0; // 버들치
+            maxFishIdx = 3; // 은어
+        }
+        else if (dist < 400f)
+        {
+            minFishIdx = 1; // 피라미
+            maxFishIdx = 6; // 쏘가리
+        }
+        else if (dist < 800f)
+        {
+            minFishIdx = 3; // 은어
+            maxFishIdx = 8; // 무지개송어
         }
         else
         {
-            fishObj = new GameObject($"JumpingFish_{pos.x:F0}x{pos.z:F0}");
+            minFishIdx = 4; // 산천어
+            maxFishIdx = 9; // 강준치
+        }
+
+        int chosenIdx = Random.Range(minFishIdx, maxFishIdx + 1);
+        GameObject chosenPrefab = (fishPrefabs != null && chosenIdx < fishPrefabs.Length && fishPrefabs[chosenIdx] != null) 
+            ? fishPrefabs[chosenIdx] 
+            : jumpingFishPrefab;
+
+        GameObject fishObj;
+        if (chosenPrefab != null)
+        {
+            fishObj = Instantiate(chosenPrefab, pos, Quaternion.identity, transform);
+            fishObj.name = $"Fish_{chosenIdx + 1:D2}_{pos.x:F0}x{pos.z:F0}";
+        }
+        else
+        {
+            fishObj = new GameObject($"Fish_{chosenIdx + 1:D2}_{pos.x:F0}x{pos.z:F0}");
             fishObj.transform.SetParent(transform);
             fishObj.transform.position = pos;
             fishObj.AddComponent<JumpingFish>();
@@ -569,24 +619,14 @@ public class RiverSpawner : MonoBehaviour
         JumpingFish jf = fishObj.GetComponent<JumpingFish>();
         if (jf != null)
         {
-            if (dist < 300f)
-            {
-                jf.speciesId = "minnow";
-                jf.speciesName = "피라미";
-                jf.jumpHeight = 2.4f;
-            }
-            else if (dist < 750f)
-            {
-                jf.speciesId = "carp";
-                jf.speciesName = "비단 잉어";
-                jf.jumpHeight = 3.2f;
-            }
-            else
-            {
-                jf.speciesId = "flying_fish";
-                jf.speciesName = "날치";
-                jf.jumpHeight = 4.0f;
-            }
+            FishSpeciesData preset = FishPresetDatabase.GetPreset(chosenIdx + 1);
+            jf.fishIndex = preset.index;
+            jf.speciesId = preset.id;
+            jf.speciesName = preset.nameKor;
+            jf.jumpHeight = Random.Range(preset.minJumpHeight, preset.maxJumpHeight);
+            jf.jumpDuration = preset.jumpDuration;
+            jf.scaleFactor = preset.scaleFactor;
+            jf.rewardCoins = preset.rewardCoins;
         }
     }
 

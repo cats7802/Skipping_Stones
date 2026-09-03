@@ -1,4 +1,4 @@
-using UnityEngine;
+﻿using UnityEngine;
 using System;
 using System.Collections.Generic;
 
@@ -7,12 +7,14 @@ public class FishSpecies
 {
     public string id;
     public string name;
+    public string scientificName;
     public string icon;
     public string description;
     public int spawnStartDistance;
     public int spawnEndDistance;
     public int caughtCount = 0;
     public int rewardCoins = 100;
+    public Sprite bookSprite;
 }
 
 public class AquariumManager : MonoBehaviour
@@ -39,38 +41,22 @@ public class AquariumManager : MonoBehaviour
     {
         if (fishSpeciesList.Count > 0) return;
 
-        fishSpeciesList.Add(new FishSpecies
+        // 10종 어종 프리셋 데이터베이스에서 동적 초기화
+        foreach (var preset in FishPresetDatabase.Presets)
         {
-            id = "minnow",
-            name = "피라미 (Minnow)",
-            icon = "🐟",
-            description = "강변 여울에서 흔히 볼 수 있는 작고 날렵한 민물고기",
-            spawnStartDistance = 30,
-            spawnEndDistance = 250,
-            rewardCoins = 100
-        });
-
-        fishSpeciesList.Add(new FishSpecies
-        {
-            id = "carp",
-            name = "비단 잉어 (Golden Carp)",
-            icon = "🐠",
-            description = "물살을 가르며 높이 뛰어오르는 황금빛 비늘의 고급 어종",
-            spawnStartDistance = 250,
-            spawnEndDistance = 600,
-            rewardCoins = 300
-        });
-
-        fishSpeciesList.Add(new FishSpecies
-        {
-            id = "flying_fish",
-            name = "날치 (Flying Fish)",
-            icon = "🦅",
-            description = "수면 위를 장거리 활강하는 전설의 초고속 어종",
-            spawnStartDistance = 600,
-            spawnEndDistance = 1500,
-            rewardCoins = 800
-        });
+            fishSpeciesList.Add(new FishSpecies
+            {
+                id = preset.id,
+                name = $"{preset.nameKor} ({preset.nameEng})",
+                scientificName = preset.scientificName,
+                icon = "🐟",
+                description = $"[{preset.lengthRange}] {preset.behaviorDesc}",
+                spawnStartDistance = (preset.index - 1) * 60,
+                spawnEndDistance = preset.index * 150 + 200,
+                rewardCoins = preset.rewardCoins,
+                bookSprite = preset.bookSprite
+            });
+        }
     }
 
     public void RegisterCaughtFish(string speciesId)
@@ -97,6 +83,7 @@ public class AquariumManager : MonoBehaviour
 
     public bool CheckAllCompleted()
     {
+        if (fishSpeciesList.Count == 0) return false;
         foreach (var f in fishSpeciesList)
         {
             if (f.caughtCount == 0) return false;
