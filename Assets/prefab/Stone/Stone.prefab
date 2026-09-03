@@ -243,7 +243,10 @@ MonoBehaviour:
   totalDistance: 0
   skimDistance: 0
   isInTimingWindow: 0
+  currentMomentum: 5
+  maxMomentum: 10
   bounceHistory: []
+  tapDebugHistory: []
   waterLevel: 0
 --- !u!114 &6858175712008058772
 MonoBehaviour:
@@ -258,13 +261,17 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::RhythmRingIndicator
   stone: {fileID: 8548560131798176245}
+  arcadeStone: {fileID: 0}
   targetRingRadius: 0.29
   maxRingMultiplier: 5.2
   segments: 56
   lineWidth: 0.032
-  innerRingColor: {r: 0.1, g: 0.85, b: 1, a: 0.9}
-  perfectRingColor: {r: 0.15, g: 1, b: 0.5, a: 1}
-  outerRingColor: {r: 0.3, g: 0.95, b: 1, a: 0.85}
+  innerCoreColor: {r: 0.95, g: 0.15, b: 0.22, a: 0.95}
+  innerRingBorderColor: {r: 1, g: 0.35, b: 0.4, a: 1}
+  shrinkingColorStart: {r: 1, g: 0.92, b: 0.2, a: 1}
+  shrinkingColorMid: {r: 1, g: 0.55, b: 0.15, a: 1}
+  shrinkingColorEnd: {r: 1, g: 0.15, b: 0.22, a: 1}
+  shrinkingDiscAlpha: 0.28
 --- !u!1001 &9116325896878660925
 PrefabInstance:
   m_ObjectHideFlags: 0

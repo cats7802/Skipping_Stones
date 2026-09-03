@@ -2,6 +2,7 @@ using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using SkippingStones.Arcade.Buffs;
 
 namespace SkippingStones.Arcade
 {
@@ -82,6 +83,14 @@ namespace SkippingStones.Arcade
         [Header("비주얼 및 트레일")]
         public TrailRenderer trail;
         public RhythmRingIndicator rhythmRing;
+
+        [Header("🌀 랜덤 링 (Random Ring) 상태 및 버프")]
+        public bool isInRandomRing = false;
+        public IRandomRingBuff currentActiveBuff = null;
+        public int activeBuffRemainingBounces = 0;
+        public float steerAngleBonus = 0f;          // 추가 꺾임 각도 (+5도 등)
+        public bool isInvincibleToObstacles = false; // 공중 하이점프 시 장애물 충돌 무시
+        public float speedMultiplierBonus = 1.0f;
 
         public event Action<int, string> OnSkipBounced;
         public event Action<float> OnStoneSunk;
@@ -267,6 +276,18 @@ namespace SkippingStones.Arcade
             earlyRetryCount = 0;
             pendingGrade = "";
             pendingSteerAngle = 0f;
+
+            // 랜덤 링 및 버프 초기화
+            isInRandomRing = false;
+            if (currentActiveBuff != null)
+            {
+                currentActiveBuff.OnRemove(this);
+                currentActiveBuff = null;
+            }
+            activeBuffRemainingBounces = 0;
+            steerAngleBonus = 0f;
+            isInvincibleToObstacles = false;
+            speedMultiplierBonus = 1.0f;
         }
 
         private void Update()
@@ -283,39 +304,43 @@ namespace SkippingStones.Arcade
             }
 #endif
 
-            if (!isThrown || isSunk || isCrashed || isSkimming) return;
+            if (!isThrown || isSunk || isCrashed || isSkimming || isInRandomRing) return;
 
             cycleElapsedTime += Time.deltaTime;
             float t = cycleElapsedTime / currentCycleDuration;
 
-            // 1. 디렉터 확정: 고정 높이 1.8m 기반 수학적 포물선 (1.00초 정박 동안 끝까지 수면으로 비행)
+            // 1. 디렉터 확정: 고정 높이 1.8m (하이점프 버프 시 +1.2m 솟구침)
+            float currentHeight = isInvincibleToObstacles ? (fixedBounceArcHeight + 1.2f) : fixedBounceArcHeight;
             Vector3 horizPos = Vector3.Lerp(cycleStartPos, cycleEndPos, Mathf.Clamp01(t));
             // y = waterLevel + 4 * H * t * (1 - t)
-            float yPos = waterLevel + 4f * fixedBounceArcHeight * t * (1f - t);
+            float yPos = waterLevel + 4f * currentHeight * t * (1f - t);
             Vector3 nextPos = new Vector3(horizPos.x, Mathf.Max(waterLevel, yPos), horizPos.z);
 
-            // 🪨 지형 및 바위 충돌 검사 (Kinematic 돌의 연속 충돌 검출)
-            Collider[] hits = Physics.OverlapSphere(nextPos, 0.12f, ~0, QueryTriggerInteraction.Ignore);
-            for (int i = 0; i < hits.Length; i++)
+            // 🪨 지형 및 바위 충돌 검사 (Kinematic 돌의 연속 충돌 검출 - 하이점프 무적 상태 시 스킵!)
+            if (!isInvincibleToObstacles)
             {
-                Collider col = hits[i];
-                if (col == null || col.gameObject == gameObject || col.transform.IsChildOf(transform)) continue;
-
-                // 수면, 캐릭터, 발판 제외
-                if (col.GetComponent<WaterSurface>() != null || col.GetComponentInParent<WaterSurface>() != null) continue;
-                string colName = col.name.ToLower();
-                if (colName.Contains("water") || colName.Contains("surface") || colName.Contains("river") 
-                    || colName.Contains("pier") || colName.Contains("platform") 
-                    || colName.Contains("character") || colName.Contains("thrower")) continue;
-
-                // 지형(Terrain/MeshCollider) 또는 바위(Rock/Obstacle/Ground/Bank) 감지
-                bool isTerrain = col.GetComponent<TerrainCollider>() != null || col.GetComponent<UnityEngine.Terrain>() != null || col.GetComponent<MeshCollider>() != null;
-                bool isObstacle = colName.Contains("rock") || colName.Contains("obstacle") || colName.Contains("ground") || colName.Contains("bank");
-
-                if (isTerrain || isObstacle)
+                Collider[] hits = Physics.OverlapSphere(nextPos, 0.12f, ~0, QueryTriggerInteraction.Ignore);
+                for (int i = 0; i < hits.Length; i++)
                 {
-                    CrashOnLand(nextPos, Vector3.up, col);
-                    return;
+                    Collider col = hits[i];
+                    if (col == null || col.gameObject == gameObject || col.transform.IsChildOf(transform)) continue;
+
+                    // 수면, 캐릭터, 발판 제외
+                    if (col.GetComponent<WaterSurface>() != null || col.GetComponentInParent<WaterSurface>() != null) continue;
+                    string colName = col.name.ToLower();
+                    if (colName.Contains("water") || colName.Contains("surface") || colName.Contains("river") 
+                        || colName.Contains("pier") || colName.Contains("platform") 
+                        || colName.Contains("character") || colName.Contains("thrower")) continue;
+
+                    // 지형(Terrain/MeshCollider) 또는 바위(Rock/Obstacle/Ground/Bank) 감지
+                    bool isTerrain = col.GetComponent<TerrainCollider>() != null || col.GetComponent<UnityEngine.Terrain>() != null || col.GetComponent<MeshCollider>() != null;
+                    bool isObstacle = colName.Contains("rock") || colName.Contains("obstacle") || colName.Contains("ground") || colName.Contains("bank");
+
+                    if (isTerrain || isObstacle)
+                    {
+                        CrashOnLand(nextPos, Vector3.up, col);
+                        return;
+                    }
                 }
             }
 
@@ -508,10 +533,17 @@ namespace SkippingStones.Arcade
             hasTappedInCycle = true;
             skipCount++;
 
-            // 조향 적용
-            if (Mathf.Abs(steerAngle) > 0.1f)
+            // 조향 적용 (+5도 조향 보너스 버프가 활성화되어 있으면 꺾이는 방향으로 +5도 가산)
+            float finalSteerAngle = steerAngle;
+            if (Mathf.Abs(finalSteerAngle) > 0.1f && steerBonusBounces > 0)
             {
-                currentForwardDir = Quaternion.Euler(0f, steerAngle, 0f) * currentForwardDir;
+                float sign = Mathf.Sign(finalSteerAngle);
+                finalSteerAngle += sign * steerAngleBonus; // 예: +5도 ➔ +10도, -5도 ➔ -10도
+            }
+
+            if (Mathf.Abs(finalSteerAngle) > 0.1f)
+            {
+                currentForwardDir = Quaternion.Euler(0f, finalSteerAngle, 0f) * currentForwardDir;
             }
 
             PresetData preset = GetCurrentPresetData();
@@ -573,6 +605,22 @@ namespace SkippingStones.Arcade
                 currentBounceDistance = Mathf.Max(3.0f, currentBounceDistance + distanceDelta);
             }
 
+            // 🌀 버프 카운터 차감 및 효과 관리
+            if (currentActiveBuff != null)
+            {
+                if (activeBuffRemainingBounces > 0)
+                {
+                    activeBuffRemainingBounces--;
+                    currentActiveBuff.OnBounceTick(this, activeBuffRemainingBounces);
+
+                    if (activeBuffRemainingBounces <= 0)
+                    {
+                        currentActiveBuff.OnRemove(this);
+                        currentActiveBuff = null;
+                    }
+                }
+            }
+
             currentMomentum = Mathf.Clamp(currentMomentum + momentumDelta, 0f, maxMomentum);
             totalDistance += currentBounceDistance;
             UpdateBPM();
@@ -592,10 +640,11 @@ namespace SkippingStones.Arcade
             }
             else
             {
-                // 다음 바운스 포물선 설정 (고정 높이 1.8m 유지)
+                // 다음 바운스 포물선 설정 (고정 높이 1.8m 유지 or 하이점프)
                 cycleStartPos = transform.position;
                 cycleStartPos.y = waterLevel;
-                cycleEndPos = cycleStartPos + currentForwardDir * currentBounceDistance;
+                float nextDistance = currentBounceDistance * speedMultiplierBonus;
+                cycleEndPos = cycleStartPos + currentForwardDir * nextDistance;
                 cycleEndPos.y = waterLevel;
 
                 cycleElapsedTime = 0f;
@@ -841,6 +890,147 @@ namespace SkippingStones.Arcade
             GUILayout.Label($"📏 목표: {currentBounceDistance:F1}m | 모멘텀: {currentMomentum:F0}", labelStyle);
             GUILayout.EndArea();
         }
+
+        #region 🌀 랜덤 링 (Random Ring) 인터랙션 & 버프 시퀀스
+
+        /// <summary>
+        /// 🌀 돌이 링 영역에 진입했을 때 RandomRing 컴포넌트에서 호출
+        /// </summary>
+        public void EnterRandomRing(RandomRing ring)
+        {
+            if (isInRandomRing || isSunk || isCrashed || !isThrown) return;
+            StartCoroutine(CoProcessRandomRingSequence(ring));
+        }
+
+        private IEnumerator CoProcessRandomRingSequence(RandomRing ring)
+        {
+            isInRandomRing = true;
+
+            // 1. 카메라 숄더/비행 리그 연동
+            DualCameraSetup cam = FindAnyObjectByType<DualCameraSetup>();
+            if (cam != null)
+            {
+                cam.SetRingHoldCinematic(true);
+            }
+
+            // 2. 박자 단위(2박) 계산: 현재 BPM 기반 1박 지속시간
+            float beatDuration = currentCycleDuration; // 1 Beat (60BPM = 1.0s)
+            float holdDuration = beatDuration * 2.0f;  // 2 Beats (60BPM = 2.0s)
+
+            // 3. 자석 스냅(Magnetic Snap): 링 중심점으로 부드럽게 흡입
+            Vector3 ringCenter = ring.transform.position;
+            Vector3 snapStartPos = transform.position;
+            float snapTime = Mathf.Min(0.25f, beatDuration * 0.35f);
+            float snapElapsed = 0f;
+
+            // 링에게 2박자 스케일 펄스(둥-둥-) 연출 지시
+            ring.PlayBeatPulse(2, beatDuration);
+
+            // 흡입 사운드
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySound(SoundType.ThrowWhoosh, 1.1f);
+            }
+
+            while (snapElapsed < snapTime)
+            {
+                snapElapsed += Time.deltaTime;
+                float st = Mathf.Clamp01(snapElapsed / snapTime);
+                transform.position = Vector3.Lerp(snapStartPos, ringCenter, Mathf.SmoothStep(0f, 1f, st));
+                transform.Rotate(Vector3.up, 720f * Time.deltaTime, Space.World);
+                yield return null;
+            }
+
+            // 4. 홀드 & 차징 기간 (나머지 홀드 시간 동안 고속 스핀 & 진동)
+            float remainingHold = holdDuration - snapTime;
+            float holdElapsed = 0f;
+            while (holdElapsed < remainingHold)
+            {
+                holdElapsed += Time.deltaTime;
+                // 에너지 차징 진동
+                Vector3 jitter = UnityEngine.Random.insideUnitSphere * 0.035f;
+                transform.position = ringCenter + jitter;
+                transform.Rotate(Vector3.up, 1440f * Time.deltaTime, Space.World);
+                yield return null;
+            }
+
+            // 5. 기분 좋은 랜덤 버프 룰렛 추첨 (버프 매니저 전략 패턴 호출)
+            if (currentActiveBuff != null)
+            {
+                currentActiveBuff.OnRemove(this);
+            }
+
+            IRandomRingBuff selectedBuff = RandomRingBuffManager.RollRandomBuff();
+            currentActiveBuff = selectedBuff;
+            activeBuffRemainingBounces = selectedBuff.DurationBounces;
+            selectedBuff.OnApply(this);
+
+            string buffMessage = selectedBuff.BuffName;
+            GameController gc = FindAnyObjectByType<GameController>();
+            if (gc != null)
+            {
+                gc.lastTimingText = buffMessage;
+                gc.bannerNotificationText = $"[RANDOM RING] {buffMessage}";
+            }
+            Debug.Log($"<color=#00FFFF>[🌀 Random Ring Roll]</color> {buffMessage}");
+
+            // 6. 🚀 매트릭스 웜홀 스타일 런치 (정확히 1박자 동안 3바운스 거리 쓩~!)
+            float launchDuration = beatDuration * 1.0f; // 정확히 1 Beat
+            float launchDistance = currentBounceDistance * 3.0f; // 3바운스 분량 거리
+
+            // 카메라 연출: 클로즈업 해제 및 광각 FOV 워프 발동
+            if (cam != null)
+            {
+                cam.SetRingHoldCinematic(false);
+                cam.TriggerWarpSpeedFOV(launchDuration, 105f);
+            }
+
+            // 런치 사운드 & 햅틱
+            if (AudioManager.Instance != null)
+            {
+                AudioManager.Instance.PlaySound(SoundType.BoostPad, 1.4f);
+            }
+            HapticFeedbackHelper.TriggerPerfectImpact();
+
+            // 링 소멸 연출
+            ring.DisappearAndDestroy();
+
+            Vector3 launchStart = transform.position;
+            Vector3 launchEnd = launchStart + currentForwardDir * launchDistance;
+            launchEnd.y = waterLevel; // 다음 정박 착수 지점
+
+            float launchElapsed = 0f;
+            while (launchElapsed < launchDuration)
+            {
+                launchElapsed += Time.deltaTime;
+                float lt = Mathf.Clamp01(launchElapsed / launchDuration);
+                // EaseOutQuad 스타일 쾌속 관통
+                float curvedT = Mathf.Sin(lt * Mathf.PI * 0.5f);
+
+                Vector3 curXZ = Vector3.Lerp(launchStart, launchEnd, curvedT);
+                // 공중 궤적: 약간의 상향 아크
+                float arcY = Mathf.Lerp(launchStart.y, waterLevel, lt) + Mathf.Sin(lt * Mathf.PI) * 1.5f;
+                transform.position = new Vector3(curXZ.x, Mathf.Max(waterLevel, arcY), curXZ.z);
+
+                transform.rotation = Quaternion.LookRotation(currentForwardDir, Vector3.up);
+                yield return null;
+            }
+
+            // 7. 정박 수면 착수 (착수 판정 실행 & 다음 바운스로 매끄럽게 연결)
+            transform.position = launchEnd;
+            isInRandomRing = false;
+
+            // 물보라 이펙트
+            if (SplashEffectSpawner.Instance != null)
+            {
+                SplashEffectSpawner.Instance.SpawnSplash(launchEnd, 2.5f);
+            }
+
+            // 링 런치 성공 착수
+            ExecuteSurfaceImpact("PERFECT (WARP LAUNCH)", 0f);
+        }
+
+        #endregion
 
         private void OnDrawGizmos()
         {

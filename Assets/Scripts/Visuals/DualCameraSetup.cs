@@ -61,8 +61,54 @@ public class DualCameraSetup : MonoBehaviour
     public float defaultFOV = 60f;
     [Tooltip("비행 중 광각 FOV (배경 전경 확장 및 원근감 극대화)")]
     public float flightFOV = 80f;
-    [Tooltip("FOV 전환 보간 속도")]
-    public float fovTransitionSpeed = 6.0f;
+    public float fovTransitionSpeed = 5f;
+
+    [Header("🌀 랜덤 링 시네마틱 연출 (클로즈업 & 매트릭스 웜홀 FOV)")]
+    private float fovOverride = -1f;
+    private float customFovSpeed = 5f;
+    private float customDistBackOffset = 0f;
+
+    /// <summary>
+    /// 🌀 링 충전 중 클로즈업 연출
+    /// </summary>
+    public void SetRingHoldCinematic(bool isHolding)
+    {
+        if (isHolding)
+        {
+            fovOverride = 68f;
+            customFovSpeed = 3.5f;
+            customDistBackOffset = -0.5f; // 살짝 줌인 클로즈업
+        }
+        else
+        {
+            customDistBackOffset = 0f;
+        }
+    }
+
+    /// <summary>
+    /// 🚀 링 발사 시 매트릭스 웜홀 광각 FOV 워프 연출
+    /// </summary>
+    public void TriggerWarpSpeedFOV(float warpDuration = 1.0f, float peakFOV = 105f)
+    {
+        StartCoroutine(CoWarpSpeedFOV(warpDuration, peakFOV));
+    }
+
+    private System.Collections.IEnumerator CoWarpSpeedFOV(float duration, float peakFOV)
+    {
+        customDistBackOffset = 0.6f; // 순간적으로 살짝 뒤로 밀림 (가속감)
+        fovOverride = peakFOV;
+        customFovSpeed = 22f; // 순식간에 쫙 펴짐
+
+        yield return new WaitForSeconds(duration * 0.5f);
+
+        // 정박 착수 타이밍에 맞춰 부드럽게 원래 flightFOV로 복귀
+        customDistBackOffset = 0f;
+        fovOverride = flightFOV;
+        customFovSpeed = 6f;
+
+        yield return new WaitForSeconds(duration * 0.5f);
+        fovOverride = -1f; // 오버라이드 해제
+    }
 
     [Header("모드별 카메라 오프셋 (세로 9:16 최적화)")]
     public float topDownDistBack = 9.0f;
@@ -367,7 +413,8 @@ public class DualCameraSetup : MonoBehaviour
                 float dynamicLookY = waterLevel + (relativeStoneY * 0.35f) + flightLookHeight + flightPivotOffsetY;
 
                 Vector3 stoneXZ = new Vector3(stonePos.x, 0f, stonePos.z);
-                targetOffset = stoneXZ - (moveDir * flightDistBack) + (Vector3.up * dynamicCamY);
+                float actualDistBack = Mathf.Max(0.5f, flightDistBack + customDistBackOffset);
+                targetOffset = stoneXZ - (moveDir * actualDistBack) + (Vector3.up * dynamicCamY);
                 targetLookOffset = stoneXZ + (moveDir * flightLookForward) + (Vector3.up * dynamicLookY);
                 break;
         }
@@ -390,11 +437,15 @@ public class DualCameraSetup : MonoBehaviour
         {
             if (mainCam.orthographic) mainCam.orthographic = false;
 
-            // 🌟 FOV 다이내믹 전환: 비행 중에는 광각(flightFOV), 그 외에는 defaultFOV
-            float targetFOV = (currentMode == CameraMode.DynamicFlight || currentMode == CameraMode.LaunchLeadIn) ? flightFOV : defaultFOV;
+            // 🌟 FOV 다이내믹 전환: 링 연출 시 fovOverride 우선, 그 외에는 비행 중 flightFOV / 대기 중 defaultFOV
+            float targetFOV = (fovOverride > 0f) 
+                ? fovOverride 
+                : ((currentMode == CameraMode.DynamicFlight || currentMode == CameraMode.LaunchLeadIn) ? flightFOV : defaultFOV);
+            float transitionSpeed = (fovOverride > 0f) ? customFovSpeed : fovTransitionSpeed;
+
             if (Mathf.Abs(mainCam.fieldOfView - targetFOV) > 0.05f)
             {
-                mainCam.fieldOfView = Mathf.Lerp(mainCam.fieldOfView, targetFOV, Time.deltaTime * fovTransitionSpeed);
+                mainCam.fieldOfView = Mathf.Lerp(mainCam.fieldOfView, targetFOV, Time.deltaTime * transitionSpeed);
             }
 
             if (currentMode == CameraMode.TopDownPosition)

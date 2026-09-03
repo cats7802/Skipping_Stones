@@ -35,6 +35,7 @@ public class RiverSpawner : MonoBehaviour
 
     public void GenerateRiverEntitiesForMode(GameController.GameMode mode)
     {
+        currentSpawningMode = mode;
         if (mode == GameController.GameMode.TargetAccuracy)
         {
             GenerateTargetAccuracyRiver();
@@ -45,6 +46,8 @@ public class RiverSpawner : MonoBehaviour
             GenerateLongDistanceRiver();
         }
     }
+
+    private GameController.GameMode currentSpawningMode = GameController.GameMode.LongDistance;
 
     public void GenerateRiverEntities()
     {
@@ -153,7 +156,7 @@ public class RiverSpawner : MonoBehaviour
                     // 🏝️ 갈라진 양쪽 물길 모두에 부스트 패드 1개씩 균등 스폰
                     foreach (var chPos in splitChannels)
                     {
-                        TrySpawnBoostPad(chPos, startZ, endZ);
+                        TrySpawnBoostPad(chPos, startZ, endZ, tan);
                     }
                 }
                 else
@@ -164,7 +167,7 @@ public class RiverSpawner : MonoBehaviour
                         // 좁은 협곡 (< 15m): 중앙 1개만 안전 스폰
                         Vector3 midPos = cPos + normal * Random.Range(-1.5f, 1.5f);
                         midPos.y = wY + 0.05f;
-                        TrySpawnBoostPad(midPos, startZ, endZ);
+                        TrySpawnBoostPad(midPos, startZ, endZ, tan);
                     }
                     else if (effectiveWidth < 25f)
                     {
@@ -173,8 +176,8 @@ public class RiverSpawner : MonoBehaviour
                         Vector3 p2 = cPos + normal * (halfW * 0.5f);
                         p1.y = wY + 0.05f;
                         p2.y = wY + 0.05f;
-                        TrySpawnBoostPad(p1, startZ, endZ);
-                        if (Random.value < 0.7f) TrySpawnBoostPad(p2, startZ, endZ);
+                        TrySpawnBoostPad(p1, startZ, endZ, tan);
+                        if (Random.value < 0.7f) TrySpawnBoostPad(p2, startZ, endZ, tan);
                     }
                     else
                     {
@@ -186,9 +189,9 @@ public class RiverSpawner : MonoBehaviour
                         midPos.y = wY + 0.05f;
                         rightPos.y = wY + 0.05f;
 
-                        TrySpawnBoostPad(leftPos, startZ, endZ);
-                        TrySpawnBoostPad(midPos, startZ, endZ);
-                        TrySpawnBoostPad(rightPos, startZ, endZ);
+                        TrySpawnBoostPad(leftPos, startZ, endZ, tan);
+                        TrySpawnBoostPad(midPos, startZ, endZ, tan);
+                        TrySpawnBoostPad(rightPos, startZ, endZ, tan);
                     }
                 }
             }
@@ -425,6 +428,8 @@ public class RiverSpawner : MonoBehaviour
     [Header("스폰 프리팹 슬롯 (인스펙터 드래그&드롭)")]
     [Tooltip("가속 부스트 패드 프리팹")]
     public GameObject boostPadPrefab;
+    [Tooltip("🌀 리듬 아케이드 전용 랜덤 링 프리팹")]
+    public GameObject randomRingPrefab;
     [Tooltip("장애물 바위 프리팹")]
     public GameObject obstacleRockPrefab;
     [Tooltip("타겟 과녁 프리팹")]
@@ -440,6 +445,7 @@ public class RiverSpawner : MonoBehaviour
     {
 #if UNITY_EDITOR
         if (boostPadPrefab == null) boostPadPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/BoostPad.prefab");
+        if (randomRingPrefab == null) randomRingPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/Ingame_Object/Random_Ring.fbx");
         if (obstacleRockPrefab == null) obstacleRockPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/ObstacleRock.prefab");
         if (targetZonePrefab == null) targetZonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/TargetZone.prefab");
         if (friendFlagPrefab == null) friendFlagPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/FriendFlag.prefab");
@@ -447,6 +453,7 @@ public class RiverSpawner : MonoBehaviour
         if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/LilyPadCluster.prefab");
 #endif
         if (boostPadPrefab == null) boostPadPrefab = Resources.Load<GameObject>("BoostPad");
+        if (randomRingPrefab == null) randomRingPrefab = Resources.Load<GameObject>("Random_Ring");
         if (obstacleRockPrefab == null) obstacleRockPrefab = Resources.Load<GameObject>("ObstacleRock");
         if (targetZonePrefab == null) targetZonePrefab = Resources.Load<GameObject>("TargetZone");
         if (friendFlagPrefab == null) friendFlagPrefab = Resources.Load<GameObject>("FriendFlag");
@@ -486,6 +493,29 @@ public class RiverSpawner : MonoBehaviour
             pad.transform.position = pos;
             pad.transform.rotation = rot;
             pad.AddComponent<BoostPad>();
+        }
+    }
+
+    private void CreateRandomRing(Vector3 pos, Quaternion rot)
+    {
+        EnsurePrefabsLoaded();
+        GameObject ringObj = null;
+        if (randomRingPrefab != null)
+        {
+            ringObj = Instantiate(randomRingPrefab, pos, rot, transform);
+            ringObj.name = $"RandomRing_{pos.x:F0}x{pos.z:F0}";
+            if (ringObj.GetComponent<SkippingStones.Arcade.RandomRing>() == null)
+            {
+                ringObj.AddComponent<SkippingStones.Arcade.RandomRing>();
+            }
+        }
+        else
+        {
+            ringObj = new GameObject($"RandomRing_{pos.x:F0}x{pos.z:F0}");
+            ringObj.transform.SetParent(transform);
+            ringObj.transform.position = pos;
+            ringObj.transform.rotation = rot;
+            ringObj.AddComponent<SkippingStones.Arcade.RandomRing>();
         }
     }
 
@@ -673,7 +703,7 @@ public class RiverSpawner : MonoBehaviour
                 {
                     foreach (var chPos in splitChannels)
                     {
-                        TrySpawnBoostPad(chPos, chunkStartZ, chunkEndZ);
+                        TrySpawnBoostPad(chPos, chunkStartZ, chunkEndZ, tan);
                     }
                 }
                 else
@@ -683,7 +713,7 @@ public class RiverSpawner : MonoBehaviour
                     {
                         Vector3 midPos = cPos + normal * Random.Range(-1.5f, 1.5f);
                         midPos.y = wY + 0.05f;
-                        TrySpawnBoostPad(midPos, chunkStartZ, chunkEndZ);
+                        TrySpawnBoostPad(midPos, chunkStartZ, chunkEndZ, tan);
                     }
                     else if (effectiveWidth < 25f)
                     {
@@ -691,8 +721,8 @@ public class RiverSpawner : MonoBehaviour
                         Vector3 p2 = cPos + normal * (halfW * 0.5f);
                         p1.y = wY + 0.05f;
                         p2.y = wY + 0.05f;
-                        TrySpawnBoostPad(p1, chunkStartZ, chunkEndZ);
-                        if (Random.value < 0.7f) TrySpawnBoostPad(p2, chunkStartZ, chunkEndZ);
+                        TrySpawnBoostPad(p1, chunkStartZ, chunkEndZ, tan);
+                        if (Random.value < 0.7f) TrySpawnBoostPad(p2, chunkStartZ, chunkEndZ, tan);
                     }
                     else
                     {
@@ -703,9 +733,9 @@ public class RiverSpawner : MonoBehaviour
                         midPos.y = wY + 0.05f;
                         rightPos.y = wY + 0.05f;
 
-                        TrySpawnBoostPad(leftPos, chunkStartZ, chunkEndZ);
-                        TrySpawnBoostPad(midPos, chunkStartZ, chunkEndZ);
-                        TrySpawnBoostPad(rightPos, chunkStartZ, chunkEndZ);
+                        TrySpawnBoostPad(leftPos, chunkStartZ, chunkEndZ, tan);
+                        TrySpawnBoostPad(midPos, chunkStartZ, chunkEndZ, tan);
+                        TrySpawnBoostPad(rightPos, chunkStartZ, chunkEndZ, tan);
                     }
                 }
             }
@@ -975,10 +1005,33 @@ public class RiverSpawner : MonoBehaviour
         return false;
     }
 
-    private void TrySpawnBoostPad(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
+    private void TrySpawnBoostPad(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue, Vector3 tangent = default)
     {
         if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
         if (HasNearbySpawnedEntity(pos, 3.8f)) return;
+
+        // 🌀 리듬 아케이드 모드: 지상 부스트 패드 대신 공중 RandomRing 스폰
+        if (currentSpawningMode == GameController.GameMode.RhythmArcade)
+        {
+            // 🛑 [곡률 검증 필터] 전방 35m 구간의 회전 각도(Tangent Delta) 검사
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && tangent.sqrMagnitude > 0.01f)
+            {
+                if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(pos.z + 35f, out _, out Vector3 fwdTan, out _, out _))
+                {
+                    float curveAngle = Vector3.Angle(tangent, fwdTan);
+                    if (curveAngle > 15f)
+                    {
+                        // 전방이 15도 이상 꺾이는 급커브/헤어핀 코너 ➔ 땅에 박히지 않도록 스폰 제외!
+                        return;
+                    }
+                }
+            }
+
+            Quaternion rot = (tangent.sqrMagnitude > 0.01f) ? Quaternion.LookRotation(tangent, Vector3.up) : Quaternion.identity;
+            CreateRandomRing(pos, rot);
+            return;
+        }
+
         CreateBoostPad(pos, Quaternion.identity);
     }
 
