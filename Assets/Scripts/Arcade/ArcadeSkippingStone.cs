@@ -97,6 +97,7 @@ namespace SkippingStones.Arcade
 
         public Vector3 CycleEndPosition => cycleEndPos;
         public float CycleElapsedTime => cycleElapsedTime;
+        public Vector3 CurrentForwardDirection => currentForwardDir;
 
         private Rigidbody rb;
         private Vector3 cycleStartPos;
@@ -535,7 +536,7 @@ namespace SkippingStones.Arcade
 
             // 조향 적용 (+5도 조향 보너스 버프가 활성화되어 있으면 꺾이는 방향으로 +5도 가산)
             float finalSteerAngle = steerAngle;
-            if (Mathf.Abs(finalSteerAngle) > 0.1f && steerBonusBounces > 0)
+            if (Mathf.Abs(finalSteerAngle) > 0.1f && steerAngleBonus > 0.01f)
             {
                 float sign = Mathf.Sign(finalSteerAngle);
                 finalSteerAngle += sign * steerAngleBonus; // 예: +5도 ➔ +10도, -5도 ➔ -10도
@@ -917,10 +918,10 @@ namespace SkippingStones.Arcade
             float beatDuration = currentCycleDuration; // 1 Beat (60BPM = 1.0s)
             float holdDuration = beatDuration * 2.0f;  // 2 Beats (60BPM = 2.0s)
 
-            // 3. 자석 스냅(Magnetic Snap): 링 중심점으로 부드럽게 흡입
+            // 3. 자석 스냅(Magnetic Snap): 링 가장자리에서 중심점으로 부드럽게 감속하며 흡입 (EaseOut)
             Vector3 ringCenter = ring.transform.position;
             Vector3 snapStartPos = transform.position;
-            float snapTime = Mathf.Min(0.25f, beatDuration * 0.35f);
+            float snapTime = Mathf.Min(0.55f, beatDuration * 0.5f); // 0.45~0.55초 여유로운 흡입
             float snapElapsed = 0f;
 
             // 링에게 2박자 스케일 펄스(둥-둥-) 연출 지시
@@ -936,7 +937,9 @@ namespace SkippingStones.Arcade
             {
                 snapElapsed += Time.deltaTime;
                 float st = Mathf.Clamp01(snapElapsed / snapTime);
-                transform.position = Vector3.Lerp(snapStartPos, ringCenter, Mathf.SmoothStep(0f, 1f, st));
+                // EaseOutCubic으로 가장자리 진입 시 부드럽게 감속하며 중심 안착
+                float smoothT = 1f - Mathf.Pow(1f - st, 3f);
+                transform.position = Vector3.Lerp(snapStartPos, ringCenter, smoothT);
                 transform.Rotate(Vector3.up, 720f * Time.deltaTime, Space.World);
                 yield return null;
             }

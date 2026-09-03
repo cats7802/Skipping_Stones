@@ -393,7 +393,16 @@ public class DualCameraSetup : MonoBehaviour
                     }
                     else
                     {
-                        targetHeading = targetStone.forward;
+                        var arcadeStone = targetStone.GetComponent<SkippingStones.Arcade.ArcadeSkippingStone>();
+                        if (arcadeStone != null && arcadeStone.isInRandomRing)
+                        {
+                            // 🌀 링 안에서 돌이 고속 스핀할 때 카메라가 어지럽게 회전하지 않도록 직진 진행 방향으로 완전 고정
+                            targetHeading = arcadeStone.CurrentForwardDirection;
+                        }
+                        else
+                        {
+                            targetHeading = targetStone.forward;
+                        }
                         targetHeading.y = 0f;
                         if (targetHeading.sqrMagnitude > 0.01f) targetHeading.Normalize();
                         else targetHeading = forwardDir;
@@ -460,10 +469,12 @@ public class DualCameraSetup : MonoBehaviour
                 Quaternion desiredRot = Quaternion.LookRotation((targetLookOffset - mainCam.transform.position).normalized);
                 mainCam.transform.rotation = Quaternion.Slerp(mainCam.transform.rotation, desiredRot, Time.deltaTime * 18f);
             }
-            else if (targetStone != null && (targetStone.GetComponent<SkippingStone>()?.isGodMode ?? false))
+            else if (targetStone != null && targetStone.GetComponent<SkippingStones.Arcade.ArcadeSkippingStone>()?.isInRandomRing == true)
             {
-                mainCam.transform.position = targetOffset;
-                mainCam.transform.rotation = Quaternion.LookRotation((targetLookOffset - mainCam.transform.position).normalized);
+                // 🌀 링 진입 시 카메라가 급격히 끌려가지 않고 우아하게 천천히 감속하며 클로즈업 안착
+                mainCam.transform.position = Vector3.Lerp(mainCam.transform.position, targetOffset, Time.deltaTime * 5.0f);
+                Quaternion desiredRot = Quaternion.LookRotation((targetLookOffset - mainCam.transform.position).normalized);
+                mainCam.transform.rotation = Quaternion.Slerp(mainCam.transform.rotation, desiredRot, Time.deltaTime * 6.0f);
             }
             else
             {

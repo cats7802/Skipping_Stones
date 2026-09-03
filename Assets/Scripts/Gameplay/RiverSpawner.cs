@@ -499,24 +499,11 @@ public class RiverSpawner : MonoBehaviour
     private void CreateRandomRing(Vector3 pos, Quaternion rot)
     {
         EnsurePrefabsLoaded();
-        GameObject ringObj = null;
-        if (randomRingPrefab != null)
-        {
-            ringObj = Instantiate(randomRingPrefab, pos, rot, transform);
-            ringObj.name = $"RandomRing_{pos.x:F0}x{pos.z:F0}";
-            if (ringObj.GetComponent<SkippingStones.Arcade.RandomRing>() == null)
-            {
-                ringObj.AddComponent<SkippingStones.Arcade.RandomRing>();
-            }
-        }
-        else
-        {
-            ringObj = new GameObject($"RandomRing_{pos.x:F0}x{pos.z:F0}");
-            ringObj.transform.SetParent(transform);
-            ringObj.transform.position = pos;
-            ringObj.transform.rotation = rot;
-            ringObj.AddComponent<SkippingStones.Arcade.RandomRing>();
-        }
+        GameObject ringObj = new GameObject($"RandomRing_{pos.x:F0}x{pos.z:F0}");
+        ringObj.transform.SetParent(transform);
+        ringObj.transform.position = pos;
+        ringObj.transform.rotation = rot;
+        ringObj.AddComponent<SkippingStones.Arcade.RandomRing>();
     }
 
     private void CreateObstacleRock(Vector3 pos)

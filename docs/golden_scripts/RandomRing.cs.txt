@@ -17,24 +17,32 @@ namespace SkippingStones.Arcade
         public float bobbingAmplitude = 0.9f;
         [Tooltip("링의 기본 중심 높이 (수면 위)")]
         public float baseHeightOffset = 1.8f;
-        [Tooltip("대기 상태 자전 회전 속도 (도/초)")]
-        public float idleRotationSpeed = 45f;
+        [Tooltip("외부 링 자전 속도 (도/초)")]
+        public float outerRotationSpeed = 45f;
+        [Tooltip("내부 링 자전 속도 (도/초, 음수면 역방향)")]
+        public float innerRotationSpeed = -65f;
         [Tooltip("펄스 연출 시 최대 스케일 배율")]
         public float pulseMaxScale = 1.3f;
-        [Tooltip("링 모델 시각적 기본 크기 배율")]
-        public float visualScaleMultiplier = 2.0f;
+        [Tooltip("외부 링 기본 크기 배율")]
+        public float outerScaleMultiplier = 3.0f; // 기존 2.0f 대비 1.5배 확대 (3.0f)
+        [Tooltip("내부 링 기본 크기 배율")]
+        public float innerScaleMultiplier = 1.5f; // 기존 1.0f 대비 1.5배 확대 (1.5f)
 
-        [Header("🎯 인터랙션 영역")]
-        [Tooltip("돌을 빨아들이는 감지 반경")]
-        public float triggerRadius = 2.0f;
+        [Header("🎯 인터랙션 영역 (원판형 정밀 통과 감지)")]
+        [Tooltip("링 통과 감지 원형 반경(m, 링 테두리에 직접 닿았을 때 작동)")]
+        public float triggerRadius = 1.6f;
+        [Tooltip("링 앞뒤 감지 두께(m, 링에 닿는 순간만 작동)")]
+        public float planeThickness = 0.35f;
 
         [Header("✨ 이펙트 슬롯 (추후 연동용)")]
         public GameObject portalVFX;
         public GameObject speedlinesVFX;
 
-        // 내부 상태
-        private Transform meshTransform;
-        private Vector3 initialLocalScale = Vector3.one;
+        // 내부 상태 (외부 링 & 내부 링)
+        private Transform outerRingTrans;
+        private Transform innerRingTrans;
+        private Vector3 initialOuterScale = Vector3.one;
+        private Vector3 initialInnerScale = Vector3.one;
         private float waterLevel = 16.0f;
         private bool isTriggered = false;
         private float bobbingTimer = 0f;
@@ -66,15 +74,6 @@ namespace SkippingStones.Arcade
 
         private void SetupVisualMesh()
         {
-            // 이미 자식으로 메쉬가 바인딩되어 있다면 스킵
-            if (transform.childCount > 0)
-            {
-                meshTransform = transform.GetChild(0);
-                meshTransform.localScale = meshTransform.localScale * visualScaleMultiplier;
-                initialLocalScale = meshTransform.localScale;
-                return;
-            }
-
             // 3D/Ingame_Object/Random_Ring.fbx 로드
             GameObject modelPrefab = null;
 #if UNITY_EDITOR
@@ -85,28 +84,35 @@ namespace SkippingStones.Arcade
                 modelPrefab = Resources.Load<GameObject>("Random_Ring");
             }
 
-            if (modelPrefab != null)
+            // 기존 자식 정리
+            for (int i = transform.childCount - 1; i >= 0; i--)
             {
-                GameObject meshInstance = Instantiate(modelPrefab, transform);
-                meshInstance.name = "RingModel";
-                meshTransform = meshInstance.transform;
-                meshTransform.localScale = meshTransform.localScale * visualScaleMultiplier;
-                initialLocalScale = meshTransform.localScale;
+                Destroy(transform.GetChild(i).gameObject);
             }
-            else
-            {
-                // 모델이 없을 때의 비주얼 폴백 (토러스/실린더 형태)
-                GameObject fallback = GameObject.CreatePrimitive(PrimitiveType.Cylinder);
-                fallback.name = "RingModel_Fallback";
-                fallback.transform.SetParent(transform);
-                fallback.transform.localPosition = Vector3.zero;
-                fallback.transform.localRotation = Quaternion.Euler(90f, 0f, 0f);
-                fallback.transform.localScale = new Vector3(2.5f * visualScaleMultiplier, 0.15f * visualScaleMultiplier, 2.5f * visualScaleMultiplier);
-                Collider col = fallback.GetComponent<Collider>();
-                if (col != null) Destroy(col);
 
-                meshTransform = fallback.transform;
-                initialLocalScale = meshTransform.localScale;
+            // 1. 🌀 외부 링 (Outer Ring) 생성
+            GameObject outerObj = (modelPrefab != null) ? Instantiate(modelPrefab, transform) : GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            outerObj.name = "OuterRing";
+            outerRingTrans = outerObj.transform;
+            outerRingTrans.localPosition = Vector3.zero;
+            outerRingTrans.localRotation = (modelPrefab == null) ? Quaternion.Euler(90f, 0f, 0f) : Quaternion.identity;
+            outerRingTrans.localScale = Vector3.one * outerScaleMultiplier;
+            initialOuterScale = outerRingTrans.localScale;
+
+            // 2. 🌀 내부 링 (Inner Ring) 생성
+            GameObject innerObj = (modelPrefab != null) ? Instantiate(modelPrefab, transform) : GameObject.CreatePrimitive(PrimitiveType.Cylinder);
+            innerObj.name = "InnerRing";
+            innerRingTrans = innerObj.transform;
+            innerRingTrans.localPosition = Vector3.zero;
+            innerRingTrans.localRotation = (modelPrefab == null) ? Quaternion.Euler(90f, 0f, 0f) : Quaternion.identity;
+            innerRingTrans.localScale = Vector3.one * innerScaleMultiplier;
+            initialInnerScale = innerRingTrans.localScale;
+
+            // 콜라이더 제거
+            Collider[] cols = GetComponentsInChildren<Collider>();
+            for (int i = 0; i < cols.Length; i++)
+            {
+                Destroy(cols[i]);
             }
         }
 
@@ -121,13 +127,17 @@ namespace SkippingStones.Arcade
             curPos.y = waterLevel + baseHeightOffset + verticalOffset;
             transform.position = curPos;
 
-            // 2. 은은한 자전
-            if (meshTransform != null)
+            // 2. 외부 링 정방향 회전 & 내부 링 역방향 회전 (Counter-Rotation)
+            if (outerRingTrans != null)
             {
-                meshTransform.Rotate(Vector3.forward, idleRotationSpeed * Time.deltaTime, Space.Self);
+                outerRingTrans.Rotate(Vector3.forward, outerRotationSpeed * Time.deltaTime, Space.Self);
+            }
+            if (innerRingTrans != null)
+            {
+                innerRingTrans.Rotate(Vector3.forward, innerRotationSpeed * Time.deltaTime, Space.Self);
             }
 
-            // 3. 근접 돌 트리거 감지 (리듬 아케이드 돌)
+            // 3. 근접 돌 트리거 감지 (원판형 통과 감지)
             CheckStoneProximity();
         }
 
@@ -136,12 +146,17 @@ namespace SkippingStones.Arcade
             ArcadeSkippingStone stone = FindAnyObjectByType<ArcadeSkippingStone>();
             if (stone == null || !stone.isThrown || stone.isSunk || stone.isCrashed || stone.isSkimming) return;
 
-            Vector3 ringCenter = transform.position;
-            Vector3 stonePos = stone.transform.position;
+            // 링의 로컬 좌표계로 돌 위치 변환
+            Vector3 localStonePos = transform.InverseTransformPoint(stone.transform.position);
 
-            // 링 영역 진입 판정
-            float dist = Vector3.Distance(ringCenter, stonePos);
-            if (dist <= triggerRadius)
+            // 1) 링 앞뒤 두께 검사 (Z축 기준 ±planeThickness 이내)
+            bool isWithinThickness = Mathf.Abs(localStonePos.z) <= (planeThickness * 0.5f);
+
+            // 2) 링 원형 반경 검사 (XY 평면 상의 거리)
+            float radialDist = new Vector2(localStonePos.x, localStonePos.y).magnitude;
+            bool isWithinRadius = radialDist <= triggerRadius;
+
+            if (isWithinThickness && isWithinRadius)
             {
                 TriggerRing(stone);
             }
@@ -166,8 +181,6 @@ namespace SkippingStones.Arcade
 
         private IEnumerator CoBeatPulse(int beatCount, float beatDuration)
         {
-            if (meshTransform == null) yield break;
-
             for (int i = 0; i < beatCount; i++)
             {
                 float halfTime = beatDuration * 0.5f;
@@ -179,7 +192,8 @@ namespace SkippingStones.Arcade
                     elapsed += Time.deltaTime;
                     float t = Mathf.Clamp01(elapsed / halfTime);
                     float curve = Mathf.Sin(t * Mathf.PI * 0.5f);
-                    meshTransform.localScale = Vector3.Lerp(initialLocalScale, initialLocalScale * pulseMaxScale, curve);
+                    if (outerRingTrans != null) outerRingTrans.localScale = Vector3.Lerp(initialOuterScale, initialOuterScale * pulseMaxScale, curve);
+                    if (innerRingTrans != null) innerRingTrans.localScale = Vector3.Lerp(initialInnerScale, initialInnerScale * pulseMaxScale, curve);
                     yield return null;
                 }
 
@@ -190,12 +204,14 @@ namespace SkippingStones.Arcade
                     elapsed += Time.deltaTime;
                     float t = Mathf.Clamp01(elapsed / halfTime);
                     float curve = Mathf.Sin(t * Mathf.PI * 0.5f);
-                    meshTransform.localScale = Vector3.Lerp(initialLocalScale * pulseMaxScale, initialLocalScale, curve);
+                    if (outerRingTrans != null) outerRingTrans.localScale = Vector3.Lerp(initialOuterScale * pulseMaxScale, initialOuterScale, curve);
+                    if (innerRingTrans != null) innerRingTrans.localScale = Vector3.Lerp(initialInnerScale * pulseMaxScale, initialInnerScale, curve);
                     yield return null;
                 }
             }
 
-            meshTransform.localScale = initialLocalScale;
+            if (outerRingTrans != null) outerRingTrans.localScale = initialOuterScale;
+            if (innerRingTrans != null) innerRingTrans.localScale = initialInnerScale;
         }
 
         /// <summary>
@@ -208,19 +224,20 @@ namespace SkippingStones.Arcade
 
         private IEnumerator CoDisappear()
         {
-            if (meshTransform != null)
-            {
-                float duration = 0.35f;
-                float elapsed = 0f;
-                Vector3 startScale = meshTransform.localScale;
+            float duration = 0.35f;
+            float elapsed = 0f;
 
-                while (elapsed < duration)
-                {
-                    elapsed += Time.deltaTime;
-                    float t = Mathf.Clamp01(elapsed / duration);
-                    meshTransform.localScale = Vector3.Lerp(startScale, Vector3.zero, t * t);
-                    yield return null;
-                }
+            Vector3 startOuter = (outerRingTrans != null) ? outerRingTrans.localScale : Vector3.zero;
+            Vector3 startInner = (innerRingTrans != null) ? innerRingTrans.localScale : Vector3.zero;
+
+            while (elapsed < duration)
+            {
+                elapsed += Time.deltaTime;
+                float t = Mathf.Clamp01(elapsed / duration);
+                float easeOut = t * t;
+                if (outerRingTrans != null) outerRingTrans.localScale = Vector3.Lerp(startOuter, Vector3.zero, easeOut);
+                if (innerRingTrans != null) innerRingTrans.localScale = Vector3.Lerp(startInner, Vector3.zero, easeOut);
+                yield return null;
             }
 
             Destroy(gameObject);
@@ -229,7 +246,11 @@ namespace SkippingStones.Arcade
         private void OnDrawGizmosSelected()
         {
             Gizmos.color = Color.cyan;
-            Gizmos.DrawWireSphere(transform.position, triggerRadius);
+            // 링 평면에 맞춘 원판 기즈모 시각화
+            Matrix4x4 oldMat = Gizmos.matrix;
+            Gizmos.matrix = transform.localToWorldMatrix;
+            Gizmos.DrawWireCube(Vector3.zero, new Vector3(triggerRadius * 2f, triggerRadius * 2f, planeThickness));
+            Gizmos.matrix = oldMat;
         }
     }
 }
