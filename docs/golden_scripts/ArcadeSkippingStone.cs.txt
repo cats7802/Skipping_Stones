@@ -1002,6 +1002,27 @@ namespace SkippingStones.Arcade
             Vector3 launchEnd = launchStart + currentForwardDir * launchDistance;
             launchEnd.y = waterLevel; // 다음 정박 착수 지점
 
+            // 🌟 강심(Centerline) 기준 런치 타겟팅 & 곡선 궤적 연동
+            bool hasRiverPath = false;
+            float startRiverDist = 0f;
+            float targetRiverDist = 0f;
+            Vector3 targetRiverCenter = launchEnd;
+            Vector3 targetRiverTangent = currentForwardDir;
+
+            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null)
+            {
+                if (SkippingStones.Terrain.GlobalRiverPath.Instance.GetClosestPointOnRiver(launchStart, out _, out _, out startRiverDist))
+                {
+                    targetRiverDist = startRiverDist + launchDistance;
+                    if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(targetRiverDist, out targetRiverCenter, out targetRiverTangent, out _, out float rWaterY))
+                    {
+                        hasRiverPath = true;
+                        launchEnd = targetRiverCenter;
+                        launchEnd.y = (rWaterY > 0.01f) ? rWaterY : waterLevel;
+                    }
+                }
+            }
+
             float launchElapsed = 0f;
             while (launchElapsed < launchDuration)
             {
@@ -1010,17 +1031,44 @@ namespace SkippingStones.Arcade
                 // EaseOutQuad 스타일 쾌속 관통
                 float curvedT = Mathf.Sin(lt * Mathf.PI * 0.5f);
 
-                Vector3 curXZ = Vector3.Lerp(launchStart, launchEnd, curvedT);
+                Vector3 curPosXZ;
+                Vector3 curTangent = currentForwardDir;
+
+                if (hasRiverPath && SkippingStones.Terrain.GlobalRiverPath.Instance != null)
+                {
+                    float curRiverDist = Mathf.Lerp(startRiverDist, targetRiverDist, curvedT);
+                    if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(curRiverDist, out Vector3 riverPoint, out curTangent, out _, out _))
+                    {
+                        curPosXZ = riverPoint;
+                    }
+                    else
+                    {
+                        curPosXZ = Vector3.Lerp(launchStart, launchEnd, curvedT);
+                    }
+                }
+                else
+                {
+                    curPosXZ = Vector3.Lerp(launchStart, launchEnd, curvedT);
+                }
+
                 // 공중 궤적: 약간의 상향 아크
                 float arcY = Mathf.Lerp(launchStart.y, waterLevel, lt) + Mathf.Sin(lt * Mathf.PI) * 1.5f;
-                transform.position = new Vector3(curXZ.x, Mathf.Max(waterLevel, arcY), curXZ.z);
+                transform.position = new Vector3(curPosXZ.x, Mathf.Max(waterLevel, arcY), curPosXZ.z);
 
-                transform.rotation = Quaternion.LookRotation(currentForwardDir, Vector3.up);
+                if (curTangent.sqrMagnitude > 0.001f)
+                {
+                    currentForwardDir = new Vector3(curTangent.x, 0f, curTangent.z).normalized;
+                    transform.rotation = Quaternion.LookRotation(currentForwardDir, Vector3.up);
+                }
                 yield return null;
             }
 
             // 7. 정박 수면 착수 (착수 판정 실행 & 다음 바운스로 매끄럽게 연결)
             transform.position = launchEnd;
+            if (hasRiverPath && targetRiverTangent.sqrMagnitude > 0.001f)
+            {
+                currentForwardDir = new Vector3(targetRiverTangent.x, 0f, targetRiverTangent.z).normalized;
+            }
             isInRandomRing = false;
 
             // 물보라 이펙트

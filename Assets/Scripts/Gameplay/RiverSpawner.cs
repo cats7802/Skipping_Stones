@@ -1040,20 +1040,6 @@ public class RiverSpawner : MonoBehaviour
         // 🌀 리듬 아케이드 모드: 지상 부스트 패드 대신 공중 RandomRing 스폰
         if (currentSpawningMode == GameController.GameMode.RhythmArcade)
         {
-            // 🛑 [곡률 검증 필터] 전방 35m 구간의 회전 각도(Tangent Delta) 검사
-            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && tangent.sqrMagnitude > 0.01f)
-            {
-                if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(pos.z + 35f, out _, out Vector3 fwdTan, out _, out _))
-                {
-                    float curveAngle = Vector3.Angle(tangent, fwdTan);
-                    if (curveAngle > 15f)
-                    {
-                        // 전방이 15도 이상 꺾이는 급커브/헤어핀 코너 ➔ 땅에 박히지 않도록 스폰 제외!
-                        return;
-                    }
-                }
-            }
-
             Quaternion rot = (tangent.sqrMagnitude > 0.01f) ? Quaternion.LookRotation(tangent, Vector3.up) : Quaternion.identity;
             CreateRandomRing(pos, rot);
             return;

@@ -61,12 +61,23 @@ public class JumpingFish : MonoBehaviour
             modelTransform.localScale = Vector3.one * scaleFactor;
         }
 
+        // 각 물고기마다 타이머 및 초기 위상 랜덤화 (모든 물고기가 동시에 멈추거나 움직이지 않도록 분산)
+        idleBobbingTimer = Random.Range(0f, 100f);
+        stateTimer = Random.Range(0f, 1.5f);
+
         // 초기 위치는 수면 아래 (-0.4m ~ -0.7m)
         baseOriginPos.y = -0.5f;
         transform.position = baseOriginPos;
 
-        PickNextPatrolPoint();
-        SwitchState(FishAIState.UnderwaterIdle);
+        // 랜덤하게 50% 확률로 수중 유영 상태로 시작
+        if (Random.value < 0.5f)
+        {
+            SwitchState(FishAIState.UnderwaterSwim);
+        }
+        else
+        {
+            SwitchState(FishAIState.UnderwaterIdle);
+        }
     }
 
     private void Update()
@@ -75,7 +86,7 @@ public class JumpingFish : MonoBehaviour
 
         LocateStone();
 
-        // 1. 돌 접근 감지 시 긴급/다이내믹 도약 트리거 (20m ~ 25m 거리 내)
+        // 1. 돌 접근 감지 시 긴급/다이내믹 도약 트리거 (15m ~ 28m 거리 내)
         if (currentState != FishAIState.LeapJump && currentState != FishAIState.Submerge)
         {
             if (stoneTransform != null)
@@ -83,8 +94,7 @@ public class JumpingFish : MonoBehaviour
                 float distZ = transform.position.z - stoneTransform.position.z;
                 float distH = Vector2.Distance(new Vector2(transform.position.x, transform.position.z), new Vector2(stoneTransform.position.x, stoneTransform.position.z));
 
-                // 돌이 15m ~ 26m 전방에서 다가오고 있을 때 반응
-                if (distZ > 5f && distZ < 26f && distH < 26f)
+                if (distZ > 5f && distZ < 28f && distH < 28f)
                 {
                     TriggerLeapJump();
                 }
@@ -115,6 +125,11 @@ public class JumpingFish : MonoBehaviour
         {
             SkippingStone s = FindAnyObjectByType<SkippingStone>();
             if (s != null) stoneTransform = s.transform;
+            else
+            {
+                SkippingStones.Arcade.ArcadeSkippingStone asStone = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+                if (asStone != null) stoneTransform = asStone.transform;
+            }
         }
     }
 
@@ -135,18 +150,16 @@ public class JumpingFish : MonoBehaviour
                 nextStateDuration = Random.Range(1.5f, 3.5f);
                 break;
             case FishAIState.UnderwaterSwim:
-                nextStateDuration = Random.Range(2.0f, 4.5f);
+                nextStateDuration = Random.Range(2.5f, 5.0f);
                 PickNextPatrolPoint();
                 break;
             case FishAIState.LeapJump:
                 leapProgress = 0f;
                 leapStartPos = transform.position;
-                // 진행 방향으로 3m ~ 5m 포물선 전진
                 Vector3 forwardDir = transform.forward;
                 leapEndPos = leapStartPos + forwardDir * Random.Range(3.5f, 5.5f);
                 leapEndPos.y = -0.5f;
 
-                // 도약 수면 물보라
                 if (SplashEffectSpawner.Instance != null)
                 {
                     SplashEffectSpawner.Instance.SpawnSplash(new Vector3(leapStartPos.x, 0f, leapStartPos.z), 1.2f * scaleFactor);
@@ -154,7 +167,6 @@ public class JumpingFish : MonoBehaviour
                 break;
             case FishAIState.Submerge:
                 nextStateDuration = 0.5f;
-                // 착수 수면 물보라
                 if (SplashEffectSpawner.Instance != null)
                 {
                     SplashEffectSpawner.Instance.SpawnSplash(new Vector3(transform.position.x, 0f, transform.position.z), 1.5f * scaleFactor);
@@ -174,8 +186,8 @@ public class JumpingFish : MonoBehaviour
 
         if (stateTimer >= nextStateDuration)
         {
-            // 가끔 자연스러운 랜덤 점프 (30% 확률) or 유영 전환
-            if (Random.value < 0.25f) TriggerLeapJump();
+            // 가끔 자연스러운 랜덤 점프 (35% 확률) or 유영 전환
+            if (Random.value < 0.35f) TriggerLeapJump();
             else SwitchState(FishAIState.UnderwaterSwim);
         }
     }
@@ -184,7 +196,6 @@ public class JumpingFish : MonoBehaviour
     {
         stateTimer += Time.deltaTime;
 
-        // 타깃 지점을 향해 부드럽게 회전 및 이동
         Vector3 dir = (currentPatrolTarget - transform.position);
         dir.y = 0f;
 
@@ -197,7 +208,6 @@ public class JumpingFish : MonoBehaviour
             transform.position += transform.forward * (moveSpeed * Time.deltaTime);
         }
 
-        // 수중 깊이 유지
         transform.position = new Vector3(transform.position.x, -0.5f, transform.position.z);
 
         if (stateTimer >= nextStateDuration || dir.magnitude < 0.5f)
@@ -211,12 +221,10 @@ public class JumpingFish : MonoBehaviour
         leapProgress += Time.deltaTime / Mathf.Max(0.1f, jumpDuration);
         float t = Mathf.Clamp01(leapProgress);
 
-        // 포물선 궤적 (Sin 곡선으로 최고점 도달 후 수면으로 하강)
         Vector3 currentHorizontal = Vector3.Lerp(leapStartPos, leapEndPos, t);
         float currentY = -0.5f + Mathf.Sin(t * Mathf.PI) * (jumpHeight + 0.5f);
         transform.position = new Vector3(currentHorizontal.x, currentY, currentHorizontal.z);
 
-        // 점프 각도 틸팅 (상승 시 머리 들고, 하강 시 머리부터 입수)
         float pitchAngle = Mathf.Cos(t * Mathf.PI) * 45f;
         Vector3 jumpDir = (leapEndPos - leapStartPos).normalized;
         if (jumpDir != Vector3.zero)
@@ -225,7 +233,6 @@ public class JumpingFish : MonoBehaviour
             transform.rotation = baseLook * Quaternion.Euler(-pitchAngle, 0f, 0f);
         }
 
-        // 🎯 돌과의 충돌 (스나이핑) 판정
         if (stoneTransform != null && !isCaught)
         {
             float hitDist = Vector3.Distance(transform.position, stoneTransform.position);
@@ -261,8 +268,7 @@ public class JumpingFish : MonoBehaviour
 
     private void PickNextPatrolPoint()
     {
-        // 기준 위치 반경 2.5m ~ 4.5m 내의 랜덤 지점
-        Vector2 circle = Random.insideUnitCircle * Random.Range(2.5f, 4.5f);
+        Vector2 circle = Random.insideUnitCircle * Random.Range(2.5f, 5.0f);
         currentPatrolTarget = new Vector3(baseOriginPos.x + circle.x, -0.5f, baseOriginPos.z + circle.y);
     }
 

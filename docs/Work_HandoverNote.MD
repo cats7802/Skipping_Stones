@@ -1,4 +1,4 @@
-﻿# 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
+# 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
 **작성 일시**: 2026-09-04 01:15  
 **현재 브랜치**: `feature/sandbox-momentum-rhythm`  
@@ -19,18 +19,24 @@
   - `RiverSpawner.cs`: 구간 거리 및 확률 기반 10종 물고기 인게임 랜덤 스폰.
   - `FishSetupTool.cs`: 에디터 원클릭 2D 스프라이트 슬라이스 & 10종 프리팹/애니메이터 컨트롤러 빌더 제작 완료.
 
+### ✅ 2. 🌀 랜덤 링(Random Ring) 베이킹 강심(Centerline) 궤적 발사 & 전 코스 스폰 확장
+- **배경 및 원인**:
+  - 기존에는 링 탈출 시 이전 진입 방향 그대로 단순 직선 발사되어, 커브 구간이나 강변 쪽을 향해 들어갔을 때 3바운스 거리로 쓩 날아가며 땅이나 둑에 처박히는 문제 발생.
+- **해결 내역**:
+  - `ArcadeSkippingStone.cs`: `GlobalRiverPath`를 통해 돌의 현재 속도/거리(`launchDistance = 3 * currentBounceDistance`) 기반 목표 지점 강심 위치(`targetRiverCenter`) 및 접선(`targetRiverTangent`)을 계산. 1박자 비행 루프 동안 강심선 곡선 궤적을 따라 부드럽게 유도 비행 후 정박 착수 및 접선 방향(`currentForwardDir`) 자동 정렬.
+  - `RiverSpawner.cs`: 링이 곡선 궤적 유도 발사를 완벽 지원하므로, 기존 15도 이상 곡률 스폰 제한 필터를 제거하여 급커브 코스에서도 자유롭게 링이 등장하도록 확장.
+
 ---
 
 ## 2. 📁 수정된 주요 파일 및 골든 스크립트 동기화 현황
 
 | 분류 | 수정 파일 경로 | 골든 스냅샷 동기화 |
 | :--- | :--- | :--- |
+| **Arcade Stone** | `Assets/Scripts/Arcade/ArcadeSkippingStone.cs` | `docs/golden_scripts/ArcadeSkippingStone.cs.txt` |
+| **Spawner** | `Assets/Scripts/Gameplay/RiverSpawner.cs` | `docs/golden_scripts/RiverSpawner.cs.txt` |
 | **Fish Data** | `Assets/Scripts/Gameplay/FishData.cs` | `docs/golden_scripts/FishData.cs.txt` |
 | **Fish AI** | `Assets/Scripts/Gameplay/JumpingFish.cs` | `docs/golden_scripts/JumpingFish.cs.txt` |
 | **Aquarium** | `Assets/Scripts/Data/AquariumManager.cs` | `docs/golden_scripts/AquariumManager.cs.txt` |
-| **Spawner** | `Assets/Scripts/Gameplay/RiverSpawner.cs` | `docs/golden_scripts/RiverSpawner.cs.txt` |
-| **Editor Tool**| `Assets/Scripts/Editor/FishSetupTool.cs` | - |
-| **Prefabs** | `Assets/Resources/FishPrefabs/River_Fish_01~10.prefab` | - |
 
 ---
 
@@ -46,3 +52,4 @@
 1. **포탈(Portal) 및 집중선(Speedlines) VFX 에셋 연동**
 2. **로비 캐릭터 쇼케이스 연출 (슬라이드 & 시그니처 포즈)**
 3. **지형 코스 및 조향 난이도 밸런스 점검**
+
