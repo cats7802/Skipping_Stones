@@ -43,7 +43,15 @@
   - `GameInputHelper.cs`: New Input System / Legacy Input System 및 마우스/터치 다운·업 교차 처리를 캡슐화한 정적 헬퍼 구축.
   - `MatchScoreCalculator.cs`: 거리/스킵/스킴/특수점수/코인 정산 공식을 순수 C# 계산기로 분리.
   - `LaunchSequenceController.cs`: 발판 좌우 드래그 슬라이드, 타깃 모드 웨이포인트 스와이프, 조준각 및 파워 차징 왕복 게이지 연산 분리.
-  - `GameController.cs`: 순수 중앙 오케스트레이터로서 외부 API 및 인스펙터 호환성을 100% 유지하며 대폭 경량화.
+### ✅ 8. 🪨 SkippingStone 모듈화 및 책임 분리 (StonePhysicsCalculator, StoneTimingEvaluator, WaterReflectionShadowController)
+- **배경 및 원인**:
+  - 1,250줄 이상의 대형 과밀 파일이었던 `SkippingStone.cs`에 비행 물리, 3축 스핀 회전, 조향 각도 벡터 변환, 착수 타이밍 판정, 모멘텀 게이지 갱신, 수면 반사 그림자(Quad/텍스처) 생명주기가 혼재되어 모듈화 요구.
+- **해결 내역**:
+  - `StonePhysicsCalculator.cs`: 스킵 수별 바운스 감쇠 곡선, 3축 비행 피치/스핀 회전 연산, 좌우 조향 각도 벡터 연산을 순수 정적 물리 계산기로 분리.
+  - `StoneTimingEvaluator.cs`: 수면 고도차 기준 +/- 양방향 판정(PERFECT, GREAT, GOOD, LATE, TOO LATE, BAD), 모멘텀 증감, 속도 및 바운스 배율 산출 분리.
+  - `WaterReflectionShadowController.cs`: Quad 생성, 소프트 알파 텍스처 베이킹, 고도별 크기/알파 추적 및 EditMode/런타임 호환 `SafeDestroy` 클린업 분리.
+  - `SkippingStone.cs`: 3대 모듈과 완벽 연동하면서 기존 이벤트(`OnSkipBounced`, `OnStoneSunk`) 및 갓모드, 텔레메트리 디버그 마커 100% 하위 호환 유지.
+  - **인엔진 검증**: Unity MCP `Unity_RunCommand`를 통해 모듈 단위 테스트 및 수면 근처 착수 바운스 시뮬레이션 전수 통과 확인 (PERFECT 판정, 속도 (0, 5, 10.8), 모멘텀 8.0).
 
 ---
 
@@ -51,6 +59,10 @@
 
 | 분류 | 수정 파일 경로 | 골든 스냅샷 동기화 |
 | :--- | :--- | :--- |
+| **Skipping Stone** | `Assets/Scripts/Gameplay/SkippingStone.cs` | `docs/golden_scripts/SkippingStone.cs.txt` |
+| **Physics Calculator** | `Assets/Scripts/Gameplay/Calculators/StonePhysicsCalculator.cs` | 신규 분리 완료 |
+| **Timing Evaluator** | `Assets/Scripts/Gameplay/StoneTimingEvaluator.cs` | 신규 분리 완료 |
+| **Shadow Controller** | `Assets/Scripts/Gameplay/WaterReflectionShadowController.cs` | 신규 분리 완료 |
 | **Game Controller** | `Assets/Scripts/Gameplay/GameController.cs` | `docs/golden_scripts/GameController.cs.txt` |
 | **Launch Sequence** | `Assets/Scripts/Gameplay/LaunchSequenceController.cs` | 신규 분리 완료 |
 | **Input Helper** | `Assets/Scripts/Gameplay/Helpers/GameInputHelper.cs` | 신규 분리 완료 |
@@ -66,7 +78,8 @@
 
 ## 3. 🛡️ 검증 및 빌드 상태
 
-- **Unity C# 컴파일**: `Assembly-CSharp.csproj` & `Assembly-CSharp-Editor.csproj` 모두 `0 Errors, 0 Warnings` 완벽 통과.
+- **Unity C# 컴파일**: `0 Errors, 0 Warnings` 완벽 통과.
+- **Unity MCP 인엔진 단위/통합 테스트**: `StonePhysicsCalculator`, `StoneTimingEvaluator`, `WaterReflectionShadowController`, `SkippingStone` 바운스 시뮬레이션 전수 통과.
 - **Console Log**: 에러 및 예외 0개 확인.
 
 ---

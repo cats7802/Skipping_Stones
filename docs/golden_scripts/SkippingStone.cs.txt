@@ -2,6 +2,8 @@ using UnityEngine;
 using System;
 using System.Collections;
 using SkippingStones.Terrain;
+using SkippingStones.Gameplay;
+using SkippingStones.Gameplay.Calculators;
 
 [RequireComponent(typeof(Rigidbody))]
 public class SkippingStone : MonoBehaviour
@@ -97,9 +99,7 @@ public class SkippingStone : MonoBehaviour
     public float maxMomentum = 10.0f;
 
     [Header("🌊 수면 대칭 반사 그림자 (Water Reflection Shadow)")]
-    private GameObject waterReflectionObj;
-    private MeshRenderer waterReflectionRenderer;
-    private Material waterReflectionMat;
+    private readonly WaterReflectionShadowController shadowController = new WaterReflectionShadowController();
 
     private bool hasTappedInCurrentBounce = false;
     private int earlyRetryCount = 0; // 하강 1회당 TOO EARLY 실수 만회 허용 횟수 (최대 1회)
@@ -160,69 +160,9 @@ public class SkippingStone : MonoBehaviour
 
         SetupVisualModel();
         SetupTrail();
-        SetupWaterReflectionShadow();
+        shadowController.Setup();
         EnsureRhythmRing();
         UpdateWaterLevel();
-    }
-
-    private void SetupWaterReflectionShadow()
-    {
-        if (waterReflectionObj != null) Destroy(waterReflectionObj);
-
-        // 🌟 1. 평면 메쉬 생성 (물결 표면에 납작하게 밀착)
-        waterReflectionObj = GameObject.CreatePrimitive(PrimitiveType.Quad);
-        waterReflectionObj.name = "[Water_Reflection_Shadow]";
-        Destroy(waterReflectionObj.GetComponent<Collider>());
-        waterReflectionObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-
-        waterReflectionRenderer = waterReflectionObj.GetComponent<MeshRenderer>();
-        Shader unlit = Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default");
-        waterReflectionMat = (unlit != null) ? new Material(unlit) : new Material(Shader.Find("Standard"));
-
-        // URP Unlit 머티리얼을 투명(Transparent Alpha Blended) 모드로 정식 세팅
-        if (waterReflectionMat.HasProperty("_Surface"))
-        {
-            waterReflectionMat.SetFloat("_Surface", 1.0f); // 1 = Transparent
-            waterReflectionMat.SetFloat("_Blend", 0.0f);   // 0 = Alpha
-            waterReflectionMat.SetInt("_SrcBlend", (int)UnityEngine.Rendering.BlendMode.SrcAlpha);
-            waterReflectionMat.SetInt("_DstBlend", (int)UnityEngine.Rendering.BlendMode.OneMinusSrcAlpha);
-            waterReflectionMat.SetInt("_ZWrite", 0);
-            waterReflectionMat.renderQueue = (int)UnityEngine.Rendering.RenderQueue.Transparent + 10;
-        }
-
-        // 🌟 2. 가장자리가 부드럽게 페이드아웃되는 원형 알파 텍스처 동적 생성
-        Texture2D softShadowTex = new Texture2D(64, 64, TextureFormat.RGBA32, false);
-        softShadowTex.wrapMode = TextureWrapMode.Clamp;
-        Vector2 center = new Vector2(31.5f, 31.5f);
-        float radius = 31.5f;
-
-        for (int y = 0; y < 64; y++)
-        {
-            for (int x = 0; x < 64; x++)
-            {
-                float dist = Vector2.Distance(new Vector2(x, y), center);
-                float normDist = Mathf.Clamp01(dist / radius);
-                // 코사인/스무스스텝으로 가장자리가 물안개처럼 사르르 빠지는 소프트 페이드
-                float alpha = Mathf.SmoothStep(1.0f, 0.0f, normDist);
-                alpha = Mathf.Pow(alpha, 1.8f); // 중심부는 진하고 외곽은 은은함
-                softShadowTex.SetPixel(x, y, new Color(1f, 1f, 1f, alpha));
-            }
-        }
-        softShadowTex.Apply();
-
-        waterReflectionMat.mainTexture = softShadowTex;
-        waterReflectionMat.color = new Color(0.02f, 0.08f, 0.16f, 0.35f);
-        if (waterReflectionMat.HasProperty("_BaseColor"))
-        {
-            waterReflectionMat.SetColor("_BaseColor", new Color(0.02f, 0.08f, 0.16f, 0.35f));
-        }
-
-        waterReflectionRenderer.material = waterReflectionMat;
-        waterReflectionRenderer.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        waterReflectionRenderer.receiveShadows = false;
-
-        waterReflectionObj.transform.localScale = new Vector3(0.25f, 0.25f, 1.0f);
-        waterReflectionObj.SetActive(false);
     }
 
     public void UpdateWaterLevel()
@@ -396,21 +336,16 @@ public class SkippingStone : MonoBehaviour
     {
         if (!isThrown || isSunk || isCrashed || isSkimming) return;
 
-        Vector3 v = (rb != null) ? rb.linearVelocity : Vector3.zero;
-        Vector3 hVel = new Vector3(v.x, 0f, v.z);
-        if (hVel.sqrMagnitude > 0.05f)
+        if (rb != null)
         {
-            Vector3 hDir = hVel.normalized;
-            float vy = v.y;
-            float targetPitch = Mathf.Clamp(vy * 6.5f, -36f, 45f);
-            currentPitchAngle = Mathf.Lerp(currentPitchAngle, targetPitch, Time.deltaTime * 14f);
-            currentSpinAngle = (currentSpinAngle + 1440f * Time.deltaTime) % 360f;
-
-            Quaternion headingRot = Quaternion.LookRotation(hDir, Vector3.up);
-            Quaternion pitchRot = Quaternion.Euler(-currentPitchAngle, 0f, 0f);
-            Quaternion spinRot = Quaternion.Euler(0f, currentSpinAngle, 0f);
-
-            transform.rotation = headingRot * pitchRot * spinRot;
+            SkippingStones.Gameplay.Calculators.StonePhysicsCalculator.CalculateFlightRotation(
+                rb.linearVelocity, currentPitchAngle, currentSpinAngle, Time.deltaTime,
+                out currentPitchAngle, out currentSpinAngle, out Quaternion finalRot
+            );
+            if (finalRot != Quaternion.identity)
+            {
+                transform.rotation = finalRot;
+            }
         }
     }
 
@@ -488,18 +423,24 @@ public class SkippingStone : MonoBehaviour
         currentSpinAngle = 0f;
         currentMomentum = 6.0f; // 기본 시작 모멘텀 게이지 (6.0 / 10.0)
 
-        rb.isKinematic = false;
-        rb.useGravity = true;
-        rb.interpolation = RigidbodyInterpolation.Interpolate;
-        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
-
-        rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        if (rb == null) rb = GetComponent<Rigidbody>();
+        if (rb != null)
+        {
+            rb.isKinematic = false;
+            rb.useGravity = true;
+            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.constraints = RigidbodyConstraints.FreezeRotationX | RigidbodyConstraints.FreezeRotationZ;
+        }
 
         float clampedPower = Mathf.Clamp(powerMultiplier, 0.4f, 1.5f);
         float finalSpeed = forwardPower * clampedPower;
 
         float upwardSpeed = initialUpwardForce * Mathf.Clamp(powerMultiplier, 0.8f, 1.3f);
-        rb.linearVelocity = (direction.normalized * finalSpeed) + (Vector3.up * upwardSpeed);
+        if (rb != null)
+        {
+            rb.linearVelocity = (direction.normalized * finalSpeed) + (Vector3.up * upwardSpeed);
+        }
 
         if (AudioManager.Instance != null) AudioManager.Instance.PlaySound(SoundType.ThrowWhoosh);
         HapticFeedbackHelper.TriggerLightTap();
@@ -571,9 +512,7 @@ public class SkippingStone : MonoBehaviour
 
     public float GetDynamicBounceForce(int currentSkip)
     {
-        float progress = Mathf.Clamp01((currentSkip - 1) / 32f);
-        float decayFactor = Mathf.Lerp(1.0f, 0.38f, Mathf.Sqrt(progress));
-        return baseBounceUpForce * decayFactor;
+        return SkippingStones.Gameplay.Calculators.StonePhysicsCalculator.GetDynamicBounceForce(baseBounceUpForce, currentSkip);
     }
 
     private float waterSubmergeTimer = 0f;
@@ -681,47 +620,7 @@ public class SkippingStone : MonoBehaviour
 
     private void LateUpdate()
     {
-        UpdateWaterReflectionShadow();
-    }
-
-    private void UpdateWaterReflectionShadow()
-    {
-        if (waterReflectionObj == null) return;
-
-        if (!isThrown || isSunk || isCrashed)
-        {
-            if (waterReflectionObj.activeSelf) waterReflectionObj.SetActive(false);
-            return;
-        }
-
-        float dist = transform.position.y - waterLevel;
-
-        // 돌이 수면 위 3.5m 이내로 진입했을 때 그림자 추적 활성화
-        if (dist >= -0.35f && dist <= 3.5f)
-        {
-            if (!waterReflectionObj.activeSelf) waterReflectionObj.SetActive(true);
-
-            // 수면 높이에 납작하게 밀착 배치
-            waterReflectionObj.transform.position = new Vector3(transform.position.x, waterLevel + 0.008f, transform.position.z);
-            waterReflectionObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
-
-            // 🌟 디렉터님 지정: 
-            // 1. 공중 높이 있을 때: 크고(0.28m) 은은하게 퍼짐(알파 0.10)
-            // 2. 수면에 가까워질수록: 돌 크기(0.14m)로 사르르 좁혀지며 짙고 선명해짐(알파 0.35)
-            float closeness = Mathf.Clamp01(1f - (dist / 2.8f)); // 0(상공) -> 1(착수)
-            float shadowScale = Mathf.Lerp(0.30f, 0.14f, closeness);
-            waterReflectionObj.transform.localScale = new Vector3(shadowScale, shadowScale, 1.0f);
-
-            if (waterReflectionMat != null)
-            {
-                float shadowAlpha = Mathf.Lerp(0.08f, 0.35f, closeness);
-                waterReflectionMat.color = new Color(0.03f, 0.10f, 0.20f, shadowAlpha);
-            }
-        }
-        else
-        {
-            if (waterReflectionObj.activeSelf) waterReflectionObj.SetActive(false);
-        }
+        shadowController.UpdateShadow(transform.position, waterLevel, isThrown && !isSunk && !isCrashed);
     }
 
     public bool TryRhythmBounce(out string timingGrade)
@@ -787,70 +686,37 @@ public class SkippingStone : MonoBehaviour
         float momentumDelta = 0f;
 
         // 🌟 [디렉터님 확정] + / - 양방향 리듬 판정 및 모멘텀 게이지 시스템 (0점 수면 밀착 대칭 PERFECT!)
-        if (distToWater > 0.85f)
+        var evalResult = StoneTimingEvaluator.Evaluate(distToWater, bounceForce);
+        timingGrade = evalResult.grade;
+
+        if (!evalResult.isSuccess)
         {
-            // + 구간 상공: 너무 일찍 누름 (Too Early - 1회 재도전 기회)
-            earlyRetryCount++;
-            if (earlyRetryCount <= 1)
+            if (evalResult.isEarlyRetry)
             {
-                hasTappedInCurrentBounce = false;
-                timingGrade = "💦 TOO EARLY";
-            }
-            else
-            {
-                hasTappedInCurrentBounce = true;
-                timingGrade = "💦 TOO EARLY (기회 소모!)";
+                earlyRetryCount++;
+                if (earlyRetryCount <= 1)
+                {
+                    hasTappedInCurrentBounce = false;
+                }
+                else
+                {
+                    hasTappedInCurrentBounce = true;
+                    timingGrade = "💦 TOO EARLY (기회 소모!)";
+                }
             }
             return false;
         }
-        else if (distToWater > 0.48f)
+
+        momentumDelta = evalResult.momentumDelta;
+        if (evalResult.fixedBounceForce > 0f)
         {
-            // + 구간 (수면 위 0.48m ~ 0.85m): GOOD
-            timingGrade = "✨ GOOD (+0.5)";
-            momentumDelta = +0.5f;
-            bounceForce *= 0.95f;
-            speedMultiplier = 0.98f;
-        }
-        else if (distToWater > 0.18f)
-        {
-            // + 구간 (수면 위 0.18m ~ 0.48m): GREAT
-            timingGrade = "⚡ GREAT! ⚡ (+1.0)";
-            momentumDelta = +1.0f;
-            bounceForce *= 1.10f;
-            speedMultiplier = 1.02f;
-        }
-        else if (distToWater >= -0.09f)
-        {
-            // 🎯 0점 수면 착수 핵심 코어 (수면 아래 -9cm ~ 수면 위 18cm): PERFECT!
-            timingGrade = "🔥 PERFECT! 🔥 (+2.0)";
-            momentumDelta = +2.0f;
-            bounceForce *= 1.25f;
-            speedMultiplier = 1.08f;
-        }
-        else if (distToWater >= -0.20f)
-        {
-            // ⚠️ - 1단계 유예 구간 (수면 아래 -9cm ~ -20cm): LATE (구제 바운스)
-            timingGrade = "⚠️ LATE (-1.0)";
-            momentumDelta = -1.0f;
-            bounceForce *= 0.82f;
-            speedMultiplier = 0.88f;
-        }
-        else if (distToWater >= -0.32f)
-        {
-            // 🚨 - 2단계 슈퍼세이브 구간 (수면 아래 -20cm ~ -32cm): TOO LATE
-            timingGrade = "🚨 TOO LATE (-1.5)";
-            momentumDelta = -1.5f;
-            bounceForce *= 0.65f;
-            speedMultiplier = 0.78f;
+            bounceForce = evalResult.fixedBounceForce;
         }
         else
         {
-            // 💥 심해 잠수 (수면 아래 -32cm 이하): BAD (-3.0)
-            timingGrade = "💥 BAD (-3.0)";
-            momentumDelta = -3.0f;
-            bounceForce = Mathf.Max(bounceForce * 0.50f, 2.8f); // 🌟 최소 2.8m/s 반발력을 보장하여 15스킵 이상에서도 안전 회생
-            speedMultiplier = 0.70f;
+            bounceForce *= evalResult.bounceForceMultiplier;
         }
+        speedMultiplier = evalResult.speedMultiplier;
 
         // 모멘텀 게이지 갱신
         currentMomentum = Mathf.Clamp(currentMomentum + momentumDelta, 0f, maxMomentum);
@@ -993,20 +859,16 @@ public class SkippingStone : MonoBehaviour
 
     public void ApplySteerAngle(float steerAngleDegrees)
     {
-        if (!isThrown || isSunk || isCrashed || isSkimming) return;
+        if (!isThrown || isSunk || isCrashed || isSkimming || rb == null) return;
+
+        rb.linearVelocity = SkippingStones.Gameplay.Calculators.StonePhysicsCalculator.ApplySteerToVelocity(rb.linearVelocity, steerAngleDegrees);
 
         Vector2 hVel = new Vector2(rb.linearVelocity.x, rb.linearVelocity.z);
-        float spd = hVel.magnitude;
-        if (spd < 0.1f) return;
-
-        Quaternion rot = Quaternion.Euler(0f, steerAngleDegrees, 0f);
-        Vector3 rotated3D = rot * new Vector3(hVel.x, 0f, hVel.y);
-        Vector2 newHDir = new Vector2(rotated3D.x, rotated3D.z).normalized;
-
-        rb.linearVelocity = new Vector3(newHDir.x * spd, rb.linearVelocity.y, newHDir.y * spd);
-
-        float newYaw = Mathf.Atan2(newHDir.x, newHDir.y) * Mathf.Rad2Deg;
-        transform.rotation = Quaternion.Euler(0f, newYaw, 0f);
+        if (hVel.sqrMagnitude > 0.01f)
+        {
+            float newYaw = Mathf.Atan2(hVel.x, hVel.y) * Mathf.Rad2Deg;
+            transform.rotation = Quaternion.Euler(0f, newYaw, 0f);
+        }
     }
 
     public void StartSkimmingFinish()
@@ -1358,7 +1220,8 @@ public class SkippingStone : MonoBehaviour
         {
             if (obj != null && obj.name.StartsWith("[TAP_DEBUG]"))
             {
-                Destroy(obj);
+                if (Application.isPlaying) Destroy(obj);
+                else DestroyImmediate(obj);
             }
         }
     }
@@ -1384,10 +1247,11 @@ public class SkippingStone : MonoBehaviour
                         record.grade.Contains("LATE") ? Color.magenta : Color.red;
 
         Renderer sphereRend = sphere.GetComponent<Renderer>();
+        Material markMat = new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default"));
+        markMat.color = markCol;
         if (sphereRend != null)
         {
-            sphereRend.material = new Material(Shader.Find("Universal Render Pipeline/Unlit") ?? Shader.Find("Sprites/Default"));
-            sphereRend.material.color = markCol;
+            sphereRend.sharedMaterial = markMat;
         }
 
         // 2. 수직 레이저 기준선 (돌 -> 수면)
@@ -1398,7 +1262,7 @@ public class SkippingStone : MonoBehaviour
         lr.positionCount = 2;
         lr.startWidth = 0.015f;
         lr.endWidth = 0.015f;
-        lr.material = sphereRend != null ? sphereRend.material : new Material(Shader.Find("Sprites/Default"));
+        lr.sharedMaterial = markMat;
         lr.startColor = markCol;
         lr.endColor = markCol;
         lr.SetPosition(0, record.stoneWorldPos);
@@ -1414,16 +1278,18 @@ public class SkippingStone : MonoBehaviour
         Renderer quadRend = waterCross.GetComponent<Renderer>();
         if (quadRend != null)
         {
-            quadRend.material = sphereRend != null ? sphereRend.material : new Material(Shader.Find("Sprites/Default"));
+            Material quadMat = new Material(markMat);
             Color c = markCol;
             c.a = 0.5f;
-            quadRend.material.color = c;
+            quadMat.color = c;
+            quadRend.sharedMaterial = quadMat;
         }
 
         // 충돌 방지 콜라이더 제거
         foreach (var col in markerRoot.GetComponentsInChildren<Collider>())
         {
-            Destroy(col);
+            if (Application.isPlaying) Destroy(col);
+            else DestroyImmediate(col);
         }
 
         Debug.Log($"<color=#{ColorUtility.ToHtmlStringRGB(markCol)}><b>[TAP TELEMETRY]</b> Skip #{record.skipIndex + 1} | 판정: {record.grade} | 수면고도차: {record.distToWater:F3}m | 하강속도: {record.verticalSpeed:F2}m/s</color>", markerRoot);
@@ -1452,18 +1318,6 @@ public class SkippingStone : MonoBehaviour
             spawnedRhythmRing = null;
         }
 
-        if (waterReflectionObj != null)
-        {
-            if (waterReflectionMat != null)
-            {
-                if (waterReflectionMat.mainTexture != null)
-                {
-                    Destroy(waterReflectionMat.mainTexture);
-                }
-                Destroy(waterReflectionMat);
-            }
-            Destroy(waterReflectionObj);
-            waterReflectionObj = null;
-        }
+        shadowController.Cleanup();
     }
 }

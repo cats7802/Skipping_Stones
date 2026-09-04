@@ -22,3 +22,11 @@
   - `SkippingStone.cs`: `EnsureRhythmRing()`에서 누락 시 자식 오브젝트로 `RhythmRingIndicator` 자동 생성 및 `ring.stone = this` 바인딩 처리.
 - **컴파일 검증**: 0 Errors, 0 Warnings.
 
+### [2026-09-04] 대형 과밀 파일 객체화 및 모듈 분리 (Calculators / Timing / Shadow)
+- **수정 목적**: 1,250줄 이상의 대형 과밀 파일이었던 `SkippingStone.cs`의 물리 계산, 타이밍 평가, 수면 그림자 로직을 독립 객체로 분리하여 유지보수성 및 단위 테스트성 극대화.
+- **적용 내용**:
+  - `StonePhysicsCalculator.cs` 생성: 스킵별 바운스 감쇠, 3축 비행 피치/스핀 회전 연산, 좌우 조향 각도 벡터 연산 분리.
+  - `StoneTimingEvaluator.cs` 생성: 수면 고도차 기준 +/- 양방향 판정(PERFECT, GREAT, GOOD, LATE, TOO LATE, BAD), 모멘텀 증감, 속도 및 바운스력 배율 산출 분리.
+  - `WaterReflectionShadowController.cs` 생성: Quad 메쉬 동적 생성, 소프트 알파 텍스처 베이킹, 비행 고도별 크기/알파 트래킹 및 `SafeDestroy` 클린업 분리.
+  - `SkippingStone.cs`: 분리된 3대 모듈 클래스들과 바인딩 연동, EditMode 및 런타임 Null-Safety 강화.
+- **컴파일 & MCP 검증**: C# 컴파일 0 Errors, 0 Warnings, Unity MCP `Unity_RunCommand` 인엔진 모듈 단위/통합 테스트 전수 통과.
