@@ -57,21 +57,46 @@ namespace SkippingStones.Terrain
 
         /// <summary>
         /// 활성화된 청크들의 RiverPathChunkData를 검색하여 연속된 글로벌 스플라인 체인 재구성
+        /// (LakeEnvironmentManager의 실제 도킹 순서를 최우선 반영하여 곡선/U턴에서도 100% 완벽한 순서 보장)
         /// </summary>
         public void RebuildPath()
         {
             segments.Clear();
             totalRiverLength = 0f;
 
-            // 씬 내의 모든 RiverPathChunkData 탐색 후 Z축 / 누적 위치 기준 정렬
-            RiverPathChunkData[] allChunks = FindObjectsByType<RiverPathChunkData>(FindObjectsInactive.Exclude);
-            if (allChunks == null || allChunks.Length == 0) return;
+            List<RiverPathChunkData> orderedChunks = new List<RiverPathChunkData>();
 
-            // 청크들을 월드 Z축 좌표 기준으로 오름차순 정렬
-            System.Array.Sort(allChunks, (a, b) => a.transform.position.z.CompareTo(b.transform.position.z));
+            // 1. LakeEnvironmentManager의 실제 청크 도킹 순서(DynamicChunks) 최우선 수집
+            if (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.DynamicChunks != null)
+            {
+                foreach (var chunkObj in LakeEnvironmentManager.Instance.DynamicChunks)
+                {
+                    if (chunkObj == null) continue;
+                    var cData = chunkObj.GetComponentInChildren<RiverPathChunkData>(true);
+                    if (cData != null && !orderedChunks.Contains(cData))
+                    {
+                        orderedChunks.Add(cData);
+                    }
+                }
+            }
+
+            // 2. 씬에 배치된 미등록 청크가 있다면 Z축 좌표 기준으로 보완 수집
+            RiverPathChunkData[] allChunks = FindObjectsByType<RiverPathChunkData>(FindObjectsInactive.Exclude);
+            if (allChunks != null && allChunks.Length > 0)
+            {
+                List<RiverPathChunkData> remaining = new List<RiverPathChunkData>();
+                foreach (var c in allChunks)
+                {
+                    if (!orderedChunks.Contains(c)) remaining.Add(c);
+                }
+                remaining.Sort((a, b) => a.transform.position.z.CompareTo(b.transform.position.z));
+                orderedChunks.AddRange(remaining);
+            }
+
+            if (orderedChunks.Count == 0) return;
 
             float accumulated = 0f;
-            foreach (var chunk in allChunks)
+            foreach (var chunk in orderedChunks)
             {
                 if (chunk.nodes == null || chunk.nodes.Count == 0) continue;
 
@@ -178,6 +203,55 @@ namespace SkippingStones.Terrain
             }
 
             distanceAlongRiver = bestDist;
+            return true;
+        }
+
+        /// <summary>
+        /// 특정 청크 게임오브젝트의 곡선 시작/끝 거리 반환 (100% 정밀 매칭)
+        /// </summary>
+        public bool GetSegmentDistanceRange(GameObject chunkObj, out float startDist, out float endDist)
+        {
+            startDist = 0f;
+            endDist = 500f;
+
+            if (chunkObj == null) return false;
+            if (segments.Count == 0) RebuildPath();
+            if (segments.Count == 0) return false;
+
+            foreach (var seg in segments)
+            {
+                if (seg.chunkTransform != null && (seg.chunkTransform.gameObject == chunkObj || seg.chunkTransform.IsChildOf(chunkObj.transform) || chunkObj.transform.IsChildOf(seg.chunkTransform)))
+                {
+                    startDist = seg.startDistance;
+                    endDist = seg.endDistance;
+                    return true;
+                }
+            }
+
+            return GetSegmentDistanceRange(chunkObj.transform.position.z, out startDist, out endDist);
+        }
+
+        /// <summary>
+        /// 특정 청크 인덱스의 곡선 시작/끝 거리 반환
+        /// </summary>
+        public bool GetSegmentDistanceRangeByIndex(int chunkIndex, out float startDist, out float endDist)
+        {
+            startDist = 0f;
+            endDist = 500f;
+
+            if (segments.Count == 0) RebuildPath();
+            if (segments.Count == 0) return false;
+
+            if (chunkIndex >= 0 && chunkIndex < segments.Count)
+            {
+                startDist = segments[chunkIndex].startDistance;
+                endDist = segments[chunkIndex].endDistance;
+                return true;
+            }
+
+            // 인덱스 초과 시 마지막 세그먼트 반환
+            startDist = segments[segments.Count - 1].startDistance;
+            endDist = segments[segments.Count - 1].endDistance;
             return true;
         }
 

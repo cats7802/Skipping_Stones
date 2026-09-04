@@ -22,15 +22,26 @@ public class RiverSpawner : MonoBehaviour
     private void Start()
     {
         // 타이틀/로비에서는 아무런 스폰도 실행하지 않고 대기.
-        // BG 청크 릴레이 콜백 구독: 인게임 중 새 1500m 구간이 앞으로 이동할 때 해당 구간 엔티티 재스폰
+        // BG 청크 릴레이 콜백 구독: 인게임 중 새 청크 구간이 스폰/도킹될 때 해당 구간 엔티티 재스폰
         if (LakeEnvironmentManager.Instance != null)
+        {
+            LakeEnvironmentManager.Instance.OnChunkSpawned += HandleChunkSpawned;
             LakeEnvironmentManager.Instance.OnChunkRelayed += SpawnChunkEntities;
+        }
     }
 
     private void OnDestroy()
     {
         if (LakeEnvironmentManager.Instance != null)
+        {
+            LakeEnvironmentManager.Instance.OnChunkSpawned -= HandleChunkSpawned;
             LakeEnvironmentManager.Instance.OnChunkRelayed -= SpawnChunkEntities;
+        }
+    }
+
+    private void HandleChunkSpawned(int chunkIndex, GameObject chunkObj, float spawnZ)
+    {
+        SpawnChunkEntities(chunkIndex, chunkObj, spawnZ);
     }
 
     public void GenerateRiverEntitiesForMode(GameController.GameMode mode)
@@ -124,237 +135,36 @@ public class RiverSpawner : MonoBehaviour
     }
 
     /// <summary>
-    /// 🏆 장거리 모드: 활성화된 1개 청크(지형 실측 길이)의 범위 내에만 엔티티 스폰 (이후 구간은 청크 릴레이 시 동적 확장)
+    /// 🏆 장거리 & 리듬 아케이드 모드: 활성화된 모든 청크의 물길 구간에 엔티티 일괄 스폰
     /// </summary>
     private void GenerateLongDistanceRiver()
     {
         ClearExistingEntities();
+        Physics.SyncTransforms();
 
-        // 🌟 [핵심] 청크가 로드/재구성된 상태에서 글로벌 스플라인 체인 최신화 보장 (갓모드 및 엔티티 스폰 100% 동기화)
+        // 🌟 [핵심] 청크가 로드/재구성된 상태에서 글로벌 스플라인 체인 최신화 보장
         if (SkippingStones.Terrain.GlobalRiverPath.Instance != null)
         {
             SkippingStones.Terrain.GlobalRiverPath.Instance.RebuildPath();
         }
 
-        GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float curWaterY);
-        float activeChunkSize = (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 10f) 
-            ? LakeEnvironmentManager.Instance.autoChunkSize 
-            : Mathf.Max(100f, maxZ - minZ);
-
-        float startZ = minZ;
-        float endZ = startZ + activeChunkSize;
-        startBankPos = Vector3.zero;
-        spawnDirection = Vector3.forward;
-
-        // 1. 🚀 가속 부스트 패드 (갈라진 양쪽 물길 및 강폭 비례 적응형 밀도 스폰)
-        for (float bDist = startZ + 40f; bDist < endZ - 40f; bDist += Random.Range(35f, 65f))
+        // 🌟 LakeEnvironmentManager에 로드된 모든 청크(0번, 1번, 2번...)에 대해 일괄 스폰 실행
+        if (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.DynamicChunks != null && LakeEnvironmentManager.Instance.DynamicChunks.Count > 0)
         {
-            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(bDist, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            for (int i = 0; i < LakeEnvironmentManager.Instance.DynamicChunks.Count; i++)
             {
-                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
-
-                // 🌟 섬(Island)으로 인한 분기 물길(Left / Right Split Channels) 감지
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.5f, 25f), startZ, endZ, wY + 0.05f);
-
-                if (splitChannels.Count > 1)
+                var chunk = LakeEnvironmentManager.Instance.DynamicChunks[i];
+                if (chunk != null)
                 {
-                    // 🏝️ 갈라진 양쪽 물길 모두에 부스트 패드 1개씩 균등 스폰
-                    foreach (var chPos in splitChannels)
-                    {
-                        TrySpawnBoostPad(chPos, startZ, endZ, tan);
-                    }
-                }
-                else
-                {
-                    float effectiveWidth = halfW * 2f;
-                    if (effectiveWidth < 15f)
-                    {
-                        // 좁은 협곡 (< 15m): 중앙 1개만 안전 스폰
-                        Vector3 midPos = cPos + normal * Random.Range(-1.5f, 1.5f);
-                        midPos.y = wY + 0.05f;
-                        TrySpawnBoostPad(midPos, startZ, endZ, tan);
-                    }
-                    else if (effectiveWidth < 25f)
-                    {
-                        // 보통 강 (15m ~ 25m): 1~2개 분산 스폰
-                        Vector3 p1 = cPos - normal * (halfW * 0.5f);
-                        Vector3 p2 = cPos + normal * (halfW * 0.5f);
-                        p1.y = wY + 0.05f;
-                        p2.y = wY + 0.05f;
-                        TrySpawnBoostPad(p1, startZ, endZ, tan);
-                        if (Random.value < 0.7f) TrySpawnBoostPad(p2, startZ, endZ, tan);
-                    }
-                    else
-                    {
-                        // 넓은 강 (>= 25m): 좌/중/우 3개 분산 스폰
-                        Vector3 leftPos = cPos - normal * (halfW * 0.65f);
-                        Vector3 midPos = cPos + normal * Random.Range(-halfW * 0.2f, halfW * 0.2f);
-                        Vector3 rightPos = cPos + normal * (halfW * 0.65f);
-                        leftPos.y = wY + 0.05f;
-                        midPos.y = wY + 0.05f;
-                        rightPos.y = wY + 0.05f;
-
-                        TrySpawnBoostPad(leftPos, startZ, endZ, tan);
-                        TrySpawnBoostPad(midPos, startZ, endZ, tan);
-                        TrySpawnBoostPad(rightPos, startZ, endZ, tan);
-                    }
+                    float z = chunk.transform.position.z;
+                    SpawnChunkEntities(i, chunk, z);
                 }
             }
-            else
-            {
-                float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-                float midX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-                float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-
-                TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
-                TrySpawnBoostPad(new Vector3(midX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
-                TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, bDist + Random.Range(-3f, 3f)), startZ, endZ);
-            }
+            return;
         }
 
-        // 2. 🪨 강 장애물(바위) (갈라진 물길 및 강폭 비례 통로 확보 스폰)
-        for (float d = startZ + 45f; d < endZ - 30f; d += Random.Range(25f, 42f))
-        {
-            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(d, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
-            {
-                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
-
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.5f, 25f), startZ, endZ, wY);
-
-                if (splitChannels.Count > 1)
-                {
-                    // 갈라진 물길마다 가장자리에 1개씩 안전 스폰
-                    foreach (var chPos in splitChannels)
-                    {
-                        if (Random.value < 0.6f)
-                        {
-                            Vector3 rockPos = chPos + normal * (Random.value < 0.5f ? -2f : 2f);
-                            rockPos.y = wY;
-                            TrySpawnObstacleRock(rockPos, startZ, endZ);
-                        }
-                    }
-                }
-                else
-                {
-                    float effectiveWidth = halfW * 2f;
-                    if (effectiveWidth < 15f)
-                    {
-                        if (Random.value < 0.5f)
-                        {
-                            float side = (Random.value < 0.5f) ? -halfW * 0.75f : halfW * 0.75f;
-                            Vector3 rockPos = cPos + normal * side;
-                            rockPos.y = wY;
-                            TrySpawnObstacleRock(rockPos, startZ, endZ);
-                        }
-                    }
-                    else
-                    {
-                        float offset = Random.Range(-halfW * 0.75f, halfW * 0.75f);
-                        Vector3 rockPos = cPos + normal * offset;
-                        rockPos.y = wY;
-                        TrySpawnObstacleRock(rockPos, startZ, endZ);
-                    }
-                }
-            }
-            else
-            {
-                float rockX = Random.Range(minX, maxX);
-                TrySpawnObstacleRock(new Vector3(rockX, curWaterY, d + Random.Range(-4f, 4f)), startZ, endZ);
-            }
-        }
-
-        // 3. 🐟 튀어오르는 물고기 (갈라진 물길 및 강폭 적응형 스폰 - 개체 수 대폭 증가)
-        for (float fDist = startZ + 25f; fDist < endZ - 25f; fDist += Random.Range(20f, 42f))
-        {
-            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(fDist, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
-            {
-                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
-
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.5f, 25f), startZ, endZ, wY);
-
-                if (splitChannels.Count > 1)
-                {
-                    // 갈라진 양쪽 물길마다 물고기 1~2마리씩 스폰
-                    for (int chIdx = 0; chIdx < splitChannels.Count; chIdx++)
-                    {
-                        TrySpawnFish(splitChannels[chIdx], fDist + (chIdx * 6f), startZ, endZ);
-                        if (Random.value < 0.45f)
-                        {
-                            Vector3 sidePos = splitChannels[chIdx] + normal * Random.Range(-2.5f, 2.5f);
-                            TrySpawnFish(sidePos, fDist + (chIdx * 6f) + Random.Range(3f, 8f), startZ, endZ);
-                        }
-                    }
-                }
-                else
-                {
-                    float effectiveWidth = halfW * 2f;
-                    if (effectiveWidth < 15f)
-                    {
-                        Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.5f, halfW * 0.5f);
-                        fPos.y = wY;
-                        TrySpawnFish(fPos, fDist, startZ, endZ);
-                    }
-                    else
-                    {
-                        Vector3 fPos1 = cPos - normal * (halfW * 0.65f);
-                        Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.25f, halfW * 0.25f);
-                        Vector3 fPos3 = cPos + normal * (halfW * 0.65f);
-                        fPos1.y = wY;
-                        fPos2.y = wY;
-                        fPos3.y = wY;
-
-                        TrySpawnFish(fPos1, fDist, startZ, endZ);
-                        TrySpawnFish(fPos2, fDist + Random.Range(4f, 10f), startZ, endZ);
-                        TrySpawnFish(fPos3, fDist + Random.Range(8f, 16f), startZ, endZ);
-                    }
-                }
-            }
-            else
-            {
-                float fX1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-                float fX2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-                float fX3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-                TrySpawnFish(new Vector3(fX1, curWaterY, fDist), fDist, startZ, endZ);
-                TrySpawnFish(new Vector3(fX2, curWaterY, fDist + Random.Range(4f, 10f)), fDist, startZ, endZ);
-                TrySpawnFish(new Vector3(fX3, curWaterY, fDist + Random.Range(8f, 16f)), fDist, startZ, endZ);
-            }
-        }
-
-        // 4. 🚩 친구 거리 깃발 (현재 청크 지형 범위 내에 존재하는 깃발만 스폰)
-        string[] friends = { "라이언 (3위)", "어피치 (2위)", "프로도 (1위)", "콘 (국내 1위)", "무지 (마스터)", "네오 (그랜드마스터)", "튜브 (초월자)", "제이지 (레전드)" };
-        float[] friendDists = { 120f, 310f, 450f, 750f, 1200f, 1800f, 2500f, 3500f };
-        for (int i = 0; i < friends.Length; i++)
-        {
-            float zPos = friendDists[i];
-            if (zPos < startZ + 30f || zPos > endZ - 30f) continue;
-            
-            Vector3 fPos;
-            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(zPos, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
-            {
-                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.4f, 5f, 35f);
-                float sideOffset = (i % 2 == 0) ? -halfW * 0.6f : halfW * 0.6f;
-                fPos = cPos + normal * sideOffset;
-                fPos.y = wY;
-            }
-            else
-            {
-                float flagX = (i % 2 == 0) ? Random.Range(minX, Mathf.Lerp(minX, maxX, 0.4f)) : Random.Range(Mathf.Lerp(minX, maxX, 0.6f), maxX);
-                fPos = new Vector3(flagX, curWaterY, zPos);
-            }
-
-            if (IsValidWaterPosition(fPos, startZ, endZ))
-            {
-                CreateFriendFlag(fPos, friends[i], $"{i + 1}위", zPos);
-            }
-        }
-
-        // 5. 🪷 연잎 및 연꽃 군락 (청크 지형 경계 엄격 준수)
-        CreateLilyPadsGrid(minX, maxX, startZ + 20f, endZ - 20f, curWaterY);
-        CleanupOldGroundObjects();
+        // 단일 청크 폴백
+        SpawnChunkEntities(0, null, 0f);
     }
 
     /// <summary>
@@ -691,8 +501,19 @@ public class RiverSpawner : MonoBehaviour
     /// 🌟 새 맵 청크가 생성(스트리밍)될 때 호출됨.
     /// 새로 생성된 chunkStartZ ~ chunkStartZ+chunkSize 구간에만 정확히 엔티티 스폰.
     /// </summary>
+    /// <summary>
+    /// 🌟 새 맵 청크가 생성(스트리밍)될 때 호출됨.
+    /// 해당 청크 객체의 베이킹된 곡선 구간(startDist ~ endDist)에 엔티티 정밀 스폰.
+    /// </summary>
     public void SpawnChunkEntities(float chunkStartZ)
     {
+        SpawnChunkEntities(-1, null, chunkStartZ);
+    }
+
+    public void SpawnChunkEntities(int chunkIndex, GameObject chunkObj, float chunkStartZ)
+    {
+        Physics.SyncTransforms();
+
         float chunkSize = (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 10f)
             ? LakeEnvironmentManager.Instance.autoChunkSize
             : 500f;
@@ -700,25 +521,42 @@ public class RiverSpawner : MonoBehaviour
         float chunkEndZ = chunkStartZ + chunkSize;
         float curWaterY = GetCurrentWaterLevel();
 
-        // 🌟 [핵심] 스플라인 곡선 거리와 월드 Z좌표의 괴리 해결:
-        // 해당 청크의 실제 스플라인 곡선 시작 거리 ~ 끝 거리를 획득하여 순회
+        // 🌟 [핵심] 스플라인 곡선 거리 획득:
+        // chunkObj 또는 chunkIndex를 통해 해당 청크의 실제 스플라인 시작~끝 거리를 100% 정밀 매칭
         float curveStartDist = chunkStartZ;
         float curveEndDist = chunkEndZ;
-        if (SkippingStones.Terrain.GlobalRiverPath.Instance != null &&
-            SkippingStones.Terrain.GlobalRiverPath.Instance.GetSegmentDistanceRange(chunkStartZ, out float sDist, out float eDist))
+        bool hasRiverPath = false;
+
+        if (SkippingStones.Terrain.GlobalRiverPath.Instance != null)
         {
-            curveStartDist = sDist;
-            curveEndDist = eDist;
+            if (chunkObj != null && SkippingStones.Terrain.GlobalRiverPath.Instance.GetSegmentDistanceRange(chunkObj, out float sDist, out float eDist))
+            {
+                curveStartDist = sDist;
+                curveEndDist = eDist;
+                hasRiverPath = true;
+            }
+            else if (chunkIndex >= 0 && SkippingStones.Terrain.GlobalRiverPath.Instance.GetSegmentDistanceRangeByIndex(chunkIndex, out float isDist, out float ieDist))
+            {
+                curveStartDist = isDist;
+                curveEndDist = ieDist;
+                hasRiverPath = true;
+            }
+            else if (SkippingStones.Terrain.GlobalRiverPath.Instance.GetSegmentDistanceRange(chunkStartZ, out float zsDist, out float zeDist))
+            {
+                curveStartDist = zsDist;
+                curveEndDist = zeDist;
+                hasRiverPath = true;
+            }
         }
 
-        // 해당 구간의 기존 엔티티 제거
+        // 해당 청크 범위의 기존 엔티티 제거
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             Transform child = transform.GetChild(i);
             if (child != null)
             {
                 float cz = child.position.z;
-                if (cz >= chunkStartZ - 30f && cz < chunkEndZ + 30f)
+                if (cz >= chunkStartZ - 35f && cz < chunkEndZ + 35f)
                     SafeDestroy(child.gameObject);
             }
         }
@@ -726,21 +564,21 @@ public class RiverSpawner : MonoBehaviour
         // Water_Surface BoxCollider로부터 실제 수면 가로폭 및 높이 동적 획득
         GetWaterColliderBounds(out float minX, out float maxX, out curWaterY);
 
-        // 1. 🚀 가속 부스트 패드 (새로 생성된 청크 지형 경계 및 갈라진 물길 적응형 스폰)
+        // 1. 🚀 가속 부스트 패드 / 랜덤 링 (갈라진 양쪽 물길 및 곡선 강폭 비례 적응형 스폰)
         for (float z = curveStartDist + 35f; z < curveEndDist - 35f; z += Random.Range(35f, 65f))
         {
-            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            if (hasRiverPath && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
                 Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
                 float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
 
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.5f, 25f), chunkStartZ, chunkEndZ, wY + 0.05f);
+                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.6f, 30f), wY + 0.05f);
 
                 if (splitChannels.Count > 1)
                 {
                     foreach (var chPos in splitChannels)
                     {
-                        TrySpawnBoostPad(chPos, chunkStartZ, chunkEndZ, tan);
+                        TrySpawnBoostPad(chPos, tan);
                     }
                 }
                 else
@@ -750,7 +588,7 @@ public class RiverSpawner : MonoBehaviour
                     {
                         Vector3 midPos = cPos + normal * Random.Range(-1.5f, 1.5f);
                         midPos.y = wY + 0.05f;
-                        TrySpawnBoostPad(midPos, chunkStartZ, chunkEndZ, tan);
+                        TrySpawnBoostPad(midPos, tan);
                     }
                     else if (effectiveWidth < 25f)
                     {
@@ -758,8 +596,8 @@ public class RiverSpawner : MonoBehaviour
                         Vector3 p2 = cPos + normal * (halfW * 0.5f);
                         p1.y = wY + 0.05f;
                         p2.y = wY + 0.05f;
-                        TrySpawnBoostPad(p1, chunkStartZ, chunkEndZ, tan);
-                        if (Random.value < 0.7f) TrySpawnBoostPad(p2, chunkStartZ, chunkEndZ, tan);
+                        TrySpawnBoostPad(p1, tan);
+                        if (Random.value < 0.7f) TrySpawnBoostPad(p2, tan);
                     }
                     else
                     {
@@ -770,9 +608,9 @@ public class RiverSpawner : MonoBehaviour
                         midPos.y = wY + 0.05f;
                         rightPos.y = wY + 0.05f;
 
-                        TrySpawnBoostPad(leftPos, chunkStartZ, chunkEndZ, tan);
-                        TrySpawnBoostPad(midPos, chunkStartZ, chunkEndZ, tan);
-                        TrySpawnBoostPad(rightPos, chunkStartZ, chunkEndZ, tan);
+                        TrySpawnBoostPad(leftPos, tan);
+                        TrySpawnBoostPad(midPos, tan);
+                        TrySpawnBoostPad(rightPos, tan);
                     }
                 }
             }
@@ -782,21 +620,21 @@ public class RiverSpawner : MonoBehaviour
                 float centerX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
                 float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
 
-                TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
-                TrySpawnBoostPad(new Vector3(centerX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
-                TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), chunkStartZ, chunkEndZ);
+                TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), Vector3.forward);
+                TrySpawnBoostPad(new Vector3(centerX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), Vector3.forward);
+                TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), Vector3.forward);
             }
         }
 
         // 2. 🪨 장애물 바위 (강폭 및 분기 물길 비례 통로 확보 스폰)
         for (float z = curveStartDist + 40f; z < curveEndDist - 30f; z += Random.Range(25f, 42f))
         {
-            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            if (hasRiverPath && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
                 Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
                 float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
 
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.5f, 25f), chunkStartZ, chunkEndZ, wY);
+                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.6f, 30f), wY);
 
                 if (splitChannels.Count > 1)
                 {
@@ -806,7 +644,7 @@ public class RiverSpawner : MonoBehaviour
                         {
                             Vector3 rockPos = chPos + normal * (Random.value < 0.5f ? -2f : 2f);
                             rockPos.y = wY;
-                            TrySpawnObstacleRock(rockPos, chunkStartZ, chunkEndZ);
+                            TrySpawnObstacleRock(rockPos);
                         }
                     }
                 }
@@ -820,7 +658,7 @@ public class RiverSpawner : MonoBehaviour
                             float side = (Random.value < 0.5f) ? -halfW * 0.75f : halfW * 0.75f;
                             Vector3 rockPos = cPos + normal * side;
                             rockPos.y = wY;
-                            TrySpawnObstacleRock(rockPos, chunkStartZ, chunkEndZ);
+                            TrySpawnObstacleRock(rockPos);
                         }
                     }
                     else
@@ -828,36 +666,36 @@ public class RiverSpawner : MonoBehaviour
                         float offset = Random.Range(-halfW * 0.75f, halfW * 0.75f);
                         Vector3 rockPos = cPos + normal * offset;
                         rockPos.y = wY;
-                        TrySpawnObstacleRock(rockPos, chunkStartZ, chunkEndZ);
+                        TrySpawnObstacleRock(rockPos);
                     }
                 }
             }
             else
             {
                 float x = Random.Range(minX, maxX);
-                TrySpawnObstacleRock(new Vector3(x, curWaterY, z + Random.Range(-4f, 4f)), chunkStartZ, chunkEndZ);
+                TrySpawnObstacleRock(new Vector3(x, curWaterY, z + Random.Range(-4f, 4f)));
             }
         }
 
-        // 3. 🐟 물고기 (갈라진 물길 및 강폭 적응형 스폰 - 개체 수 대폭 증가)
+        // 3. 🐟 물고기 (갈라진 양쪽 물길 및 강폭 적응형 스폰 - 개체 수 풍성 배치)
         for (float z = curveStartDist + 25f; z < curveEndDist - 25f; z += Random.Range(20f, 42f))
         {
-            if (SkippingStones.Terrain.GlobalRiverPath.Instance != null && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+            if (hasRiverPath && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
             {
                 Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
                 float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
 
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.5f, 25f), chunkStartZ, chunkEndZ, wY);
+                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.6f, 30f), wY);
 
                 if (splitChannels.Count > 1)
                 {
                     for (int chIdx = 0; chIdx < splitChannels.Count; chIdx++)
                     {
-                        TrySpawnFish(splitChannels[chIdx], z + (chIdx * 6f), chunkStartZ, chunkEndZ);
-                        if (Random.value < 0.45f)
+                        TrySpawnFish(splitChannels[chIdx], z + (chIdx * 6f));
+                        if (Random.value < 0.55f)
                         {
                             Vector3 sidePos = splitChannels[chIdx] + normal * Random.Range(-2.5f, 2.5f);
-                            TrySpawnFish(sidePos, z + (chIdx * 6f) + Random.Range(3f, 8f), chunkStartZ, chunkEndZ);
+                            TrySpawnFish(sidePos, z + (chIdx * 6f) + Random.Range(3f, 8f));
                         }
                     }
                 }
@@ -868,7 +706,7 @@ public class RiverSpawner : MonoBehaviour
                     {
                         Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.5f, halfW * 0.5f);
                         fPos.y = wY;
-                        TrySpawnFish(fPos, z, chunkStartZ, chunkEndZ);
+                        TrySpawnFish(fPos, z);
                     }
                     else
                     {
@@ -879,9 +717,9 @@ public class RiverSpawner : MonoBehaviour
                         fPos2.y = wY;
                         fPos3.y = wY;
 
-                        TrySpawnFish(fPos1, z, chunkStartZ, chunkEndZ);
-                        TrySpawnFish(fPos2, z + Random.Range(4f, 10f), chunkStartZ, chunkEndZ);
-                        TrySpawnFish(fPos3, z + Random.Range(8f, 16f), chunkStartZ, chunkEndZ);
+                        TrySpawnFish(fPos1, z);
+                        TrySpawnFish(fPos2, z + Random.Range(4f, 10f));
+                        TrySpawnFish(fPos3, z + Random.Range(8f, 16f));
                     }
                 }
             }
@@ -890,24 +728,24 @@ public class RiverSpawner : MonoBehaviour
                 float x1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
                 float x2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
                 float x3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-                TrySpawnFish(new Vector3(x1, curWaterY, z), z, chunkStartZ, chunkEndZ);
-                TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(4f, 10f)), z, chunkStartZ, chunkEndZ);
-                TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(8f, 16f)), z, chunkStartZ, chunkEndZ);
+                TrySpawnFish(new Vector3(x1, curWaterY, z), z);
+                TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(4f, 10f)), z);
+                TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(8f, 16f)), z);
             }
         }
 
-        // 4. 🪷 연잎 군락 (새 청크 지형 경계 내부 엄격 준수)
+        // 4. 🪷 연잎 군락
         CreateLilyPadsGrid(minX, maxX, chunkStartZ + 20f, chunkEndZ - 20f, curWaterY);
     }
 
     /// <summary>
     /// 🏝️ 특정 단면(Distance)에서 섬으로 인해 분리된 다중 수면 채널(Water Channels) 중심점 검출
     /// </summary>
-    private List<Vector3> DetectSplitWaterChannels(Vector3 centerPos, Vector3 normal, float maxScanWidth, float chunkStartZ, float chunkEndZ, float waterY)
+    private List<Vector3> DetectSplitWaterChannels(Vector3 centerPos, Vector3 normal, float maxScanWidth, float waterY)
     {
         List<Vector3> channels = new List<Vector3>();
-        // 섬 주변 반대편 물길까지 포용할 수 있도록 스캔 반경 확장 (기본 65m 이상)
-        float scanRange = Mathf.Max(maxScanWidth, 65f);
+        // 섬 주변 반대편 물길까지 포용할 수 있도록 스캔 반경 확장 (최소 75m)
+        float scanRange = Mathf.Max(maxScanWidth, 75f);
         float step = 2.5f;
 
         bool inWater = false;
@@ -918,7 +756,7 @@ public class RiverSpawner : MonoBehaviour
             Vector3 testPos = centerPos + normal * offset;
             testPos.y = waterY;
 
-            bool isWater = IsValidWaterPosition(testPos, chunkStartZ, chunkEndZ, false);
+            bool isWater = IsValidWaterPosition(testPos, false);
 
             if (isWater && !inWater)
             {
@@ -954,34 +792,32 @@ public class RiverSpawner : MonoBehaviour
         return channels;
     }
 
-
     /// <summary>
     /// 상공에서 수직 레이캐스트: MeshCollider 및 TerrainCollider를 모두 완벽 검사
     /// 1) 지형(MeshCollider/TerrainCollider)이 수면 위로 솟아 있는 육지인 경우 -> False
     /// 2) 수심이 너무 얕아(수면과 지형 사이 < 0.35m) 바닥에 파묻히는 경우 -> False
-    /// 3) 바닥에 지형/수면이 없는 허공인 경우 -> False
-    /// 4) 충분한 수심(waterDepth >= 0.35m)이 확보된 유효한 수면 영역인 경우만 -> True
+    /// 3) 충분한 수심(waterDepth >= 0.35m)이 확보된 유효한 수면 영역인 경우 -> True
     /// </summary>
-    private bool IsValidWaterPosition(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue, bool checkZBounds = true)
+    private bool IsValidWaterPosition(Vector3 pos, bool checkZBounds = false, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
-        // 1. 청크 Z 범위 경계 검사 (곡선 강줄기는 옆으로 굽이치므로 checkZBounds가 false면 Z필터 면제)
+        // 1. 단순 Z 경계 검사 (곡선 강줄기는 옆으로 굽이치므로 기본 비활성화)
         if (checkZBounds && chunkEndZ < float.MaxValue)
         {
             if (pos.z < chunkStartZ - 50f || pos.z > chunkEndZ + 50f) return false;
         }
 
-        float curWater = GetCurrentWaterLevel();
-        
+        float curWater = pos.y;
+        if (Mathf.Abs(curWater) < 0.001f) curWater = GetCurrentWaterLevel();
+
         // 2. 초고도 상공(Y = curWater + 250m)에서 아래로 수직 레이캐스트
-        float rayStart = Mathf.Max(pos.y + 250f, curWater + 250f);
+        float rayStart = curWater + 250f;
         Vector3 rayOrigin = new Vector3(pos.x, rayStart, pos.z);
 
-        // RaycastAll로 수면과 바닥 지형(MeshCollider, TerrainCollider 등)을 모두 수집
         RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 400f, ~0, QueryTriggerInteraction.Collide);
         if (hits == null || hits.Length == 0)
         {
-            // 허공 (아무런 콜라이더도 없음)
-            return false;
+            // 베이킹된 강줄기 상의 점이면 안전 수면 인정
+            return true;
         }
 
         bool hasWaterSurface = false;
@@ -992,15 +828,13 @@ public class RiverSpawner : MonoBehaviour
         {
             if (hit.collider == null) continue;
 
-            // 수면 콜라이더인지 확인
-            if (hit.collider.GetComponent<WaterSurface>() != null || hit.collider.name.Contains("Water"))
+            if (hit.collider.GetComponent<WaterSurface>() != null || hit.collider.name.ToLower().Contains("water"))
             {
                 hasWaterSurface = true;
-                curWater = hit.point.y; // 실제 레이에 닿은 수면 높이로 보정
+                curWater = hit.point.y;
             }
             else
             {
-                // 지형(MeshCollider, TerrainCollider, 기타 바닥 콜라이더)
                 if (hit.point.y > groundY)
                 {
                     groundY = hit.point.y;
@@ -1008,9 +842,6 @@ public class RiverSpawner : MonoBehaviour
                 }
             }
         }
-
-        // 수면 콜라이더 또는 지형이 전혀 없는 허공 영역
-        if (!hasWaterSurface && !hasGround) return false;
 
         // 지형이 수면보다 높이 솟아 있는 육지/언덕인 경우 스폰 차단
         if (hasGround && groundY >= curWater - 0.15f)
@@ -1041,15 +872,15 @@ public class RiverSpawner : MonoBehaviour
             diff.y = 0f; // 수평 거리 기준
             if (diff.sqrMagnitude < minSq)
             {
-                return true; // 너무 가까운 위치에 이미 다른 오브젝트가 존재함
+                return true;
             }
         }
         return false;
     }
 
-    private void TrySpawnBoostPad(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue, Vector3 tangent = default)
+    private void TrySpawnBoostPad(Vector3 pos, Vector3 tangent = default)
     {
-        if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
+        if (!IsValidWaterPosition(pos, false)) return;
         if (HasNearbySpawnedEntity(pos, 3.8f)) return;
 
         // 🌀 리듬 아케이드 모드: 지상 부스트 패드 대신 공중 RandomRing 스폰
@@ -1063,16 +894,16 @@ public class RiverSpawner : MonoBehaviour
         CreateBoostPad(pos, Quaternion.identity);
     }
 
-    private void TrySpawnObstacleRock(Vector3 pos, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
+    private void TrySpawnObstacleRock(Vector3 pos)
     {
-        if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
+        if (!IsValidWaterPosition(pos, false)) return;
         if (HasNearbySpawnedEntity(pos, 4.2f)) return;
         CreateObstacleRock(pos);
     }
 
-    private void TrySpawnFish(Vector3 pos, float dist, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
+    private void TrySpawnFish(Vector3 pos, float dist)
     {
-        if (!IsValidWaterPosition(pos, chunkStartZ, chunkEndZ)) return;
+        if (!IsValidWaterPosition(pos, false)) return;
         if (HasNearbySpawnedEntity(pos, 2.0f)) return;
         SpawnSingleFish(pos, dist);
     }

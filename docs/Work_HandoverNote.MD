@@ -27,13 +27,18 @@
   - `RiverSpawner.cs`: `defaultWaterHeight` 및 레거시 슬롯 완전 삭제. `WaterSurface` 직접 실시간 쿼리 단일화. 스폰 간격(45~85m ➔ 20~42m) 대폭 단축하여 개체 수 2.5배 증량.
   - `FishData.cs` & `JumpingFish.cs`: 물고기 크기를 **`1.05 ~ 2.50`** 배율로 시원하게 확대. 수심 `0.35m ~ 4.5m`까지 입체적 깊이 부여 및 `Start()` 스케일 동적 갱신 보장.
 
-### ✅ 4. 🔀 집 & 회사 작업 완전 병합 (물고기 10종 + 캐릭터 패시브 고도 단일 진실 공급원 + 링 곡선 유도)
+### ✅ 5. 🌊 2번째 청크 및 급커브/섬 분기 맵 수면 오브젝트 스폰 정상화
 - **배경 및 원인**:
-  - 집에서 작업하여 푸시한 커밋(물고기 10종 생태계, 지형 강심선 곡선 궤적 런치 연동)과 회사 로컬에서 작업한 내용(캐릭터 패시브 고도 오프셋 및 단일 진실 공급원 `CurrentBounceArcHeight`, 링 마중 높이 동기화)을 충돌 없이 100% 통합.
+  - 청크 스트리밍 도입 후 `IsValidWaterPosition`의 단순 Z축 경계 검사식으로 인해 곡선/도킹 맵에서 2번째 청크 이후 엔티티가 모두 탈락하던 문제 해결.
+  - 섬(Island)으로 인해 물길이 둘로 갈라질 때 베이킹되지 않은 반대편 물길에도 정상 스폰되도록 보장.
 - **해결 내역**:
-  - `ArcadeSkippingStone.cs`: `characterHeightModifier`, `CurrentBounceArcHeight` 프로퍼티 추가 및 `GlobalRiverPath` 기반 곡선 궤적 런치 완벽 결합.
-  - `RandomRing.cs`: `CurrentBounceArcHeight` 연동, 실시간 마중 높이 및 3D 실린더 감지/기즈모 유지.
-  - 골든 스크립트 100% 동기화 및 Unity 컴파일 0 Errors 확인 완료.
+  - `GlobalRiverPath.cs`: 청크 실제 도킹 순서(`DynamicChunks`) 기반 스플라인 체인 결합 및 청크별 거리(`GetSegmentDistanceRange`) 100% 정밀 매칭.
+  - `RiverSpawner.cs`:
+    - 청크 생성 즉시 `Physics.SyncTransforms()`로 물리 콜라이더 트리 강제 동기화.
+    - 베이킹된 강줄기 스플라인 기반 곡선 스폰 시 단순 Z축 필터를 면제하여 급커브/회전 맵에서도 100% 정상 스폰.
+    - `DetectSplitWaterChannels` 스캔 반경을 75m로 확장하여 섬으로 나뉜 반대편 물길(하늘색 영역)까지 정확히 탐지하고 양쪽 물길 모두 균등 스폰.
+    - 게임 시작 시 로드된 모든 청크(0번, 1번...)를 순회하여 시작부터 전 구간 수면 오브젝트 생성 보장.
+  - `LakeEnvironmentManager.cs`: `DynamicChunks` 프로퍼티 및 `OnChunkSpawned` 이벤트 연동.
 
 ---
 

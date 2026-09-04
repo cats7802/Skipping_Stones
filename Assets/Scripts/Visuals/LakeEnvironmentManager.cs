@@ -98,7 +98,9 @@ public class LakeEnvironmentManager : MonoBehaviour
     private readonly System.Collections.Generic.List<GameObject> dynamicChunks = new System.Collections.Generic.List<GameObject>();
     private readonly System.Collections.Generic.HashSet<int> spawnedChunkIndices = new System.Collections.Generic.HashSet<int>();
 
+    public System.Collections.Generic.IReadOnlyList<GameObject> DynamicChunks => dynamicChunks;
     public System.Action<float> OnChunkRelayed;
+    public System.Action<int, GameObject, float> OnChunkSpawned;
 
     private void Start()
     {
@@ -520,6 +522,7 @@ public class LakeEnvironmentManager : MonoBehaviour
         }
 
         OnChunkRelayed?.Invoke(spawnZ);
+        OnChunkSpawned?.Invoke(chunkIndex, newChunk, spawnZ);
 
         return newChunk;
     }

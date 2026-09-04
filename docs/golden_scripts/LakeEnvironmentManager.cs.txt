@@ -98,7 +98,9 @@ public class LakeEnvironmentManager : MonoBehaviour
     private readonly System.Collections.Generic.List<GameObject> dynamicChunks = new System.Collections.Generic.List<GameObject>();
     private readonly System.Collections.Generic.HashSet<int> spawnedChunkIndices = new System.Collections.Generic.HashSet<int>();
 
+    public System.Collections.Generic.IReadOnlyList<GameObject> DynamicChunks => dynamicChunks;
     public System.Action<float> OnChunkRelayed;
+    public System.Action<int, GameObject, float> OnChunkSpawned;
 
     private void Start()
     {
@@ -520,6 +522,7 @@ public class LakeEnvironmentManager : MonoBehaviour
         }
 
         OnChunkRelayed?.Invoke(spawnZ);
+        OnChunkSpawned?.Invoke(chunkIndex, newChunk, spawnZ);
 
         return newChunk;
     }
@@ -592,8 +595,13 @@ public class LakeEnvironmentManager : MonoBehaviour
         var gc = FindAnyObjectByType<GameController>();
         if (gc != null && gc.currentState == GameController.GameState.Replay)
             return Camera.main != null ? Camera.main.transform.position.z : 0f;
+
+        var arcade = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+        if (arcade != null && arcade.isThrown && !arcade.isSunk) return arcade.transform.position.z;
+
         var stone = FindAnyObjectByType<SkippingStone>();
-        if (stone != null) return stone.transform.position.z;
+        if (stone != null && stone.isThrown && !stone.isSunk) return stone.transform.position.z;
+
         return Camera.main != null ? Camera.main.transform.position.z : 0f;
     }
 
