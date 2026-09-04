@@ -18,7 +18,15 @@
   - `GameController.cs`: `UpdateFlying()`에서 키보드 `A/D/S`, `←/→/↓` 입력 및 0.25초 이내 더블 탭 판정 추가. 화면 전체 스와이프 시 5° / 8° 조향 각도 반영.
 - **컴파일 검증**: `Assembly-CSharp.csproj`, `Editor.csproj` 경고 0개, 오류 0개 완료.
 
-### [2026-09-01] 결과창 복귀 및 모드 전환 시 3D 텔레메트리 디버그 마커 완전 소멸 처리
+- ### [2026-09-04] 🏗️ GameController 모듈화 및 책임 분리 (GameInputHelper, MatchScoreCalculator, LaunchSequenceController)
+  - **수정 목적**: 1,300줄에 달하던 `GameController.cs`의 복잡도를 낮추고 각 비즈니스 로직(입력 래퍼, 점수/보상 계산, 투구 조준 및 게이지 시퀀스)을 독립 모듈로 캡슐화.
+  - **핵심 구조**:
+    - `GameInputHelper`: 신구 Input System 및 모바일 터치 입력을 일원화한 정적 헬퍼.
+    - `MatchScoreCalculator`: 거리/스킵/스킴/특수점수 및 코인 환산 순수 C# 도메인 계산기.
+    - `LaunchSequenceController`: 발판 좌우 드래그, 타깃 모드 스와이프, 조준각/파워 왕복 게이지 연산 분리.
+    - `GameController.cs`: 순수 중앙 오케스트레이터로서의 역할 유지 및 외부 API 100% 하위 호환성 보장.
+  - **컴파일 검증**: 0 Errors, 0 Warnings 통과.
+- ### [2026-09-01] 결과창 복귀 및 모드 전환 시 3D 텔레메트리 디버그 마커 완전 소멸 처리
 - **수정 목적**: 장거리 모드에서 생성된 `[TAP_DEBUG]` 마커가 결과창 확인 후 맵 선택/로비 복귀 시 또는 타 모드 전환 시 씬에 남아있던 현상 해결.
 - **적용 내용**:
   - `GameController.cs`: `FinishMatchAndReturnToMapSelect()` 및 `ResetToPositioning()`에 `SkippingStone.ClearAllTapDebugMarkers()` 호출 추가.

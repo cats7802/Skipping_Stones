@@ -9,16 +9,16 @@ public class GameController : MonoBehaviour
 {
     public static GameController Instance { get; private set; }
 
-    [Header("0. 세션 데이터 및 결과 DTO")]
+    [Header("0. ?�션 ?�이??�?결과 DTO")]
     public MatchSessionData currentSessionData;
     public InGameResultData lastResultData;
     public event System.Action<InGameResultData> OnMatchResultGenerated;
 
     public enum GameMode
     {
-        LongDistance,   // 장거리 물리 모드
-        TargetAccuracy, // 타깃 정밀 모드
-        RhythmArcade    // 🎵 리듬 아케이드 모드
+        LongDistance,   // ?�거�?물리 모드
+        TargetAccuracy, // ?��??��? 모드
+        RhythmArcade    // ?�� 리듬 ?��??�드 모드
     }
 
     public enum GameState
@@ -33,29 +33,29 @@ public class GameController : MonoBehaviour
         Result
     }
 
-    [Header("1. 게임 모드 및 상태")]
+    [Header("1. 게임 모드 �??�태")]
     public GameMode currentMode = GameMode.LongDistance;
     public GameState currentState = GameState.ModeSelect;
 
-    [Header("🎵 리듬 아케이드 밸런스 튜닝 (디렉터 프리셋)")]
-    [Tooltip("리듬 아케이드 모드에서 적용할 기본 밸런스 프리셋 (Cute_10m / Standard_12m / Speed_15m / Custom)")]
+    [Header("?�� 리듬 ?��??�드 밸런???�닝 (?�렉???�리??")]
+    [Tooltip("리듬 ?��??�드 모드?�서 ?�용??기본 밸런???�리??(Cute_10m / Standard_12m / Speed_15m / Custom)")]
     public SkippingStones.Arcade.ArcadeSkippingStone.RhythmPresetType rhythmPreset = SkippingStones.Arcade.ArcadeSkippingStone.RhythmPresetType.Cute_10m;
-    [Tooltip("통통 귀엽게 튀는 고정 포물선 정점 높이")]
+    [Tooltip("?�통 귀?�게 ?�??고정 ?�물???�점 ?�이")]
     public float rhythmArcadeHeight = 1.8f;
-    [Tooltip("Custom 선택 시 사용할 자유 튜닝 수치")]
+    [Tooltip("Custom ?�택 ???�용???�유 ?�닝 ?�치")]
     public SkippingStones.Arcade.ArcadeSkippingStone.PresetData customRhythmPreset = new SkippingStones.Arcade.ArcadeSkippingStone.PresetData(10.0f, +0.5f, +0.2f, 0.0f, -0.3f, -0.6f);
 
-    [Header("🛠️ 개발자 테스트 설정")]
-    [Tooltip("체크 시 로비/맵선택창을 건너뛰고 시작하자마자 곧바로 인게임 투척 대기(Positioning) 상태로 직행합니다.")]
+    [Header("?���?개발???�스???�정")]
+    [Tooltip("체크 ??로비/맵선?�창??건너?�고 ?�작?�자마자 곧바�??�게???�척 ?��?Positioning) ?�태�?직행?�니??")]
     public bool autoStartInGame = false;
 
-    [Tooltip("체크 시 물수제비 탭 없이도 착수 시 자동으로 PERFECT 바운스되어 스트리밍 맵을 끝까지 날아갑니다.")]
+    [Tooltip("체크 ??물수?�비 ???�이??착수 ???�동?�로 PERFECT 바운?�되???�트리밍 맵을 ?�까지 ?�아갑니??")]
     public bool devGodMode = false;
 
-    [Tooltip("갓모드 비행 시 도달하고자 하는 최대 테스트 거리 (m). 이 거리에 도달하면 자동으로 바운스를 멈추고 자연스럽게 착수/피니시합니다. (0이면 무제한)")]
+    [Tooltip("갓모??비행 ???�달?�고???�는 최�? ?�스??거리 (m). ??거리???�달?�면 ?�동?�로 바운?��? 멈추�??�연?�럽�?착수/?�니?�합?�다. (0?�면 무제??")]
     public float devGodModeTargetDistance = 1500f;
 
-    [Header("2. 인게임 씬 참조 (인스펙터 명시 연결)")]
+    [Header("2. ?�게????참조 (?�스?�터 명시 ?�결)")]
     [SerializeField] private StoneThrowerCharacter _character;
     public StoneThrowerCharacter character
     {
@@ -91,7 +91,7 @@ public class GameController : MonoBehaviour
         set => _currentLaunchPlatform = value;
     }
 
-    // 🌟 레거시 호환 프로퍼티
+    // ?�� ?�거???�환 ?�로?�티
     public Transform currentLaunchPier
     {
         get => _currentLaunchPlatform;
@@ -105,29 +105,29 @@ public class GameController : MonoBehaviour
         set => _playerPositionRoot = value;
     }
 
-    [Header("3. 기본 프리팹")]
+    [Header("3. 기본 ?�리??)]
     public GameObject defaultCharacterPrefab;
     public GameObject defaultStonePrefab;
     public GameObject defaultMapPrefab;
 
-    [Header("4. 게이지 및 실시간 파라미터")]
+    [Header("4. 게이지 �??�시�??�라미터")]
     public float startPosX = 0f;
     public float aimGaugeValue = 0f;
     public float powerGaugeValue = 0f;
     public string lastTimingText = "";
     public string bannerNotificationText = "";
 
-    [Header("5. 위치 선정 파라미터")]
+    [Header("5. ?�치 ?�정 ?�라미터")]
     public float minPositionX = -12f;
     public float maxPositionX = 12f;
     public int targetPlatformIndex = 0;
 
-    [Header("6. 모달 상태")]
+    [Header("6. 모달 ?�태")]
     public bool showAquariumModal = false;
     public bool showStoneSelectorModal = false;
     public bool requireTouchRelease = false;
 
-    [Header("7. 결과 점수 데이터")]
+    [Header("7. 결과 ?�수 ?�이??)]
     public int distanceScore = 0;
     public int skipScore = 0;
     public int specialScore = 0;
@@ -140,24 +140,18 @@ public class GameController : MonoBehaviour
     public float lastSkimBonusDist = 0f;
     private bool hasCalculatedResult = false;
 
-    private float aimSpeed = 2.4f;
-    private float powerSpeed = 3.0f;
-    private float aimDirection = 1f;
-    private float powerDirection = 1f;
     private float lastStateChangeTime = 0f;
     private const float STATE_COOLDOWN = 0.35f;
-
-    private bool isDraggingMap = false;
-    private Vector2 prevDragPos;
-    private bool isSwipingTarget = false;
-    private Vector2 swipeStartPos;
-    private float swipeThreshold = 35f;
 
     private Vector2 flightTouchStartPos;
     private float flightTouchStartTime = 0f;
     private bool isTrackingFlightTouch = false;
 
-    // 🎮 모드별 독립 객체 핸들러 (Strategy Pattern)
+    // ?�� ?�구 ?�퀀??컨트롤러 (?�치 ?�래�? 각도 게이지, ?�워 차징 분리)
+    private readonly SkippingStones.Gameplay.LaunchSequenceController launchSequenceController = 
+        new SkippingStones.Gameplay.LaunchSequenceController();
+
+    // ?�� 모드�??�립 객체 ?�들??(Strategy Pattern)
     private SkippingStones.Gameplay.Modes.IGameModeHandler currentModeHandler;
     private readonly System.Collections.Generic.Dictionary<GameMode, SkippingStones.Gameplay.Modes.IGameModeHandler> modeHandlers = 
         new System.Collections.Generic.Dictionary<GameMode, SkippingStones.Gameplay.Modes.IGameModeHandler>();
@@ -174,10 +168,10 @@ public class GameController : MonoBehaviour
             return;
         }
 
-        // 인스펙터 연결 누락 시에만 계층 탐색으로 보완
+        // ?�스?�터 ?�결 ?�락 ?�에�?계층 ?�색?�로 보완
         ResolveSceneReferences();
 
-        // 모드 핸들러 등록
+        // 모드 ?�들???�록
         modeHandlers[GameMode.LongDistance] = new SkippingStones.Gameplay.Modes.LongDistanceModeHandler();
         modeHandlers[GameMode.TargetAccuracy] = new SkippingStones.Gameplay.Modes.TargetAccuracyModeHandler();
         modeHandlers[GameMode.RhythmArcade] = new SkippingStones.Gameplay.Modes.RhythmArcadeModeHandler();
@@ -207,19 +201,19 @@ public class GameController : MonoBehaviour
             _topDownReplay = FindAnyObjectByType<TopDownReplayManager>() ?? GetComponent<TopDownReplayManager>() ?? gameObject.AddComponent<TopDownReplayManager>();
         }
 
-        // 🌟 맵 재스폰 시 항상 최신 유효 발판으로 재바인딩
+        // ?�� �??�스??????�� 최신 ?�효 발판?�로 ?�바?�딩
         _currentLaunchPlatform = FindPlatformInScene();
         _playerPositionRoot = FindPlayerPositionRootInScene();
     }
 
     /// <summary>
-    /// 🌟 씬 루트 및 배경 프리팹/청크 하위에서 투척 발판(Platform)을 다중 표준으로 탐색
+    /// ?�� ??루트 �?배경 ?�리??�?�� ?�위?�서 ?�척 발판(Platform)???�중 ?��??�로 ?�색
     /// </summary>
     public static Transform FindPlatformInScene()
     {
         string[] candidateKeywords = { "woodenpier_platform", "lakeside_woodenpier", "lakeside_platform", "platform", "pier" };
 
-        // 1순위: LakeEnvironmentManager가 스폰한 0번 청크 하위에서 직속 탐색
+        // 1?�위: LakeEnvironmentManager가 ?�폰??0�?�?�� ?�위?�서 직속 ?�색
         var lem = LakeEnvironmentManager.Instance != null ? LakeEnvironmentManager.Instance : FindAnyObjectByType<LakeEnvironmentManager>();
         if (lem != null)
         {
@@ -239,7 +233,7 @@ public class GameController : MonoBehaviour
             }
         }
 
-        // 2순위: 씬 전체 활성/비활성 오브젝트 중 탐색 (쇼케이스 더미 제외)
+        // 2?�위: ???�체 ?�성/비활???�브?�트 �??�색 (?��??�스 ?��? ?�외)
         var allObjs = FindObjectsByType<GameObject>(FindObjectsInactive.Include);
         foreach (var obj in allObjs)
         {
@@ -259,7 +253,7 @@ public class GameController : MonoBehaviour
     }
 
     /// <summary>
-    /// 🌟 씬 루트 및 배경 프리팹 하위에서 타깃 모드 위치 그룹(Player_Position) 탐색
+    /// ?�� ??루트 �?배경 ?�리???�위?�서 ?��?모드 ?�치 그룹(Player_Position) ?�색
     /// </summary>
     public static Transform FindPlayerPositionRootInScene()
     {
@@ -342,7 +336,7 @@ public class GameController : MonoBehaviour
                 }
             }
 
-            // 폴백: 에디터에서 Assets 전체 내 StoneThrowerCharacter 컴포넌트를 가진 프리팹 중 이름 매칭
+            // ?�백: ?�디?�에??Assets ?�체 ??StoneThrowerCharacter 컴포?�트�?가�??�리??�??�름 매칭
 #if UNITY_EDITOR
             if (charPrefab == null)
             {
@@ -393,7 +387,7 @@ public class GameController : MonoBehaviour
     {
         LakeEnvironmentManager existingMgr = LakeEnvironmentManager.Instance != null ? LakeEnvironmentManager.Instance : FindAnyObjectByType<LakeEnvironmentManager>();
 
-        // 🌟 mapPrefab이 LakeEnvironmentManager가 아니거나 null일 때 기본 환경 매니저(New_TestEnvMgr) 자동 폴백
+        // ?�� mapPrefab??LakeEnvironmentManager가 ?�니거나 null????기본 ?�경 매니?�(New_TestEnvMgr) ?�동 ?�백
         if (mapPrefab == null || mapPrefab.GetComponent<LakeEnvironmentManager>() == null)
         {
             if (existingMgr == null)
@@ -412,7 +406,7 @@ public class GameController : MonoBehaviour
             }
         }
 
-        // 🌟 씬에 이미 환경 매니저가 존재하고 동일한 맵이면 파괴 없이 보존 및 청크 세팅
+        // ?�� ?�에 ?��? ?�경 매니?�가 존재?�고 ?�일??맵이�??�괴 ?�이 보존 �?�?�� ?�팅
         if (existingMgr != null)
         {
             if (mapPrefab == null || existingMgr.gameObject.name.StartsWith(mapPrefab.name, System.StringComparison.OrdinalIgnoreCase))
@@ -421,7 +415,7 @@ public class GameController : MonoBehaviour
             }
             else
             {
-                // 다른 맵으로 교체 요청된 경우에만 이전 매니저 교체
+                // ?�른 맵으�?교체 ?�청??경우?�만 ?�전 매니?� 교체
                 LakeEnvironmentManager.Instance = null;
                 if (Application.isPlaying) Destroy(existingMgr.gameObject);
                 else DestroyImmediate(existingMgr.gameObject);
@@ -429,7 +423,7 @@ public class GameController : MonoBehaviour
             }
         }
 
-        // 씬에 환경 매니저가 없으면 새로 생성
+        // ?�에 ?�경 매니?�가 ?�으�??�로 ?�성
         if (existingMgr == null && mapPrefab != null)
         {
             GameObject newMgrObj = Instantiate(mapPrefab, Vector3.zero, Quaternion.identity);
@@ -483,14 +477,14 @@ public class GameController : MonoBehaviour
         if (charPrefab == null) charPrefab = defaultCharacterPrefab;
         if (charPrefab == null) return;
 
-        // 1. 씬 내의 모든 기존 인게임 캐릭터 수집 (쇼케이스 더미 제외)
+        // 1. ???�의 모든 기존 ?�게??캐릭???�집 (?��??�스 ?��? ?�외)
         StoneThrowerCharacter[] allCharacters = FindObjectsByType<StoneThrowerCharacter>(FindObjectsInactive.Include);
         System.Collections.Generic.List<StoneThrowerCharacter> inGameCharacters = new System.Collections.Generic.List<StoneThrowerCharacter>();
 
         foreach (var c in allCharacters)
         {
             if (c == null) continue;
-            // 쇼케이스/로비 전용 더미 캐릭터는 제외
+            // ?��??�스/로비 ?�용 ?��? 캐릭?�는 ?�외
             if (c.gameObject.name.Contains("[Showcase") || c.gameObject.name.Contains("Showcase_Ctrl") ||
                 c.transform.root.name.Contains("[Lobby") || c.transform.root.name.Contains("[Showcase")) continue;
             inGameCharacters.Add(c);
@@ -498,7 +492,7 @@ public class GameController : MonoBehaviour
 
         StoneThrowerCharacter matchedCharacter = null;
 
-        // 2. 이미 요청된 프리팹과 일치하는 유효한 인게임 캐릭터가 씬에 있는지 루트(Root) 이름 기준으로 정밀 검사
+        // 2. ?��? ?�청???�리?�과 ?�치?�는 ?�효???�게??캐릭?��? ?�에 ?�는지 루트(Root) ?�름 기�??�로 ?��? 검??
         foreach (var c in inGameCharacters)
         {
             GameObject rootObj = c.transform.root.gameObject;
@@ -510,17 +504,17 @@ public class GameController : MonoBehaviour
 
             if (matchedCharacter == null && isMatch)
             {
-                matchedCharacter = c; // 일치하는 기존 캐릭터는 그대로 재사용!
+                matchedCharacter = c; // ?�치?�는 기존 캐릭?�는 그�?�??�사??
             }
             else
             {
-                // 불일치하거나 중복 생성된 찌꺼기 캐릭터는 루트 오브젝트 전체를 완전히 파괴하여 0점 누적 방지!
+                // 불일치하거나 중복 ?�성??찌꺼�?캐릭?�는 루트 ?�브?�트 ?�체�??�전???�괴?�여 0???�적 방�?!
                 if (Application.isPlaying) Destroy(rootObj);
                 else DestroyImmediate(rootObj);
             }
         }
 
-        // 3. 일치하는 캐릭터가 없으면 딱 1개 새로 인스턴스화
+        // 3. ?�치?�는 캐릭?��? ?�으�???1�??�로 ?�스?�스??
         if (matchedCharacter == null)
         {
             GameObject spawnedObj = Instantiate(charPrefab);
@@ -541,7 +535,7 @@ public class GameController : MonoBehaviour
             PositionCharacterForMode();
             character.InitializeCharacter();
             character.SetHandStonePrefab(defaultStonePrefab);
-            PositionCharacterForMode(); // 초기화 후 한 번 더 정확히 발판 위치에 고정
+            PositionCharacterForMode(); // 초기??????�????�확??발판 ?�치??고정
         }
 
         if (dualCamera != null && character != null)
@@ -574,7 +568,7 @@ public class GameController : MonoBehaviour
             return;
         }
 
-        // 장거리 모드: 발판 콜라이더(루트 또는 자식)의 실제 월드 중심 상단에 정확히 배치
+        // ?�거�?모드: 발판 콜라?�더(루트 ?�는 ?�식)???�제 ?�드 중심 ?�단???�확??배치
         if (currentLaunchPier != null)
         {
             BoxCollider pierCol = currentLaunchPier.GetComponent<BoxCollider>() ?? currentLaunchPier.GetComponentInChildren<BoxCollider>();
@@ -591,13 +585,13 @@ public class GameController : MonoBehaviour
 
             character.basePosition = spawnPos;
             character.currentPosition = spawnPos;
-            character.baseRotation = Quaternion.Euler(0f, 0f, 0f); // 월드 Z축(정면) 절대 정렬
+            character.baseRotation = Quaternion.Euler(0f, 0f, 0f); // ?�드 Z�??�면) ?��? ?�렬
             character.transform.position = spawnPos;
             character.transform.rotation = character.baseRotation;
         }
         else
         {
-            // 발판이 아직 없을 시 수면 높이를 반영하여 안전 배치
+            // 발판???�직 ?�을 ???�면 ?�이�?반영?�여 ?�전 배치
             WaterSurface ws = FindAnyObjectByType<WaterSurface>();
             float waterY = (ws != null && ws.GetComponent<BoxCollider>() != null) ? ws.GetComponent<BoxCollider>().bounds.max.y : 16.0f;
             Vector3 defaultSpawnPos = new Vector3(0f, waterY + 0.5f, -10f);
@@ -616,7 +610,7 @@ public class GameController : MonoBehaviour
         requireTouchRelease = true;
         if (MapPIPManager.Instance != null) MapPIPManager.Instance.UpdatePIPState(false);
 
-        // 🌟 인게임 캐릭터 및 잔존 오브젝트 정리하여 로비 쇼케이스와 겹침 방지
+        // ?�� ?�게??캐릭??�??�존 ?�브?�트 ?�리?�여 로비 ?��??�스?� 겹침 방�?
         ClearInGameCharacter();
 
         if (SkippingStones.UI.MetaUIManager.Instance != null)
@@ -646,7 +640,7 @@ public class GameController : MonoBehaviour
                 UpdateFlying();
                 break;
             case GameState.Result:
-                // 🌟 침몰 직후 결과 화면으로 넘어가는 1.5초 지연 구간에서도 늦게 누른 스페이스바 마커 포착!
+                // ?�� 침몰 직후 결과 ?�면?�로 ?�어가??1.5�?지??구간?�서????�� ?�른 ?�페?�스�?마커 ?�착!
                 if (IsKeyTriggered(KeyCode.Space) && stone != null)
                 {
                     EvaluateRhythmTiming(0f);
@@ -672,33 +666,18 @@ public class GameController : MonoBehaviour
                 maxPositionX = halfW;
             }
 
-            float hInput = GetHorizontalInput();
-            if (Mathf.Abs(hInput) > 0.001f)
-            {
-                startPosX = Mathf.Clamp(startPosX + hInput * Time.deltaTime * 7.5f, minPositionX, maxPositionX);
-            }
-
-            HandlePierDragSlide();
+            startPosX = launchSequenceController.UpdatePositionSlide(startPosX, minPositionX, maxPositionX);
 
             if (character != null)
             {
-                // 🌟 발판의 기준 위치(basePosition)를 유지하면서 좌우 슬라이드(startPosX) 적용
+                // ?�� 발판??기�? ?�치(basePosition)�??��??�면??좌우 ?�라?�드(startPosX) ?�용
                 character.UpdatePositioning(startPosX, 0f);
                 if (stone != null) stone.transform.position = character.GetHandPosition();
             }
         }
         else
         {
-            if (IsKeyTriggered(KeyCode.LeftArrow) || IsKeyTriggered(KeyCode.A))
-            {
-                if (character != null) character.MoveToPreviousWaypoint();
-            }
-            if (IsKeyTriggered(KeyCode.RightArrow) || IsKeyTriggered(KeyCode.D))
-            {
-                if (character != null) character.MoveToNextWaypoint();
-            }
-
-            HandleTargetSwipeStep();
+            launchSequenceController.UpdateTargetSwipe(character);
 
             if (character != null)
             {
@@ -716,113 +695,12 @@ public class GameController : MonoBehaviour
         }
     }
 
-    private void HandlePierDragSlide()
-    {
-        Vector2 curPos = Vector2.zero;
-        bool isPressed = false;
-
-#if ENABLE_INPUT_SYSTEM
-        var touch = Touchscreen.current;
-        var mouse = Mouse.current;
-        if (touch != null && touch.primaryTouch.press.isPressed)
-        {
-            isPressed = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (mouse != null && (mouse.leftButton.isPressed || mouse.rightButton.isPressed))
-        {
-            isPressed = true;
-            curPos = mouse.position.ReadValue();
-        }
-#else
-        if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
-        {
-            isPressed = true;
-            curPos = Input.mousePosition;
-        }
-#endif
-
-        if (isPressed)
-        {
-            if (!isDraggingMap)
-            {
-                isDraggingMap = true;
-                prevDragPos = curPos;
-            }
-            else
-            {
-                float deltaX = (curPos.x - prevDragPos.x) * 0.016f;
-                startPosX = Mathf.Clamp(startPosX + deltaX, minPositionX, maxPositionX);
-                prevDragPos = curPos;
-            }
-        }
-        else
-        {
-            isDraggingMap = false;
-        }
-    }
-
-    private void HandleTargetSwipeStep()
-    {
-        Vector2 curPos = Vector2.zero;
-        bool isPressed = false;
-
-#if ENABLE_INPUT_SYSTEM
-        var touch = Touchscreen.current;
-        var mouse = Mouse.current;
-        if (touch != null && touch.primaryTouch.press.isPressed)
-        {
-            isPressed = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (mouse != null && (mouse.leftButton.isPressed || mouse.rightButton.isPressed))
-        {
-            isPressed = true;
-            curPos = mouse.position.ReadValue();
-        }
-#else
-        if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
-        {
-            isPressed = true;
-            curPos = Input.mousePosition;
-        }
-#endif
-
-        if (isPressed)
-        {
-            if (!isSwipingTarget)
-            {
-                isSwipingTarget = true;
-                swipeStartPos = curPos;
-            }
-            else
-            {
-                float dx = curPos.x - swipeStartPos.x;
-                if (dx > swipeThreshold)
-                {
-                    if (character != null) character.MoveToNextWaypoint();
-                    swipeStartPos = curPos;
-                }
-                else if (dx < -swipeThreshold)
-                {
-                    if (character != null) character.MoveToPreviousWaypoint();
-                    swipeStartPos = curPos;
-                }
-            }
-        }
-        else
-        {
-            isSwipingTarget = false;
-        }
-    }
-
     public void ConfirmPosition()
     {
         currentState = GameState.AimingAngle;
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
         aimGaugeValue = 0f;
-        aimDirection = 1f;
 
         if (MapPIPManager.Instance != null)
         {
@@ -835,9 +713,7 @@ public class GameController : MonoBehaviour
 
     private void UpdateAimingAngle()
     {
-        aimGaugeValue += aimDirection * aimSpeed * Time.deltaTime;
-        if (aimGaugeValue > 1f) { aimGaugeValue = 1f; aimDirection = -1f; }
-        else if (aimGaugeValue < -1f) { aimGaugeValue = -1f; aimDirection = 1f; }
+        aimGaugeValue = launchSequenceController.UpdateAimingGauge(aimGaugeValue);
 
         if (character != null)
         {
@@ -857,14 +733,11 @@ public class GameController : MonoBehaviour
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
         powerGaugeValue = 0.1f;
-        powerDirection = 1f;
     }
 
     private void UpdateChargingPower()
     {
-        powerGaugeValue += powerDirection * powerSpeed * Time.deltaTime;
-        if (powerGaugeValue > 1f) { powerGaugeValue = 1f; powerDirection = -1f; }
-        else if (powerGaugeValue < 0f) { powerGaugeValue = 0f; powerDirection = 1f; }
+        powerGaugeValue = launchSequenceController.UpdatePowerGauge(powerGaugeValue);
 
         if (character != null)
         {
@@ -887,12 +760,12 @@ public class GameController : MonoBehaviour
         float animSpeed = 1f;
         if (currentMode == GameMode.RhythmArcade)
         {
-            // 🎵 리듬 아케이드 모드: 투구 버튼 탭 즉시 BGM 시작 (120 BPM 원곡의 2박 정박 60 BPM 싱크)
+            // ?�� 리듬 ?��??�드 모드: ?�구 버튼 ??즉시 BGM ?�작 (120 BPM ?�곡??2�??�박 60 BPM ?�크)
             if (AudioManager.Instance != null)
             {
                 AudioManager.Instance.PlayBGM(null, 60f);
             }
-            // 60 BPM 기준 정확히 1.0초 동안 투구 완료되도록 속도 동기화 (1.833x 배속)
+            // 60 BPM 기�? ?�확??1.0�??�안 ?�구 ?�료?�도�??�도 ?�기??(1.833x 배속)
             animSpeed = 1.833f;
         }
 
@@ -970,7 +843,7 @@ public class GameController : MonoBehaviour
             Application.Quit();
         }
 
-        // ⌨️ 키보드 리듬 탭 및 조향 (A/D/S 및 방향키)
+        // ?�️ ?�보??리듬 ??�?조향 (A/D/S �?방향??
         bool leftTriggered = IsKeyTriggered(KeyCode.A) || IsKeyTriggered(KeyCode.LeftArrow);
         bool rightTriggered = IsKeyTriggered(KeyCode.D) || IsKeyTriggered(KeyCode.RightArrow);
         bool centerTriggered = IsKeyTriggered(KeyCode.Space) || IsKeyTriggered(KeyCode.Return) || 
@@ -1015,51 +888,11 @@ public class GameController : MonoBehaviour
 
     private void HandleFlightFlickSteering()
     {
-        Vector2 curPos = Vector2.zero;
-        bool isDown = false;
-        bool isUp = false;
-
-#if ENABLE_INPUT_SYSTEM
-        var touch = Touchscreen.current;
-        var mouse = Mouse.current;
-        if (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
-        {
-            isDown = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (touch != null && touch.primaryTouch.press.wasReleasedThisFrame)
-        {
-            isUp = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (mouse != null && mouse.leftButton.wasPressedThisFrame)
-        {
-            isDown = true;
-            curPos = mouse.position.ReadValue();
-        }
-        else if (mouse != null && mouse.leftButton.wasReleasedThisFrame)
-        {
-            isUp = true;
-            curPos = mouse.position.ReadValue();
-        }
-#else
-        try
-        {
-            if (Input.touchCount > 0)
-            {
-                var t = Input.GetTouch(0);
-                if (t.phase == UnityEngine.TouchPhase.Began) { isDown = true; curPos = t.position; }
-                else if (t.phase == UnityEngine.TouchPhase.Ended || t.phase == UnityEngine.TouchPhase.Canceled) { isUp = true; curPos = t.position; }
-            }
-            else if (Input.GetMouseButtonDown(0)) { isDown = true; curPos = Input.mousePosition; }
-            else if (Input.GetMouseButtonUp(0)) { isUp = true; curPos = Input.mousePosition; }
-        }
-        catch { }
-#endif
+        SkippingStones.Gameplay.Helpers.GameInputHelper.GetPointerDownUp(out bool isDown, out bool isUp, out Vector2 curPos);
 
         if (isDown)
         {
-            // UI 버튼 영역 탭 시 화면 전체 제스처 중복 방지 (EventSystem 포인터 검사)
+            // UI 버튼 ?�역 ?????�면 ?�체 ?�스�?중복 방�? (EventSystem ?�인??검??
             if (UnityEngine.EventSystems.EventSystem.current != null && 
                 UnityEngine.EventSystems.EventSystem.current.IsPointerOverGameObject())
             {
@@ -1079,7 +912,7 @@ public class GameController : MonoBehaviour
 
             if (duration < 0.35f && Mathf.Abs(deltaX) > 30f)
             {
-                // 화면 전체 스와이프: 기본 5° / 빠른 스와이프(거리 > 80px) 8°
+                // ?�면 ?�체 ?��??�프: 기본 5° / 빠른 ?��??�프(거리 > 80px) 8°
                 float baseAngle = (Mathf.Abs(deltaX) > 80f) ? 8.0f : 5.0f;
                 float steerAngle = (deltaX > 0f) ? baseAngle : -baseAngle;
                 ApplySteerToCurrentStone(steerAngle);
@@ -1095,13 +928,13 @@ public class GameController : MonoBehaviour
             if (arcade != null && !arcade.isSunk && !arcade.isCrashed)
             {
                 arcade.ApplySteerAngle(steerAngle);
-                lastTimingText += (steerAngle > 0f) ? $" \n👉 [RIGHT {steerAngle:F0}° 조향]" : $" \n👈 [LEFT {Mathf.Abs(steerAngle):F0}° 조향]";
+                lastTimingText += (steerAngle > 0f) ? $" \n?�� [RIGHT {steerAngle:F0}° 조향]" : $" \n?�� [LEFT {Mathf.Abs(steerAngle):F0}° 조향]";
             }
         }
         else if (stone != null && !stone.isSunk && !stone.isCrashed)
         {
             stone.ApplySteerAngle(steerAngle);
-            lastTimingText += (steerAngle > 0f) ? $" \n👉 [RIGHT {steerAngle:F0}° 조향]" : $" \n👈 [LEFT {Mathf.Abs(steerAngle):F0}° 조향]";
+            lastTimingText += (steerAngle > 0f) ? $" \n?�� [RIGHT {steerAngle:F0}° 조향]" : $" \n?�� [LEFT {Mathf.Abs(steerAngle):F0}° 조향]";
         }
     }
 
@@ -1124,10 +957,10 @@ public class GameController : MonoBehaviour
     public void TriggerFishSnipeEffect(string speciesName)
     {
         fishSnipeCount++;
-        bannerNotificationText = $"🎯 FISH SNIPE! [{speciesName}] 저격 성공! (+1,000점 & 코인)";
-        lastTimingText = "🔥 FISH SNIPE! 🔥";
+        bannerNotificationText = $"?�� FISH SNIPE! [{speciesName}] ?��??�공! (+1,000??& 코인)";
+        lastTimingText = "?�� FISH SNIPE! ?��";
 
-        // 🎵 리듬 아케이드 모드에서는 비트 박자 싱크 유지를 위해 타임스케일 슬로우모션(멈칫) 비활성화
+        // ?�� 리듬 ?��??�드 모드?�서??비트 박자 ?�크 ?��?�??�해 ?�?�스케???�로?�모??멈칫) 비활?�화
         if (currentMode != GameMode.RhythmArcade)
         {
             StartCoroutine(HitStopSlowMo(0.25f));
@@ -1140,7 +973,7 @@ public class GameController : MonoBehaviour
     public void TriggerFriendOvertake(string friendName, string rank)
     {
         friendOvertakeCount++;
-        bannerNotificationText = $"🚩 [{friendName}] 추월 달성! ({rank} 랭킹 진입! +800점)";
+        bannerNotificationText = $"?�� [{friendName}] 추월 ?�성! ({rank} ??�� 진입! +800??";
         StopCoroutine(nameof(ClearBannerAfterDelay));
         StartCoroutine(ClearBannerAfterDelay(2.5f));
     }
@@ -1182,7 +1015,7 @@ public class GameController : MonoBehaviour
 
     public void HandleStoneSunk(float dist)
     {
-        // 🎵 침몰 순간 0.4초 만에 음악이 스르륵 꺼지며 꼴깍- 물소리만 강조!
+        // ?�� 침몰 ?�간 0.4�?만에 ?�악???�르�?꺼�?�?꼴깍- 물소리만 강조!
         if (AudioManager.Instance != null)
         {
             AudioManager.Instance.StopBGMFadeOut(0.4f);
@@ -1220,32 +1053,31 @@ public class GameController : MonoBehaviour
         if (hasCalculatedResult) return;
         hasCalculatedResult = true;
 
-        distanceScore = Mathf.RoundToInt(dist * 10f);
-        int skips = (stone != null) ? stone.skipCount : 0;
-        skipScore = skips * 500;
-        lastSkimBonusDist = (stone != null) ? stone.skimDistance : 0f;
-        int skimScore = Mathf.RoundToInt(lastSkimBonusDist * 15f);
+        var p = new SkippingStones.Gameplay.Calculators.MatchScoreCalculator.ScoreCalculationParams
+        {
+            finalDistance = dist,
+            skipCount = (stone != null) ? stone.skipCount : 0,
+            skimDistance = (stone != null) ? stone.skimDistance : 0f,
+            perfectTimingCount = perfectTimingCount,
+            fishSnipeCount = fishSnipeCount,
+            friendOvertakeCount = friendOvertakeCount,
+            boostPadCount = boostPadCount
+        };
 
-        specialScore = (perfectTimingCount * 300) + (fishSnipeCount * 1000) + (friendOvertakeCount * 800) + (boostPadCount * 500) + skimScore;
-        totalScore = distanceScore + skipScore + specialScore;
-        earnedCoins = Mathf.Max(5, Mathf.RoundToInt(totalScore / 25f));
+        var result = SkippingStones.Gameplay.Calculators.MatchScoreCalculator.Calculate(p);
+
+        distanceScore = result.distanceScore;
+        skipScore = result.skipScore;
+        specialScore = result.specialScore;
+        totalScore = result.totalScore;
+        earnedCoins = result.earnedCoins;
+        lastSkimBonusDist = p.skimDistance;
+        lastResultData = result.resultData;
 
         if (AquariumManager.Instance != null)
         {
             AquariumManager.Instance.AddCoins(earnedCoins);
         }
-
-        lastResultData = new InGameResultData
-        {
-            finalDistance = dist,
-            skipCount = skips,
-            perfectTimingCount = perfectTimingCount,
-            fishSnipeCount = fishSnipeCount,
-            friendOvertakeCount = friendOvertakeCount,
-            boostPadCount = boostPadCount,
-            earnedCoins = earnedCoins,
-            totalScore = totalScore
-        };
 
         if (GameDataManager.Instance != null)
         {
@@ -1281,7 +1113,7 @@ public class GameController : MonoBehaviour
             else DestroyImmediate(mgrObj);
         }
 
-        // 🌟 인게임 캐릭터 완전 정리
+        // ?�� ?�게??캐릭???�전 ?�리
         ClearInGameCharacter();
 
         currentState = GameState.ModeSelect;
@@ -1293,7 +1125,7 @@ public class GameController : MonoBehaviour
     }
 
     /// <summary>
-    /// 로비 또는 맵 선택 복귀 시 씬에 남겨진 인게임 투구 캐릭터 완전 파괴/정리
+    /// 로비 ?�는 �??�택 복�? ???�에 ?�겨�??�게???�구 캐릭???�전 ?�괴/?�리
     /// </summary>
     public void ClearInGameCharacter()
     {
@@ -1305,7 +1137,7 @@ public class GameController : MonoBehaviour
             else DestroyImmediate(rootObj);
         }
 
-        // 씬 내에 잔존하는 모든 인게임 투구 캐릭터(쇼케이스 제외) 일괄 파괴
+        // ???�에 ?�존?�는 모든 ?�게???�구 캐릭???��??�스 ?�외) ?�괄 ?�괴
         var allCharacters = FindObjectsByType<StoneThrowerCharacter>(FindObjectsInactive.Include);
         foreach (var c in allCharacters)
         {
@@ -1333,8 +1165,7 @@ public class GameController : MonoBehaviour
         currentState = GameState.Positioning;
         lastStateChangeTime = Time.time + 0.35f;
         startPosX = 0f;
-        aimGaugeValue = 0f;
-        powerGaugeValue = 0f;
+        launchSequenceController.ResetGauges(out aimGaugeValue, out powerGaugeValue);
         lastTimingText = "";
         bannerNotificationText = "";
 
@@ -1418,79 +1249,11 @@ public class GameController : MonoBehaviour
 
     #region Input Handling
 
-    public float GetHorizontalInput()
-    {
-        float h = 0f;
-#if ENABLE_INPUT_SYSTEM
-        if (Keyboard.current != null)
-        {
-            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) h -= 1f;
-            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) h += 1f;
-        }
-#endif
-        try
-        {
-            float legacyH = Input.GetAxisRaw("Horizontal");
-            if (Mathf.Abs(legacyH) > 0.01f) h = legacyH;
-        }
-        catch { }
-        return h;
-    }
+    public float GetHorizontalInput() => SkippingStones.Gameplay.Helpers.GameInputHelper.GetHorizontalInput();
 
-    public bool IsActionTriggered()
-    {
-        if (Time.time - lastStateChangeTime < STATE_COOLDOWN) return false;
+    public bool IsActionTriggered() => SkippingStones.Gameplay.Helpers.GameInputHelper.IsActionTriggered(ref requireTouchRelease, lastStateChangeTime, STATE_COOLDOWN);
 
-        bool isCurrentlyHeld = false;
-#if ENABLE_INPUT_SYSTEM
-        if (Mouse.current != null && Mouse.current.leftButton.isPressed) isCurrentlyHeld = true;
-        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed) isCurrentlyHeld = true;
-#endif
-        try
-        {
-            if (Input.touchCount > 0 || Input.GetMouseButton(0)) isCurrentlyHeld = true;
-        }
-        catch { }
-
-        if (requireTouchRelease)
-        {
-            if (!isCurrentlyHeld) requireTouchRelease = false;
-            return false;
-        }
-
-#if ENABLE_INPUT_SYSTEM
-        if (Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame)) return true;
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) return true;
-        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame) return true;
-#endif
-        try
-        {
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0)) return true;
-        }
-        catch { }
-        return false;
-    }
-
-    private bool IsKeyTriggered(KeyCode key)
-    {
-#if ENABLE_INPUT_SYSTEM
-        if (Keyboard.current != null)
-        {
-            if (key == KeyCode.Space && Keyboard.current.spaceKey.wasPressedThisFrame) return true;
-            if (key == KeyCode.Return && (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame)) return true;
-            if (key == KeyCode.R && Keyboard.current.rKey.wasPressedThisFrame) return true;
-            if ((key == KeyCode.A || key == KeyCode.LeftArrow) && (Keyboard.current.aKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame)) return true;
-            if ((key == KeyCode.D || key == KeyCode.RightArrow) && (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame)) return true;
-            if ((key == KeyCode.S || key == KeyCode.DownArrow) && (Keyboard.current.sKey.wasPressedThisFrame || Keyboard.current.downArrowKey.wasPressedThisFrame)) return true;
-        }
-#endif
-        try
-        {
-            if (Input.GetKeyDown(key)) return true;
-        }
-        catch { }
-        return false;
-    }
+    private bool IsKeyTriggered(KeyCode key) => SkippingStones.Gameplay.Helpers.GameInputHelper.IsKeyTriggered(key);
 
     private void TriggerButtonFeedback(float steerAngle)
     {

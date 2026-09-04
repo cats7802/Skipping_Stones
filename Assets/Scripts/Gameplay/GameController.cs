@@ -140,22 +140,16 @@ public class GameController : MonoBehaviour
     public float lastSkimBonusDist = 0f;
     private bool hasCalculatedResult = false;
 
-    private float aimSpeed = 2.4f;
-    private float powerSpeed = 3.0f;
-    private float aimDirection = 1f;
-    private float powerDirection = 1f;
     private float lastStateChangeTime = 0f;
     private const float STATE_COOLDOWN = 0.35f;
-
-    private bool isDraggingMap = false;
-    private Vector2 prevDragPos;
-    private bool isSwipingTarget = false;
-    private Vector2 swipeStartPos;
-    private float swipeThreshold = 35f;
 
     private Vector2 flightTouchStartPos;
     private float flightTouchStartTime = 0f;
     private bool isTrackingFlightTouch = false;
+
+    // 🎯 투구 시퀀스 컨트롤러 (위치 드래그, 각도 게이지, 파워 차징 분리)
+    private readonly SkippingStones.Gameplay.LaunchSequenceController launchSequenceController = 
+        new SkippingStones.Gameplay.LaunchSequenceController();
 
     // 🎮 모드별 독립 객체 핸들러 (Strategy Pattern)
     private SkippingStones.Gameplay.Modes.IGameModeHandler currentModeHandler;
@@ -672,13 +666,7 @@ public class GameController : MonoBehaviour
                 maxPositionX = halfW;
             }
 
-            float hInput = GetHorizontalInput();
-            if (Mathf.Abs(hInput) > 0.001f)
-            {
-                startPosX = Mathf.Clamp(startPosX + hInput * Time.deltaTime * 7.5f, minPositionX, maxPositionX);
-            }
-
-            HandlePierDragSlide();
+            startPosX = launchSequenceController.UpdatePositionSlide(startPosX, minPositionX, maxPositionX);
 
             if (character != null)
             {
@@ -689,16 +677,7 @@ public class GameController : MonoBehaviour
         }
         else
         {
-            if (IsKeyTriggered(KeyCode.LeftArrow) || IsKeyTriggered(KeyCode.A))
-            {
-                if (character != null) character.MoveToPreviousWaypoint();
-            }
-            if (IsKeyTriggered(KeyCode.RightArrow) || IsKeyTriggered(KeyCode.D))
-            {
-                if (character != null) character.MoveToNextWaypoint();
-            }
-
-            HandleTargetSwipeStep();
+            launchSequenceController.UpdateTargetSwipe(character);
 
             if (character != null)
             {
@@ -716,113 +695,12 @@ public class GameController : MonoBehaviour
         }
     }
 
-    private void HandlePierDragSlide()
-    {
-        Vector2 curPos = Vector2.zero;
-        bool isPressed = false;
-
-#if ENABLE_INPUT_SYSTEM
-        var touch = Touchscreen.current;
-        var mouse = Mouse.current;
-        if (touch != null && touch.primaryTouch.press.isPressed)
-        {
-            isPressed = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (mouse != null && (mouse.leftButton.isPressed || mouse.rightButton.isPressed))
-        {
-            isPressed = true;
-            curPos = mouse.position.ReadValue();
-        }
-#else
-        if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
-        {
-            isPressed = true;
-            curPos = Input.mousePosition;
-        }
-#endif
-
-        if (isPressed)
-        {
-            if (!isDraggingMap)
-            {
-                isDraggingMap = true;
-                prevDragPos = curPos;
-            }
-            else
-            {
-                float deltaX = (curPos.x - prevDragPos.x) * 0.016f;
-                startPosX = Mathf.Clamp(startPosX + deltaX, minPositionX, maxPositionX);
-                prevDragPos = curPos;
-            }
-        }
-        else
-        {
-            isDraggingMap = false;
-        }
-    }
-
-    private void HandleTargetSwipeStep()
-    {
-        Vector2 curPos = Vector2.zero;
-        bool isPressed = false;
-
-#if ENABLE_INPUT_SYSTEM
-        var touch = Touchscreen.current;
-        var mouse = Mouse.current;
-        if (touch != null && touch.primaryTouch.press.isPressed)
-        {
-            isPressed = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (mouse != null && (mouse.leftButton.isPressed || mouse.rightButton.isPressed))
-        {
-            isPressed = true;
-            curPos = mouse.position.ReadValue();
-        }
-#else
-        if (Input.GetMouseButton(0) || Input.GetMouseButton(1))
-        {
-            isPressed = true;
-            curPos = Input.mousePosition;
-        }
-#endif
-
-        if (isPressed)
-        {
-            if (!isSwipingTarget)
-            {
-                isSwipingTarget = true;
-                swipeStartPos = curPos;
-            }
-            else
-            {
-                float dx = curPos.x - swipeStartPos.x;
-                if (dx > swipeThreshold)
-                {
-                    if (character != null) character.MoveToNextWaypoint();
-                    swipeStartPos = curPos;
-                }
-                else if (dx < -swipeThreshold)
-                {
-                    if (character != null) character.MoveToPreviousWaypoint();
-                    swipeStartPos = curPos;
-                }
-            }
-        }
-        else
-        {
-            isSwipingTarget = false;
-        }
-    }
-
     public void ConfirmPosition()
     {
         currentState = GameState.AimingAngle;
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
         aimGaugeValue = 0f;
-        aimDirection = 1f;
 
         if (MapPIPManager.Instance != null)
         {
@@ -835,9 +713,7 @@ public class GameController : MonoBehaviour
 
     private void UpdateAimingAngle()
     {
-        aimGaugeValue += aimDirection * aimSpeed * Time.deltaTime;
-        if (aimGaugeValue > 1f) { aimGaugeValue = 1f; aimDirection = -1f; }
-        else if (aimGaugeValue < -1f) { aimGaugeValue = -1f; aimDirection = 1f; }
+        aimGaugeValue = launchSequenceController.UpdateAimingGauge(aimGaugeValue);
 
         if (character != null)
         {
@@ -857,14 +733,11 @@ public class GameController : MonoBehaviour
         lastStateChangeTime = Time.time;
         requireTouchRelease = true;
         powerGaugeValue = 0.1f;
-        powerDirection = 1f;
     }
 
     private void UpdateChargingPower()
     {
-        powerGaugeValue += powerDirection * powerSpeed * Time.deltaTime;
-        if (powerGaugeValue > 1f) { powerGaugeValue = 1f; powerDirection = -1f; }
-        else if (powerGaugeValue < 0f) { powerGaugeValue = 0f; powerDirection = 1f; }
+        powerGaugeValue = launchSequenceController.UpdatePowerGauge(powerGaugeValue);
 
         if (character != null)
         {
@@ -1015,47 +888,7 @@ public class GameController : MonoBehaviour
 
     private void HandleFlightFlickSteering()
     {
-        Vector2 curPos = Vector2.zero;
-        bool isDown = false;
-        bool isUp = false;
-
-#if ENABLE_INPUT_SYSTEM
-        var touch = Touchscreen.current;
-        var mouse = Mouse.current;
-        if (touch != null && touch.primaryTouch.press.wasPressedThisFrame)
-        {
-            isDown = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (touch != null && touch.primaryTouch.press.wasReleasedThisFrame)
-        {
-            isUp = true;
-            curPos = touch.primaryTouch.position.ReadValue();
-        }
-        else if (mouse != null && mouse.leftButton.wasPressedThisFrame)
-        {
-            isDown = true;
-            curPos = mouse.position.ReadValue();
-        }
-        else if (mouse != null && mouse.leftButton.wasReleasedThisFrame)
-        {
-            isUp = true;
-            curPos = mouse.position.ReadValue();
-        }
-#else
-        try
-        {
-            if (Input.touchCount > 0)
-            {
-                var t = Input.GetTouch(0);
-                if (t.phase == UnityEngine.TouchPhase.Began) { isDown = true; curPos = t.position; }
-                else if (t.phase == UnityEngine.TouchPhase.Ended || t.phase == UnityEngine.TouchPhase.Canceled) { isUp = true; curPos = t.position; }
-            }
-            else if (Input.GetMouseButtonDown(0)) { isDown = true; curPos = Input.mousePosition; }
-            else if (Input.GetMouseButtonUp(0)) { isUp = true; curPos = Input.mousePosition; }
-        }
-        catch { }
-#endif
+        SkippingStones.Gameplay.Helpers.GameInputHelper.GetPointerDownUp(out bool isDown, out bool isUp, out Vector2 curPos);
 
         if (isDown)
         {
@@ -1220,32 +1053,31 @@ public class GameController : MonoBehaviour
         if (hasCalculatedResult) return;
         hasCalculatedResult = true;
 
-        distanceScore = Mathf.RoundToInt(dist * 10f);
-        int skips = (stone != null) ? stone.skipCount : 0;
-        skipScore = skips * 500;
-        lastSkimBonusDist = (stone != null) ? stone.skimDistance : 0f;
-        int skimScore = Mathf.RoundToInt(lastSkimBonusDist * 15f);
+        var p = new SkippingStones.Gameplay.Calculators.MatchScoreCalculator.ScoreCalculationParams
+        {
+            finalDistance = dist,
+            skipCount = (stone != null) ? stone.skipCount : 0,
+            skimDistance = (stone != null) ? stone.skimDistance : 0f,
+            perfectTimingCount = perfectTimingCount,
+            fishSnipeCount = fishSnipeCount,
+            friendOvertakeCount = friendOvertakeCount,
+            boostPadCount = boostPadCount
+        };
 
-        specialScore = (perfectTimingCount * 300) + (fishSnipeCount * 1000) + (friendOvertakeCount * 800) + (boostPadCount * 500) + skimScore;
-        totalScore = distanceScore + skipScore + specialScore;
-        earnedCoins = Mathf.Max(5, Mathf.RoundToInt(totalScore / 25f));
+        var result = SkippingStones.Gameplay.Calculators.MatchScoreCalculator.Calculate(p);
+
+        distanceScore = result.distanceScore;
+        skipScore = result.skipScore;
+        specialScore = result.specialScore;
+        totalScore = result.totalScore;
+        earnedCoins = result.earnedCoins;
+        lastSkimBonusDist = p.skimDistance;
+        lastResultData = result.resultData;
 
         if (AquariumManager.Instance != null)
         {
             AquariumManager.Instance.AddCoins(earnedCoins);
         }
-
-        lastResultData = new InGameResultData
-        {
-            finalDistance = dist,
-            skipCount = skips,
-            perfectTimingCount = perfectTimingCount,
-            fishSnipeCount = fishSnipeCount,
-            friendOvertakeCount = friendOvertakeCount,
-            boostPadCount = boostPadCount,
-            earnedCoins = earnedCoins,
-            totalScore = totalScore
-        };
 
         if (GameDataManager.Instance != null)
         {
@@ -1333,8 +1165,7 @@ public class GameController : MonoBehaviour
         currentState = GameState.Positioning;
         lastStateChangeTime = Time.time + 0.35f;
         startPosX = 0f;
-        aimGaugeValue = 0f;
-        powerGaugeValue = 0f;
+        launchSequenceController.ResetGauges(out aimGaugeValue, out powerGaugeValue);
         lastTimingText = "";
         bannerNotificationText = "";
 
@@ -1418,79 +1249,11 @@ public class GameController : MonoBehaviour
 
     #region Input Handling
 
-    public float GetHorizontalInput()
-    {
-        float h = 0f;
-#if ENABLE_INPUT_SYSTEM
-        if (Keyboard.current != null)
-        {
-            if (Keyboard.current.aKey.isPressed || Keyboard.current.leftArrowKey.isPressed) h -= 1f;
-            if (Keyboard.current.dKey.isPressed || Keyboard.current.rightArrowKey.isPressed) h += 1f;
-        }
-#endif
-        try
-        {
-            float legacyH = Input.GetAxisRaw("Horizontal");
-            if (Mathf.Abs(legacyH) > 0.01f) h = legacyH;
-        }
-        catch { }
-        return h;
-    }
+    public float GetHorizontalInput() => SkippingStones.Gameplay.Helpers.GameInputHelper.GetHorizontalInput();
 
-    public bool IsActionTriggered()
-    {
-        if (Time.time - lastStateChangeTime < STATE_COOLDOWN) return false;
+    public bool IsActionTriggered() => SkippingStones.Gameplay.Helpers.GameInputHelper.IsActionTriggered(ref requireTouchRelease, lastStateChangeTime, STATE_COOLDOWN);
 
-        bool isCurrentlyHeld = false;
-#if ENABLE_INPUT_SYSTEM
-        if (Mouse.current != null && Mouse.current.leftButton.isPressed) isCurrentlyHeld = true;
-        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.isPressed) isCurrentlyHeld = true;
-#endif
-        try
-        {
-            if (Input.touchCount > 0 || Input.GetMouseButton(0)) isCurrentlyHeld = true;
-        }
-        catch { }
-
-        if (requireTouchRelease)
-        {
-            if (!isCurrentlyHeld) requireTouchRelease = false;
-            return false;
-        }
-
-#if ENABLE_INPUT_SYSTEM
-        if (Keyboard.current != null && (Keyboard.current.spaceKey.wasPressedThisFrame || Keyboard.current.enterKey.wasPressedThisFrame)) return true;
-        if (Mouse.current != null && Mouse.current.leftButton.wasPressedThisFrame) return true;
-        if (Touchscreen.current != null && Touchscreen.current.primaryTouch.press.wasPressedThisFrame) return true;
-#endif
-        try
-        {
-            if (Input.GetKeyDown(KeyCode.Space) || Input.GetKeyDown(KeyCode.Return) || Input.GetMouseButtonDown(0)) return true;
-        }
-        catch { }
-        return false;
-    }
-
-    private bool IsKeyTriggered(KeyCode key)
-    {
-#if ENABLE_INPUT_SYSTEM
-        if (Keyboard.current != null)
-        {
-            if (key == KeyCode.Space && Keyboard.current.spaceKey.wasPressedThisFrame) return true;
-            if (key == KeyCode.Return && (Keyboard.current.enterKey.wasPressedThisFrame || Keyboard.current.numpadEnterKey.wasPressedThisFrame)) return true;
-            if (key == KeyCode.R && Keyboard.current.rKey.wasPressedThisFrame) return true;
-            if ((key == KeyCode.A || key == KeyCode.LeftArrow) && (Keyboard.current.aKey.wasPressedThisFrame || Keyboard.current.leftArrowKey.wasPressedThisFrame)) return true;
-            if ((key == KeyCode.D || key == KeyCode.RightArrow) && (Keyboard.current.dKey.wasPressedThisFrame || Keyboard.current.rightArrowKey.wasPressedThisFrame)) return true;
-            if ((key == KeyCode.S || key == KeyCode.DownArrow) && (Keyboard.current.sKey.wasPressedThisFrame || Keyboard.current.downArrowKey.wasPressedThisFrame)) return true;
-        }
-#endif
-        try
-        {
-            if (Input.GetKeyDown(key)) return true;
-        }
-        catch { }
-        return false;
-    }
+    private bool IsKeyTriggered(KeyCode key) => SkippingStones.Gameplay.Helpers.GameInputHelper.IsKeyTriggered(key);
 
     private void TriggerButtonFeedback(float steerAngle)
     {

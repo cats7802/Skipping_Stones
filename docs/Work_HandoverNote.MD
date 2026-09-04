@@ -36,12 +36,25 @@
     - `TrySpawnBoostPad` 내에서 `GameController.Instance.currentMode`를 SSOT(단일 진실 공급원)로 실시간 동기화하여 캐쥬얼 모드에서는 어떠한 청크에서도 100% `RandomRing` 생성 보장.
     - 강폭별(협곡/중형/대형) 및 분기 물길 스폰 시 오브젝트마다 독립된 거리 오프셋($\pm 4\text{m} \sim 10\text{m}$)을 부여하고, `GlobalRiverPath.EvaluateAtDistance`로 곡선 물길 흐름과 접선 각도를 각각 개별 평가하여 유기적인 지그재그(Stagger) 분산 배치 완성.
 
+### ✅ 7. 🏗️ GameController 모듈화 및 책임 분리 (GameInputHelper, MatchScoreCalculator, LaunchSequenceController)
+- **배경 및 원인**:
+  - 1,300줄이 넘어가던 `GameController.cs`에 입력 교차 처리, 점수 계산, 투구 조준 및 게이지 연산이 뒤섞여 있어 모듈 분리 및 객체화 요구.
+- **해결 내역**:
+  - `GameInputHelper.cs`: New Input System / Legacy Input System 및 마우스/터치 다운·업 교차 처리를 캡슐화한 정적 헬퍼 구축.
+  - `MatchScoreCalculator.cs`: 거리/스킵/스킴/특수점수/코인 정산 공식을 순수 C# 계산기로 분리.
+  - `LaunchSequenceController.cs`: 발판 좌우 드래그 슬라이드, 타깃 모드 웨이포인트 스와이프, 조준각 및 파워 차징 왕복 게이지 연산 분리.
+  - `GameController.cs`: 순수 중앙 오케스트레이터로서 외부 API 및 인스펙터 호환성을 100% 유지하며 대폭 경량화.
+
 ---
 
 ## 2. 📁 수정된 주요 파일 및 골든 스크립트 동기화 현황
 
 | 분류 | 수정 파일 경로 | 골든 스냅샷 동기화 |
 | :--- | :--- | :--- |
+| **Game Controller** | `Assets/Scripts/Gameplay/GameController.cs` | `docs/golden_scripts/GameController.cs.txt` |
+| **Launch Sequence** | `Assets/Scripts/Gameplay/LaunchSequenceController.cs` | 신규 분리 완료 |
+| **Input Helper** | `Assets/Scripts/Gameplay/Helpers/GameInputHelper.cs` | 신규 분리 완료 |
+| **Score Calculator** | `Assets/Scripts/Gameplay/Calculators/MatchScoreCalculator.cs` | 신규 분리 완료 |
 | **Arcade Stone** | `Assets/Scripts/Arcade/ArcadeSkippingStone.cs` | `docs/golden_scripts/ArcadeSkippingStone.cs.txt` |
 | **Random Ring** | `Assets/Scripts/Arcade/RandomRing.cs` | `docs/golden_scripts/RandomRing.cs.txt` |
 | **Spawner** | `Assets/Scripts/Gameplay/RiverSpawner.cs` | `docs/golden_scripts/RiverSpawner.cs.txt` |
