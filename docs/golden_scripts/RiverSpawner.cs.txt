@@ -33,8 +33,8 @@ public class RiverSpawner : MonoBehaviour
     public GameObject friendFlagPrefab;
     [Tooltip("토종 강물고기 10종 프리팹 배열")]
     public GameObject[] fishPrefabs = new GameObject[10];
-    [Tooltip("연잎/연꽃 군락 프리팹")]
-    public GameObject lilyPadClusterPrefab;
+    [Tooltip("연잎/연꽃 5종 프리팹 배열")]
+    public GameObject[] lilyPadPrefabs = new GameObject[5];
 
     private readonly RiverEntityFactory entityFactory = new RiverEntityFactory();
     private GameController.GameMode currentSpawningMode = GameController.GameMode.LongDistance;
@@ -52,7 +52,7 @@ public class RiverSpawner : MonoBehaviour
         entityFactory.targetZonePrefab = targetZonePrefab;
         entityFactory.friendFlagPrefab = friendFlagPrefab;
         entityFactory.fishPrefabs = fishPrefabs;
-        entityFactory.lilyPadClusterPrefab = lilyPadClusterPrefab;
+        entityFactory.lilyPadPrefabs = lilyPadPrefabs;
     }
 
     private void Start()

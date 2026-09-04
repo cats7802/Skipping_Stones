@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections.Generic;
 
 namespace SkippingStones.Gameplay.Spawners
 {
@@ -13,7 +14,7 @@ namespace SkippingStones.Gameplay.Spawners
         public GameObject targetZonePrefab;
         public GameObject friendFlagPrefab;
         public GameObject[] fishPrefabs = new GameObject[10];
-        public GameObject lilyPadClusterPrefab;
+        public GameObject[] lilyPadPrefabs = new GameObject[5];
 
         public void EnsurePrefabsLoaded()
         {
@@ -23,7 +24,22 @@ namespace SkippingStones.Gameplay.Spawners
             if (obstacleRockPrefab == null) obstacleRockPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/ObstacleRock.prefab");
             if (targetZonePrefab == null) targetZonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/TargetZone.prefab");
             if (friendFlagPrefab == null) friendFlagPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/FriendFlag.prefab");
-            if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/LilyPadCluster.prefab");
+
+            string[] lilyPaths = {
+                "Assets/Design_sources/3D/Environments/SoStylized/Environment/Foliage/Prefabs/P_LilyPad1.prefab",
+                "Assets/Design_sources/3D/Environments/SoStylized/Environment/Foliage/Prefabs/P_LilyPad2.prefab",
+                "Assets/Design_sources/3D/Environments/SoStylized/Environment/Foliage/Prefabs/P_LilyPad3.prefab",
+                "Assets/Design_sources/3D/Environments/SoStylized/Environment/Foliage/Prefabs/P_LilyPadCluster1.prefab",
+                "Assets/Design_sources/3D/Environments/SoStylized/Environment/Foliage/Prefabs/P_LilyPadCluster2.prefab"
+            };
+
+            for (int i = 0; i < 5; i++)
+            {
+                if (lilyPadPrefabs[i] == null)
+                {
+                    lilyPadPrefabs[i] = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(lilyPaths[i]);
+                }
+            }
 
             for (int i = 1; i <= 10; i++)
             {
@@ -39,7 +55,14 @@ namespace SkippingStones.Gameplay.Spawners
             if (obstacleRockPrefab == null) obstacleRockPrefab = Resources.Load<GameObject>("ObstacleRock");
             if (targetZonePrefab == null) targetZonePrefab = Resources.Load<GameObject>("TargetZone");
             if (friendFlagPrefab == null) friendFlagPrefab = Resources.Load<GameObject>("FriendFlag");
-            if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = Resources.Load<GameObject>("LilyPadCluster");
+
+            for (int i = 0; i < 5; i++)
+            {
+                if (lilyPadPrefabs[i] == null)
+                {
+                    lilyPadPrefabs[i] = Resources.Load<GameObject>($"LilyPad_{i + 1}");
+                }
+            }
 
             for (int i = 1; i <= 10; i++)
             {
@@ -212,10 +235,40 @@ namespace SkippingStones.Gameplay.Spawners
         public GameObject SpawnSingleLilyCluster(Transform parent, Vector3 centerPos)
         {
             EnsurePrefabsLoaded();
-            if (lilyPadClusterPrefab != null)
+
+            GameObject chosenPrefab = null;
+            if (lilyPadPrefabs != null && lilyPadPrefabs.Length > 0)
             {
-                GameObject cluster = Object.Instantiate(lilyPadClusterPrefab, centerPos, Quaternion.identity, parent);
-                cluster.name = $"LilyCluster_{centerPos.x:F0}x{centerPos.z:F0}";
+                // 유효한 프리팹 중 랜덤 선택
+                List<GameObject> valids = new List<GameObject>();
+                for (int i = 0; i < lilyPadPrefabs.Length; i++)
+                {
+                    if (lilyPadPrefabs[i] != null) valids.Add(lilyPadPrefabs[i]);
+                }
+                if (valids.Count > 0)
+                {
+                    chosenPrefab = valids[Random.Range(0, valids.Count)];
+                }
+            }
+
+            if (chosenPrefab != null)
+            {
+                Quaternion rot = Quaternion.Euler(0f, Random.Range(0f, 360f), 0f);
+                GameObject cluster = Object.Instantiate(chosenPrefab, centerPos, rot, parent);
+                cluster.name = $"LilyPad_{chosenPrefab.name}_{centerPos.x:F0}x{centerPos.z:F0}";
+
+                // 미세 크기 변량 (자연스러움 증대)
+                float scaleVar = Random.Range(0.95f, 1.25f);
+                cluster.transform.localScale = cluster.transform.localScale * scaleVar;
+
+                // LilyPad 컴포넌트 부착 보장
+                LilyPad lp = cluster.GetComponent<LilyPad>();
+                if (lp == null)
+                {
+                    lp = cluster.AddComponent<LilyPad>();
+                }
+                lp.detectionRadius = (chosenPrefab.name.Contains("Cluster")) ? 1.8f : 1.2f;
+
                 return cluster;
             }
             return null;

@@ -28,10 +28,12 @@ public class TopDownReplayManager : MonoBehaviour
     public float lineWidth = 0.55f;
     public Color pathColor = new Color(0.1f, 0.95f, 1.0f, 0.95f);
     public Color skimLineColor = new Color(1.0f, 0.85f, 0.20f, 0.98f);
+    public Color randomRingPathColor = new Color(1.0f, 0.25f, 0.85f, 0.98f); // 🌀 랜덤 링 진입/부스트 구간 형광 핑크
     public Color startMarkerColor = new Color(0.2f, 1f, 0.4f, 1f);
     public Color bounceMarkerColor = new Color(0.1f, 0.85f, 1f, 1f);
     public Color perfectMarkerColor = new Color(0.2f, 1f, 0.5f, 1f);
     public Color boostMarkerColor = new Color(0.95f, 0.20f, 1.0f, 1f);
+    public Color randomRingMarkerColor = new Color(1.0f, 0.15f, 0.90f, 1f); // 🌀 링 통과 마커 색상
     public Color skimStartMarkerColor = new Color(1.0f, 0.62f, 0.12f, 1f);
     public Color finishMarkerColor = new Color(1.0f, 0.22f, 0.22f, 1f);
 
@@ -41,6 +43,7 @@ public class TopDownReplayManager : MonoBehaviour
     private GameObject replayStoneAvatar;
     private List<GameObject> markerObjects = new List<GameObject>();
     private List<SkippingStone.BounceRecord> currentHistory = new List<SkippingStone.BounceRecord>();
+    private List<SkippingStone.BounceRecord> markerRecords = new List<SkippingStone.BounceRecord>();
     private Coroutine drawCoroutine;
     private Coroutine slideCoroutine;
     private float cachedFinalDist = 0f;
@@ -105,14 +108,108 @@ public class TopDownReplayManager : MonoBehaviour
         }
     }
 
+    public struct FlightSample
+    {
+        public Vector3 position;
+        public bool isRingBoost;
+    }
+
+    private readonly List<FlightSample> realTimeFlightTrajectory = new List<FlightSample>();
+    private float lastSampleZ = -999f;
+
+    /// <summary>
+    /// 🌟 비행 시작 시 이전 실시간 샘플링 궤적 초기화 (발판 상단 중심을 첫 시작점으로 안전 등록)
+    /// </summary>
+    public void ResetRealtimeTrajectory()
+    {
+        realTimeFlightTrajectory.Clear();
+        lastSampleZ = -999f;
+
+        Vector3 startOrigin = GetExactStartPlatformPosition();
+        realTimeFlightTrajectory.Add(new FlightSample { position = startOrigin, isRingBoost = false });
+        lastSampleZ = startOrigin.z;
+    }
+
+    /// <summary>
+    /// 🌟 씬 내 발판 또는 캐릭터의 실제 월드 중심 좌표 정밀 취득
+    /// </summary>
+    public Vector3 GetExactStartPlatformPosition()
+    {
+        UpdateBaseReplayLevel();
+        Transform platform = GameController.FindPlatformInScene();
+        if (platform != null)
+        {
+            Collider pierCol = platform.GetComponent<Collider>() ?? platform.GetComponentInChildren<Collider>();
+            if (pierCol != null)
+            {
+                return new Vector3(pierCol.bounds.center.x, baseReplayLevel, pierCol.bounds.center.z);
+            }
+            return new Vector3(platform.position.x, baseReplayLevel, platform.position.z);
+        }
+
+        StoneThrowerCharacter thrower = FindAnyObjectByType<StoneThrowerCharacter>();
+        if (thrower != null)
+        {
+            return new Vector3(thrower.transform.position.x, baseReplayLevel, thrower.transform.position.z);
+        }
+
+        return new Vector3(0f, baseReplayLevel, 0f);
+    }
+
+    /// <summary>
+    /// 🌟 매 프레임/비행 중 돌의 실제 위치(X, Y, Z)와 링 부스트 상태를 촘촘하게 샘플링 기록
+    /// </summary>
+    public void SampleStonePosition(Vector3 pos, bool isRingBoost = false)
+    {
+        if (realTimeFlightTrajectory.Count == 0 || Mathf.Abs(pos.z - lastSampleZ) >= 1.5f || (pos - realTimeFlightTrajectory[realTimeFlightTrajectory.Count - 1].position).sqrMagnitude >= 2.5f)
+        {
+            realTimeFlightTrajectory.Add(new FlightSample { position = pos, isRingBoost = isRingBoost });
+            lastSampleZ = pos.z;
+        }
+    }
+
     private void Update()
     {
+        if (gameController == null) gameController = FindAnyObjectByType<GameController>();
+
+        // 🌟 비행 중일 때 실시간 돌 위치 자동 샘플링 (물리 모드 & 리듬 아케이드 모드 공통 지원)
+        if (gameController != null && gameController.currentState == GameController.GameState.Flying)
+        {
+            Transform stoneT = null;
+            bool ringBoostActive = false;
+
+            if (gameController.currentMode == GameController.GameMode.RhythmArcade)
+            {
+                var arcade = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+                if (arcade != null && !arcade.isSunk)
+                {
+                    stoneT = arcade.transform;
+                    ringBoostActive = arcade.isInRandomRing;
+                }
+            }
+            else
+            {
+                if (stone == null || !stone.gameObject.activeInHierarchy || stone.isSunk)
+                {
+                    stone = gameController.stone ?? FindAnyObjectByType<SkippingStone>();
+                }
+
+                if (stone != null && !stone.isSunk)
+                {
+                    stoneT = stone.transform;
+                }
+            }
+
+            if (stoneT != null)
+            {
+                SampleStonePosition(stoneT.position, ringBoostActive);
+            }
+        }
+
         if (!isReplayActive) return;
 
-        if (isReplayFinished && !isDrawing)
-        {
-            HandleFreeNavigation();
-        }
+        // 🌟 리플레이 도중에도 상시 줌인/줌아웃 및 자유 내비게이션 지원!
+        HandleFreeNavigation();
     }
 
     private void CreateTrajectoryLineRenderers()
@@ -258,7 +355,6 @@ public class TopDownReplayManager : MonoBehaviour
 
         if (replayStoneAvatar != null && replayStoneAvatar.activeSelf)
         {
-            // 상공 80m 탑다운 뷰에서도 조약돌이 확실하게 눈에 띄도록 시인성 강화 배율 적용
             float avatarScale = Mathf.Clamp(orthoSize * 0.18f, 2.5f, 25f);
             replayStoneAvatar.transform.localScale = new Vector3(avatarScale, avatarScale, avatarScale);
         }
@@ -283,23 +379,61 @@ public class TopDownReplayManager : MonoBehaviour
             Rigidbody sRb = stone.GetComponent<Rigidbody>();
             if (sRb != null)
             {
-                sRb.linearVelocity = Vector3.zero;
-                sRb.angularVelocity = Vector3.zero;
+                if (!sRb.isKinematic)
+                {
+                    sRb.linearVelocity = Vector3.zero;
+                    sRb.angularVelocity = Vector3.zero;
+                }
                 sRb.useGravity = false;
                 sRb.isKinematic = true;
             }
         }
 
         currentHistory.Clear();
+        markerRecords.Clear();
+
+        // 1. 실제 물수제비 바운스 지점 마커 데이터 취득
         if (stone != null && stone.bounceHistory != null && stone.bounceHistory.Count > 0)
         {
-            currentHistory.AddRange(stone.bounceHistory);
+            markerRecords.AddRange(stone.bounceHistory);
+        }
+
+        // 2. 실시간 샘플링 궤적이 있으면 유려한 비행 곡선 데이터(currentHistory)로 변환
+        if (realTimeFlightTrajectory.Count >= 2)
+        {
+            for (int i = 0; i < realTimeFlightTrajectory.Count; i++)
+            {
+                FlightSample sample = realTimeFlightTrajectory[i];
+                string grade = (i == 0) ? "START" : ((i == realTimeFlightTrajectory.Count - 1) ? "FINISH" : (sample.isRingBoost ? "RING_BOOST" : "TRAJECTORY"));
+                currentHistory.Add(new SkippingStone.BounceRecord { position = sample.position, skipIndex = i, grade = grade, distance = sample.position.z });
+            }
+        }
+        else if (markerRecords.Count >= 2)
+        {
+            currentHistory.AddRange(markerRecords);
         }
         else
         {
-            Vector3 startP = (stone != null) ? stone.transform.position : new Vector3(0f, baseReplayLevel, 0f);
+            Vector3 startP = GetExactStartPlatformPosition();
+            Vector3 endP = startP + Vector3.forward * finalDist;
             currentHistory.Add(new SkippingStone.BounceRecord { position = startP, skipIndex = 0, grade = "START", distance = 0f });
-            currentHistory.Add(new SkippingStone.BounceRecord { position = startP + Vector3.forward * finalDist, skipIndex = 1, grade = "FINISH", distance = finalDist });
+            currentHistory.Add(new SkippingStone.BounceRecord { position = endP, skipIndex = 1, grade = "FINISH", distance = finalDist });
+            
+            markerRecords.Add(new SkippingStone.BounceRecord { position = startP, skipIndex = 0, grade = "START", distance = 0f });
+            markerRecords.Add(new SkippingStone.BounceRecord { position = endP, skipIndex = 1, grade = "FINISH", distance = finalDist });
+        }
+
+        // 시작점/종료점 마커가 누락된 경우 보정
+        if (markerRecords.Count > 0 && currentHistory.Count > 0)
+        {
+            if (markerRecords[0].grade != "START")
+            {
+                markerRecords.Insert(0, new SkippingStone.BounceRecord { position = currentHistory[0].position, skipIndex = 0, grade = "START", distance = 0f });
+            }
+            if (markerRecords[markerRecords.Count - 1].grade != "FINISH")
+            {
+                markerRecords.Add(new SkippingStone.BounceRecord { position = currentHistory[currentHistory.Count - 1].position, skipIndex = markerRecords.Count, grade = "FINISH", distance = finalDist });
+            }
         }
 
         CalculateSmartBounds();
@@ -337,20 +471,22 @@ public class TopDownReplayManager : MonoBehaviour
     private void CalculateSmartBounds()
     {
         float minX = float.MaxValue, maxX = float.MinValue;
-        float maxZ = cachedFinalDist;
+        float minZ = float.MaxValue, maxZ = float.MinValue;
 
         foreach (var r in currentHistory)
         {
             if (r.position.x < minX) minX = r.position.x;
             if (r.position.x > maxX) maxX = r.position.x;
+            if (r.position.z < minZ) minZ = r.position.z;
             if (r.position.z > maxZ) maxZ = r.position.z;
         }
 
         if (minX > maxX) { minX = -10f; maxX = 10f; }
+        if (minZ > maxZ) { minZ = -260f; maxZ = cachedFinalDist; }
 
         boundMinX = Mathf.Max(minX - 35f, -120f);
         boundMaxX = Mathf.Min(maxX + 35f, 120f);
-        boundMinZ = -15f;
+        boundMinZ = minZ - 25f;
         boundMaxZ = maxZ + 25f;
 
         minOrthoSize = 18f;
@@ -396,7 +532,17 @@ public class TopDownReplayManager : MonoBehaviour
         float targetOrtho;
         float pageDist = GetPageDistance();
 
-        if (cachedFinalDist <= pageDist)
+        if (page == 1)
+        {
+            Vector3 startPos = GetExactStartPlatformPosition();
+            if (currentHistory != null && currentHistory.Count > 0)
+            {
+                startPos = currentHistory[0].position;
+            }
+            targetCenter = new Vector3(startPos.x, baseReplayLevel + 80f, startPos.z + 15f);
+            targetOrtho = 32f;
+        }
+        else if (cachedFinalDist <= pageDist)
         {
             float spanZ = Mathf.Max(35f, boundMaxZ - boundMinZ);
             float spanX = Mathf.Max(25f, boundMaxX - boundMinX);
@@ -481,18 +627,8 @@ public class TopDownReplayManager : MonoBehaviour
 
     private float CalculateCameraZForLeadPosition(float leadZ)
     {
-        float pageDist = GetPageDistance();
-        if (cachedFinalDist <= pageDist)
-        {
-            return (boundMinZ + boundMaxZ) * 0.5f;
-        }
-
-        if (leadZ <= pageDist * 0.55f)
-        {
-            return pageDist * 0.5f;
-        }
-
-        return Mathf.Clamp(leadZ - 50f, pageDist * 0.5f, cachedFinalDist);
+        float lookLeadZ = leadZ + 15f;
+        return Mathf.Clamp(lookLeadZ, boundMinZ, boundMaxZ);
     }
 
     private void HandleFreeNavigation()
@@ -505,63 +641,62 @@ public class TopDownReplayManager : MonoBehaviour
         float screenH = Mathf.Max(Screen.height, 100f);
         float worldPerPixel = (currentOrthoSize * 2f) / screenH;
 
+        // 🌟 1. 줌인 / 줌아웃 (마우스 휠 스크롤 & 2터치 핀치 줌 최우선 처리)
+        float scrollDelta = 0f;
+
 #if ENABLE_INPUT_SYSTEM
-        if (Touchscreen.current != null && Touchscreen.current.touches.Count > 0)
+        if (Mouse.current != null)
         {
-            int tCount = 0;
-            Vector2 t0Pos = Vector2.zero, t0Delta = Vector2.zero;
-            Vector2 t1Pos = Vector2.zero, t1Delta = Vector2.zero;
-
-            for (int i = 0; i < Touchscreen.current.touches.Count; i++)
+            Vector2 s = Mouse.current.scroll.ReadValue();
+            if (Mathf.Abs(s.y) > 0.001f)
             {
-                var touchControl = Touchscreen.current.touches[i];
-                if (touchControl.isInProgress)
-                {
-                    if (tCount == 0)
-                    {
-                        t0Pos = touchControl.position.ReadValue();
-                        t0Delta = touchControl.delta.ReadValue();
-                        tCount++;
-                    }
-                    else if (tCount == 1)
-                    {
-                        t1Pos = touchControl.position.ReadValue();
-                        t1Delta = touchControl.delta.ReadValue();
-                        tCount++;
-                        break;
-                    }
-                }
+                scrollDelta = s.y;
             }
-
-            if (tCount == 1 && t0Pos.y > screenH * 0.18f)
+        }
+#endif
+        if (Mathf.Abs(scrollDelta) < 0.001f)
+        {
+            float legScroll = Input.mouseScrollDelta.y;
+            if (Mathf.Abs(legScroll) > 0.001f) scrollDelta = legScroll * 120f;
+            else
             {
-                currentCamCenter.x -= t0Delta.x * worldPerPixel;
-                currentCamCenter.z -= t0Delta.y * worldPerPixel;
+                float axisScroll = Input.GetAxis("Mouse ScrollWheel");
+                if (Mathf.Abs(axisScroll) > 0.001f) scrollDelta = axisScroll * 1200f;
             }
-            else if (tCount == 2)
+        }
+
+        if (Mathf.Abs(scrollDelta) > 0.001f)
+        {
+            float zoomRate = (scrollDelta > 0f) ? 0.82f : 1.22f; // 휠 1틱당 18~22% 시원하게 줌 영역 증감
+            targetOrthoSize = Mathf.Clamp(targetOrthoSize * zoomRate, minOrthoSize, maxOrthoSize);
+        }
+
+#if ENABLE_INPUT_SYSTEM
+        if (Touchscreen.current != null && Touchscreen.current.touches.Count >= 2)
+        {
+            var t0 = Touchscreen.current.touches[0];
+            var t1 = Touchscreen.current.touches[1];
+            if (t0.isInProgress && t1.isInProgress)
             {
-                Vector2 prevP0 = t0Pos - t0Delta;
-                Vector2 prevP1 = t1Pos - t1Delta;
-                float prevDist = (prevP0 - prevP1).magnitude;
-                float currDist = (t0Pos - t1Pos).magnitude;
+                Vector2 p0 = t0.position.ReadValue();
+                Vector2 p1 = t1.position.ReadValue();
+                Vector2 d0 = t0.delta.ReadValue();
+                Vector2 d1 = t1.delta.ReadValue();
+
+                float prevDist = ((p0 - d0) - (p1 - d1)).magnitude;
+                float currDist = (p0 - p1).magnitude;
                 float delta = currDist - prevDist;
 
-                targetOrthoSize = Mathf.Clamp(targetOrthoSize - delta * (targetOrthoSize * 0.0035f), minOrthoSize, maxOrthoSize);
+                if (Mathf.Abs(delta) > 0.1f)
+                {
+                    targetOrthoSize = Mathf.Clamp(targetOrthoSize - delta * (targetOrthoSize * 0.004f), minOrthoSize, maxOrthoSize);
+                }
             }
         }
 #endif
         try
         {
-            if (Input.touchCount == 1)
-            {
-                Touch t = Input.GetTouch(0);
-                if (t.position.y > screenH * 0.18f && t.phase == UnityEngine.TouchPhase.Moved)
-                {
-                    currentCamCenter.x -= t.deltaPosition.x * worldPerPixel;
-                    currentCamCenter.z -= t.deltaPosition.y * worldPerPixel;
-                }
-            }
-            else if (Input.touchCount == 2)
+            if (Input.touchCount == 2)
             {
                 Touch t0 = Input.GetTouch(0);
                 Touch t1 = Input.GetTouch(1);
@@ -571,54 +706,32 @@ public class TopDownReplayManager : MonoBehaviour
                 float currDist = (t0.position - t1.position).magnitude;
                 float delta = currDist - prevDist;
 
-                targetOrthoSize = Mathf.Clamp(targetOrthoSize - delta * (targetOrthoSize * 0.0035f), minOrthoSize, maxOrthoSize);
+                if (Mathf.Abs(delta) > 0.1f)
+                {
+                    targetOrthoSize = Mathf.Clamp(targetOrthoSize - delta * (targetOrthoSize * 0.004f), minOrthoSize, maxOrthoSize);
+                }
             }
         }
         catch { }
 
-        float scrollVal = 0f;
+        // 🌟 2. 화면 드래그 패닝 (드로잉 완료 후에만 활성화)
         Vector2 mousePos = Vector2.zero;
         bool isMouseDown = false;
 
 #if ENABLE_INPUT_SYSTEM
         if (Mouse.current != null)
         {
-            Vector2 s = Mouse.current.scroll.ReadValue();
-            if (Mathf.Abs(s.y) > 0.01f)
-            {
-                scrollVal = Mathf.Sign(s.y);
-            }
-
             mousePos = Mouse.current.position.ReadValue();
             isMouseDown = Mouse.current.leftButton.isPressed || Mouse.current.rightButton.isPressed || Mouse.current.middleButton.isPressed;
         }
 #endif
-        try
+        if (!isMouseDown)
         {
-            if (Mathf.Abs(scrollVal) < 0.01f)
-            {
-                float legScroll = Input.mouseScrollDelta.y;
-                if (Mathf.Abs(legScroll) > 0.01f) scrollVal = Mathf.Sign(legScroll);
-                else
-                {
-                    float axisScroll = Input.GetAxis("Mouse ScrollWheel");
-                    if (Mathf.Abs(axisScroll) > 0.01f) scrollVal = Mathf.Sign(axisScroll);
-                }
-            }
-            if (!isMouseDown)
-            {
-                isMouseDown = Input.GetMouseButton(0) || Input.GetMouseButton(1) || Input.GetMouseButton(2);
-                mousePos = Input.mousePosition;
-            }
-        }
-        catch { }
-
-        if (Mathf.Abs(scrollVal) > 0.01f)
-        {
-            targetOrthoSize = Mathf.Clamp(targetOrthoSize - scrollVal * (targetOrthoSize * 0.12f), minOrthoSize, maxOrthoSize);
+            isMouseDown = Input.GetMouseButton(0) || Input.GetMouseButton(1) || Input.GetMouseButton(2);
+            mousePos = Input.mousePosition;
         }
 
-        if (isMouseDown && mousePos.y > screenH * 0.18f)
+        if (isMouseDown && mousePos.y > screenH * 0.18f && isReplayFinished && !isDrawing)
         {
             if (!isMouseDragging)
             {
@@ -644,11 +757,10 @@ public class TopDownReplayManager : MonoBehaviour
         currentCamCenter.x = Mathf.Clamp(currentCamCenter.x, boundMinX, boundMaxX);
         currentCamCenter.z = Mathf.Clamp(currentCamCenter.z, boundMinZ, boundMaxZ);
 
-        currentOrthoSize = Mathf.Lerp(currentOrthoSize, targetOrthoSize, Time.unscaledDeltaTime * 14f);
+        currentOrthoSize = Mathf.Lerp(currentOrthoSize, targetOrthoSize, Time.unscaledDeltaTime * 16f);
         UpdateVisualsScale(currentOrthoSize);
 
         dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
-
         SyncTerrainByZ(currentCamCenter.z);
     }
 
@@ -713,15 +825,22 @@ public class TopDownReplayManager : MonoBehaviour
 
         float drawY = baseReplayLevel + 0.15f;
 
-        SpawnBounceMarker(currentHistory[0], 0);
+        // 시작점 단발 마커 스폰
+        if (markerRecords.Count > 0 && markerRecords[0].grade == "START")
+        {
+            SpawnBounceMarker(markerRecords[0], 0);
+        }
 
         List<Vector3> flightPoints = new List<Vector3>();
         flightPoints.Add(new Vector3(currentHistory[0].position.x, drawY, currentHistory[0].position.z));
         trajectoryLine.positionCount = 1;
         trajectoryLine.SetPosition(0, flightPoints[0]);
 
-        float totalDrawDuration = Mathf.Clamp(currentHistory.Count * 0.28f, 1.8f, 3.2f);
-        float timePerSegment = totalDrawDuration / (currentHistory.Count - 1);
+        // 🌟 궤적을 충분히 음미할 수 있도록 1/3 감속 (초속 약 45m/s 속도로 10~25초간 우아하게 재생)
+        float totalDrawDuration = Mathf.Clamp(cachedFinalDist / 45f, 10.0f, 25.0f);
+        float timePerSegment = totalDrawDuration / Mathf.Max(1, currentHistory.Count - 1);
+
+        int nextMarkerIdx = 1;
 
         for (int i = 0; i < currentHistory.Count - 1; i++)
         {
@@ -824,24 +943,43 @@ public class TopDownReplayManager : MonoBehaviour
                 skimLine.SetPosition(1, endP);
             }
 
-            SpawnBounceMarker(currentHistory[i + 1], i + 1);
+            // 🌟 1) 실제 물수제비 바운스 지점 통과 시 원형 마커 단발 스폰
+            while (nextMarkerIdx < markerRecords.Count - 1 && markerRecords[nextMarkerIdx].distance <= currentHistory[i + 1].distance)
+            {
+                SpawnBounceMarker(markerRecords[nextMarkerIdx], nextMarkerIdx);
+                nextMarkerIdx++;
+            }
+
+            // 🌟 2) 링 진입 및 탈출 순간 1회 단발 마커 스폰
+            bool prevWasRing = (i > 0 && currentHistory[i - 1].grade == "RING_BOOST");
+            bool currIsRing = (currentHistory[i].grade == "RING_BOOST");
+            if (currIsRing && !prevWasRing)
+            {
+                SpawnBounceMarker(new SkippingStone.BounceRecord { position = currentHistory[i].position, grade = "RING_BOOST", distance = currentHistory[i].distance }, 9000 + i);
+            }
         }
 
-        if (dualCam != null)
+        // 🌟 종료 지점 최종 마커 스폰
+        if (markerRecords.Count > 0)
         {
-            float finalX = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.x : 0f;
-            currentCamCenter.x = Mathf.Clamp(finalX, boundMinX, boundMaxX);
-            currentCamCenter.z = CalculateCameraZForLeadPosition(cachedFinalDist);
+            SpawnBounceMarker(markerRecords[markerRecords.Count - 1], markerRecords.Count - 1);
+        }
+
+        // 🌟 종료 시 엉뚱한 곳으로 점프하지 않고 마지막 돌 위치에 부드럽게 유지
+        if (dualCam != null && currentHistory.Count > 0)
+        {
+            Vector3 lastPos = currentHistory[currentHistory.Count - 1].position;
+            currentCamCenter.x = Mathf.Clamp(lastPos.x, boundMinX, boundMaxX);
+            currentCamCenter.z = CalculateCameraZForLeadPosition(lastPos.z);
             dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
             SyncTerrainByZ(currentCamCenter.z);
         }
 
-        if (replayStoneAvatar != null)
+        if (replayStoneAvatar != null && currentHistory.Count > 0)
         {
-            float finalX = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.x : 0f;
-            float finalZ = (currentHistory.Count > 0) ? currentHistory[currentHistory.Count - 1].position.z : cachedFinalDist;
+            Vector3 lastPos = currentHistory[currentHistory.Count - 1].position;
             float avatarBaseScale = Mathf.Clamp(currentOrthoSize * 0.18f, 2.5f, 25f);
-            replayStoneAvatar.transform.position = new Vector3(finalX, baseReplayLevel + 0.45f, finalZ);
+            replayStoneAvatar.transform.position = new Vector3(lastPos.x, baseReplayLevel + 0.45f, lastPos.z);
             replayStoneAvatar.transform.localScale = new Vector3(avatarBaseScale, avatarBaseScale, avatarBaseScale);
             replayStoneAvatar.transform.rotation = Quaternion.identity;
             replayStoneAvatar.SetActive(true);
@@ -881,6 +1019,11 @@ public class TopDownReplayManager : MonoBehaviour
         {
             mColor = finishMarkerColor;
             baseRadius = 22f;
+        }
+        else if (record.grade.Contains("RING_BOOST"))
+        {
+            mColor = randomRingMarkerColor;
+            baseRadius = 20f;
         }
         else if (record.grade.Contains("BOOST"))
         {

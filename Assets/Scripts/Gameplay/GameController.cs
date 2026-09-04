@@ -769,6 +769,11 @@ public class GameController : MonoBehaviour
             animSpeed = 1.833f;
         }
 
+        if (TopDownReplayManager.Instance != null)
+        {
+            TopDownReplayManager.Instance.ResetRealtimeTrajectory();
+        }
+
         if (character != null)
         {
             character.PlayThrowAnimation(

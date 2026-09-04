@@ -98,6 +98,9 @@ public class SkippingStone : MonoBehaviour
     public float currentMomentum = 5.0f;
     public float maxMomentum = 10.0f;
 
+    [Header("🪷 연잎(Lily Pad) 착수 3턴 높이 보너스")]
+    public int lilyBonusRemainingTurns = 0; // 3턴 동안 +0.5, +0.3, +0.1 보너스 적용
+
     [Header("🌊 수면 대칭 반사 그림자 (Water Reflection Shadow)")]
     private readonly WaterReflectionShadowController shadowController = new WaterReflectionShadowController();
 
@@ -373,6 +376,7 @@ public class SkippingStone : MonoBehaviour
         skipCount = 0;
         totalDistance = 0f;
         skimDistance = 0f;
+        lilyBonusRemainingTurns = 0;
         hasTappedInCurrentBounce = false;
         earlyRetryCount = 0;
         isInTimingWindow = false;
@@ -415,6 +419,7 @@ public class SkippingStone : MonoBehaviour
         isSkimming = false;
         skipCount = 0;
         skimDistance = 0f;
+        lilyBonusRemainingTurns = 0;
         hasTappedInCurrentBounce = false;
         earlyRetryCount = 0;
         isInTimingWindow = false;
@@ -753,6 +758,35 @@ public class SkippingStone : MonoBehaviour
 
         waterSubmergeTimer = 0f;
         skipCount++;
+
+        // 🪷 연잎(Lily Pad) 착수 판정 (착수 반경 1.5m 이내에 LilyPad가 있을 때 3턴 보너스 충전)
+        Collider[] nearbyCols = Physics.OverlapSphere(transform.position, 1.6f);
+        LilyPad steppedLily = null;
+        for (int i = 0; i < nearbyCols.Length; i++)
+        {
+            steppedLily = nearbyCols[i].GetComponentInParent<LilyPad>() ?? nearbyCols[i].GetComponent<LilyPad>();
+            if (steppedLily != null) break;
+        }
+
+        if (steppedLily != null)
+        {
+            steppedLily.OnStepped();
+            lilyBonusRemainingTurns = 3;
+            currentMomentum = Mathf.Min(maxMomentum, currentMomentum + 1.0f); // 모멘텀 보너스 +1.0
+        }
+
+        // 🪷 연잎 착수 3턴 점진적 높이 보너스 (+0.5m -> +0.3m -> +0.1m)
+        if (lilyBonusRemainingTurns > 0)
+        {
+            float heightBonus = 0f;
+            if (lilyBonusRemainingTurns == 3) heightBonus = 0.5f;
+            else if (lilyBonusRemainingTurns == 2) heightBonus = 0.3f;
+            else if (lilyBonusRemainingTurns == 1) heightBonus = 0.1f;
+
+            bounceForce += heightBonus;
+            timingGrade += $"\n🪷 LILY HOP! (+{heightBonus:F1}m)";
+            lilyBonusRemainingTurns--;
+        }
 
         if (SkippingStones.UI.InGameMomentumHUD.Instance != null)
         {

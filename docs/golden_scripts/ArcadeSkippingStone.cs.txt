@@ -94,11 +94,22 @@ namespace SkippingStones.Arcade
         [Header("🎛️ 캐릭터 특성/패시브 고도 오프셋")]
         public float characterHeightModifier = 0f;
 
+        [Header("🪷 연잎(Lily Pad) 착수 3턴 높이 보너스")]
+        public int lilyBonusRemainingTurns = 0;
+
         public Vector3 CycleStartPosition => cycleStartPos;
         public Vector3 CycleEndPosition => cycleEndPos;
         public float CycleElapsedTime => cycleElapsedTime;
         public Vector3 CurrentForwardDirection => currentForwardDir;
-        public float CurrentBounceArcHeight => fixedBounceArcHeight + characterHeightModifier + (isInvincibleToObstacles ? 1.2f : 0f);
+        public float CurrentBounceArcHeight => fixedBounceArcHeight + characterHeightModifier + (isInvincibleToObstacles ? 1.2f : 0f) + GetCurrentLilyHeightBonus();
+
+        public float GetCurrentLilyHeightBonus()
+        {
+            if (lilyBonusRemainingTurns == 3) return 0.5f;
+            if (lilyBonusRemainingTurns == 2) return 0.3f;
+            if (lilyBonusRemainingTurns == 1) return 0.1f;
+            return 0f;
+        }
 
         private Rigidbody rb;
         private Vector3 cycleStartPos;
@@ -443,6 +454,29 @@ namespace SkippingStones.Arcade
                         currentActiveBuff = null;
                     }
                 }
+            }
+
+            // 🪷 연잎(Lily Pad) 착수 판정 (착수 반경 1.6m 이내에 LilyPad가 있을 때 3턴 보너스 충전)
+            Collider[] nearbyCols = Physics.OverlapSphere(transform.position, 1.6f);
+            LilyPad steppedLily = null;
+            for (int i = 0; i < nearbyCols.Length; i++)
+            {
+                steppedLily = nearbyCols[i].GetComponentInParent<LilyPad>() ?? nearbyCols[i].GetComponent<LilyPad>();
+                if (steppedLily != null) break;
+            }
+
+            if (steppedLily != null)
+            {
+                steppedLily.OnStepped();
+                lilyBonusRemainingTurns = 3;
+                momentumDelta += 10f; // 모멘텀 보너스
+            }
+
+            if (lilyBonusRemainingTurns > 0)
+            {
+                float bonus = GetCurrentLilyHeightBonus();
+                grade += $"\n🪷 LILY HOP! (+{bonus:F1}m)";
+                lilyBonusRemainingTurns--;
             }
 
             currentMomentum = Mathf.Clamp(currentMomentum + momentumDelta, 0f, maxMomentum);
