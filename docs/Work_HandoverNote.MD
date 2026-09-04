@@ -53,12 +53,26 @@
   - `SkippingStone.cs`: 3대 모듈과 완벽 연동하면서 기존 이벤트(`OnSkipBounced`, `OnStoneSunk`) 및 갓모드, 텔레메트리 디버그 마커 100% 하위 호환 유지.
   - **인엔진 검증**: Unity MCP `Unity_RunCommand`를 통해 모듈 단위 테스트 및 수면 근처 착수 바운스 시뮬레이션 전수 통과 확인 (PERFECT 판정, 속도 (0, 5, 10.8), 모멘텀 8.0).
 
+### ✅ 9. 🌊 RiverSpawner 모듈화 및 책임 분리 (RiverWaterValidator, RiverEntityFactory, RiverChunkPlacementStrategy)
+- **배경 및 원인**:
+  - 1,000줄 이상의 대형 과밀 파일이었던 `RiverSpawner.cs`에 수면 지형 레이캐스트 검증, 섬 분기 수로 스캔, 프리팹 인스턴스화, 지형 적응형 지그재그 배치 알고리즘이 뒤섞여 있어 모듈 분리 및 단일 책임 원칙(SRP) 확립 요구.
+- **해결 내역**:
+  - `RiverWaterValidator.cs`: 초고도 250m `RaycastAll` 기반 수심(waterDepth >= 0.35m) 검증, 섬 분기 수로 검출(`DetectSplitWaterChannels`), 겹침 방지(`HasNearbySpawnedEntity`) 캡슐화.
+  - `RiverEntityFactory.cs`: 10종 물고기, 부스트 패드, 랜덤 링, 바위, 과녁, 깃발, 연꽃 생성 및 프리팹 로드 캡슐화.
+  - `RiverChunkPlacementStrategy.cs`: 곡선 스플라인 및 강폭별(협곡/중형/대형) 지그재그 분산 배치 알고리즘 분리.
+  - `RiverSpawner.cs`: 씬 내 청크 이벤트 및 모드별 생성을 오케스트레이션하는 경량 컴포넌트로 재구성.
+  - **인엔진 검증**: Unity MCP `Unity_RunCommand`를 통해 `RiverWaterValidator`, `RiverEntityFactory`, `RiverSpawner` 전수 인엔진 테스트 통과 확인.
+
 ---
 
 ## 2. 📁 수정된 주요 파일 및 골든 스크립트 동기화 현황
 
 | 분류 | 수정 파일 경로 | 골든 스냅샷 동기화 |
 | :--- | :--- | :--- |
+| **River Spawner** | `Assets/Scripts/Gameplay/RiverSpawner.cs` | `docs/golden_scripts/RiverSpawner.cs.txt` |
+| **Water Validator** | `Assets/Scripts/Gameplay/Spawners/RiverWaterValidator.cs` | 신규 분리 완료 |
+| **Entity Factory** | `Assets/Scripts/Gameplay/Spawners/RiverEntityFactory.cs` | 신규 분리 완료 |
+| **Placement Strategy** | `Assets/Scripts/Gameplay/Spawners/RiverChunkPlacementStrategy.cs` | 신규 분리 완료 |
 | **Skipping Stone** | `Assets/Scripts/Gameplay/SkippingStone.cs` | `docs/golden_scripts/SkippingStone.cs.txt` |
 | **Physics Calculator** | `Assets/Scripts/Gameplay/Calculators/StonePhysicsCalculator.cs` | 신규 분리 완료 |
 | **Timing Evaluator** | `Assets/Scripts/Gameplay/StoneTimingEvaluator.cs` | 신규 분리 완료 |
@@ -69,7 +83,6 @@
 | **Score Calculator** | `Assets/Scripts/Gameplay/Calculators/MatchScoreCalculator.cs` | 신규 분리 완료 |
 | **Arcade Stone** | `Assets/Scripts/Arcade/ArcadeSkippingStone.cs` | `docs/golden_scripts/ArcadeSkippingStone.cs.txt` |
 | **Random Ring** | `Assets/Scripts/Arcade/RandomRing.cs` | `docs/golden_scripts/RandomRing.cs.txt` |
-| **Spawner** | `Assets/Scripts/Gameplay/RiverSpawner.cs` | `docs/golden_scripts/RiverSpawner.cs.txt` |
 | **Fish Data** | `Assets/Scripts/Gameplay/FishData.cs` | `docs/golden_scripts/FishData.cs.txt` |
 | **Fish AI** | `Assets/Scripts/Gameplay/JumpingFish.cs` | `docs/golden_scripts/JumpingFish.cs.txt` |
 | **Aquarium** | `Assets/Scripts/Data/AquariumManager.cs` | `docs/golden_scripts/AquariumManager.cs.txt` |
@@ -79,7 +92,7 @@
 ## 3. 🛡️ 검증 및 빌드 상태
 
 - **Unity C# 컴파일**: `0 Errors, 0 Warnings` 완벽 통과.
-- **Unity MCP 인엔진 단위/통합 테스트**: `StonePhysicsCalculator`, `StoneTimingEvaluator`, `WaterReflectionShadowController`, `SkippingStone` 바운스 시뮬레이션 전수 통과.
+- **Unity MCP 인엔진 단위/통합 테스트**: `RiverSpawner`, `RiverWaterValidator`, `RiverEntityFactory`, `SkippingStone`, `StonePhysicsCalculator`, `StoneTimingEvaluator` 전수 통과.
 - **Console Log**: 에러 및 예외 0개 확인.
 
 ---

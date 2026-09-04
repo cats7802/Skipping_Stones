@@ -1,9 +1,10 @@
 using UnityEngine;
 using System.Collections.Generic;
+using SkippingStones.Gameplay.Spawners;
 
 public class RiverSpawner : MonoBehaviour
 {
-    [Header("?¤í° ?¤ì •")]
+    [Header("ìŠ¤í° ì„¤ì •")]
     public float riverLength = 4800f;
     public float riverWidth = 50f;
     public float riverWaterMinX = -28f;
@@ -11,18 +12,51 @@ public class RiverSpawner : MonoBehaviour
     public Vector3 startBankPos = Vector3.zero;
     public Vector3 spawnDirection = Vector3.forward;
 
-    [Header("?ˆì´ìºìŠ¤??ê²€ì¦?)]
-    [Tooltip("?…ì† ?¤í° ë°©ì????ˆì´ìºìŠ¤???€???ˆì´??(Default ì²´í¬)")]
-    public LayerMask groundLayerMask = 1; // Default layer
-    public float raycastHeight = 20f;      // ?„ì—???˜ëŠ” ?ˆì´ ?œì‘ ?’ì´
+    [Header("ë ˆì´ìºìŠ¤íŠ¸ ê²€ì¦")]
+    [Tooltip("ë•…ì† ìŠ¤í° ë°©ì§€ìš© ë ˆì´ìºìŠ¤íŠ¸ ëŒ€ìƒ ë ˆì´ì–´ (Default ì²´í¬)")]
+    public LayerMask groundLayerMask = 1;
+    public float raycastHeight = 20f;
 
     public float startBankX { get => startBankPos.x; set => startBankPos.x = value; }
     public float bankZ { get => startBankPos.z; set => startBankPos.z = value; }
 
+    [Header("ìŠ¤í° í”„ë¦¬íŒ¹ ìŠ¬ë¡¯ (ì¸ìŠ¤í™í„° ë“œë˜ê·¸&ë“œë¡­)")]
+    [Tooltip("ê°€ì† ë¶€ìŠ¤íŠ¸ íŒ¨ë“œ í”„ë¦¬íŒ¹")]
+    public GameObject boostPadPrefab;
+    [Tooltip("ğŸŒ€ ë¦¬ë“¬ ì•„ì¼€ì´ë“œ ì „ìš© ëœë¤ ë§ í”„ë¦¬íŒ¹")]
+    public GameObject randomRingPrefab;
+    [Tooltip("ì¥ì• ë¬¼ ë°”ìœ„ í”„ë¦¬íŒ¹")]
+    public GameObject obstacleRockPrefab;
+    [Tooltip("íƒ€ê²Ÿ ê³¼ë… í”„ë¦¬íŒ¹")]
+    public GameObject targetZonePrefab;
+    [Tooltip("ì¹œêµ¬ ë­í‚¹ ê¹ƒë°œ í”„ë¦¬íŒ¹")]
+    public GameObject friendFlagPrefab;
+    [Tooltip("í† ì¢… ê°•ë¬¼ê³ ê¸° 10ì¢… í”„ë¦¬íŒ¹ ë°°ì—´")]
+    public GameObject[] fishPrefabs = new GameObject[10];
+    [Tooltip("ì—°ì/ì—°ê½ƒ êµ°ë½ í”„ë¦¬íŒ¹")]
+    public GameObject lilyPadClusterPrefab;
+
+    private readonly RiverEntityFactory entityFactory = new RiverEntityFactory();
+    private GameController.GameMode currentSpawningMode = GameController.GameMode.LongDistance;
+
+    private void Awake()
+    {
+        SyncFactoryPrefabs();
+    }
+
+    private void SyncFactoryPrefabs()
+    {
+        entityFactory.boostPadPrefab = boostPadPrefab;
+        entityFactory.randomRingPrefab = randomRingPrefab;
+        entityFactory.obstacleRockPrefab = obstacleRockPrefab;
+        entityFactory.targetZonePrefab = targetZonePrefab;
+        entityFactory.friendFlagPrefab = friendFlagPrefab;
+        entityFactory.fishPrefabs = fishPrefabs;
+        entityFactory.lilyPadClusterPrefab = lilyPadClusterPrefab;
+    }
+
     private void Start()
     {
-        // ?€?´í?/ë¡œë¹„?ì„œ???„ë¬´???¤í°???¤í–‰?˜ì? ?Šê³  ?€ê¸?
-        // BG ì²?¬ ë¦´ë ˆ??ì½œë°± êµ¬ë…: ?¸ê²Œ??ì¤???ì²?¬ êµ¬ê°„???¤í°/?„í‚¹?????´ë‹¹ êµ¬ê°„ ?”í‹°???¬ìŠ¤??
         if (LakeEnvironmentManager.Instance != null)
         {
             LakeEnvironmentManager.Instance.OnChunkSpawned += HandleChunkSpawned;
@@ -53,12 +87,9 @@ public class RiverSpawner : MonoBehaviour
         }
         else
         {
-            // LongDistance ë°?RhythmArcade ëª¨ë“œ??ê°•ì¤„ê¸??¥ê±°ë¦??”í‹°???¤í° (?€ê¹?ë¶€???œì™¸)
             GenerateLongDistanceRiver();
         }
     }
-
-    private GameController.GameMode currentSpawningMode = GameController.GameMode.LongDistance;
 
     public void GenerateRiverEntities()
     {
@@ -73,9 +104,6 @@ public class RiverSpawner : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// ?˜ë©´ ?¤ë¸Œ?íŠ¸(WaterSurface / Water_Surface)ë¡œë????¤ì‹œê°?ê°€ë¡œí­(minX, maxX), ?¸ë¡œê¸¸ì´(minZ, maxZ)?€ ?˜ë©´ ?’ì´(waterY)ë¥?100% ? ë¢°???ˆê²Œ ?ë“
-    /// </summary>
     public bool GetWaterColliderBounds(out float minX, out float maxX, out float minZ, out float maxZ, out float waterY)
     {
         BoxCollider bc = null;
@@ -109,7 +137,6 @@ public class RiverSpawner : MonoBehaviour
             return true;
         }
 
-        // BoxColliderê°€ ?†ì„ ê²½ìš° ?ˆì „ ?´ë°± (Transform / default 0)
         minX = -100f;
         maxX = 100f;
         minZ = 0f;
@@ -134,21 +161,16 @@ public class RiverSpawner : MonoBehaviour
         return waterY;
     }
 
-    /// <summary>
-    /// ?† ?¥ê±°ë¦?& ë¦¬ë“¬ ?„ì??´ë“œ ëª¨ë“œ: ?œì„±?”ëœ ëª¨ë“  ì²?¬??ë¬¼ê¸¸ êµ¬ê°„???”í‹°???¼ê´„ ?¤í°
-    /// </summary>
     private void GenerateLongDistanceRiver()
     {
         ClearExistingEntities();
         Physics.SyncTransforms();
 
-        // ?ŒŸ [?µì‹¬] ì²?¬ê°€ ë¡œë“œ/?¬êµ¬?±ëœ ?íƒœ?ì„œ ê¸€ë¡œë²Œ ?¤í”Œ?¼ì¸ ì²´ì¸ ìµœì‹ ??ë³´ì¥
         if (SkippingStones.Terrain.GlobalRiverPath.Instance != null)
         {
             SkippingStones.Terrain.GlobalRiverPath.Instance.RebuildPath();
         }
 
-        // ?ŒŸ LakeEnvironmentManager??ë¡œë“œ??ëª¨ë“  ì²?¬(0ë²? 1ë²? 2ë²?..)???€???¼ê´„ ?¤í° ?¤í–‰
         if (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.DynamicChunks != null && LakeEnvironmentManager.Instance.DynamicChunks.Count > 0)
         {
             for (int i = 0; i < LakeEnvironmentManager.Instance.DynamicChunks.Count; i++)
@@ -163,16 +185,13 @@ public class RiverSpawner : MonoBehaviour
             return;
         }
 
-        // ?¨ì¼ ì²?¬ ?´ë°±
         SpawnChunkEntities(0, null, 0f);
     }
 
-    /// <summary>
-    /// ?¯ ?€ê²?ë§ì¶”ê¸?ëª¨ë“œ: ?¸ìˆ˜ ?„ì²´ ?˜ë©´ ê³ ë¥¸ ?„ì—­ ?œë¤ ë°°ì¹˜
-    /// </summary>
     private void GenerateTargetAccuracyRiver()
     {
         ClearExistingEntities();
+        SyncFactoryPrefabs();
 
         if (SkippingStones.Terrain.GlobalRiverPath.Instance != null)
         {
@@ -184,7 +203,6 @@ public class RiverSpawner : MonoBehaviour
         startBankPos = new Vector3((minX + maxX) * 0.5f, curWaterY, minZ);
         spawnDirection = Vector3.forward;
 
-        // 1. ?¯ ?Œë¡œ???€ê²?ê³¼ë… (Floating Target Rings) ?˜ë©´ ?„ì²´ ë¶„ì‚° ë°°ì¹˜
         float[] targetLanes = { minX * 0.7f, minX * 0.3f, 0f, maxX * 0.3f, maxX * 0.7f };
         for (float z = minZ + 50f; z < endZ - 50f; z += 55f)
         {
@@ -194,48 +212,42 @@ public class RiverSpawner : MonoBehaviour
                 {
                     float xPos = targetLanes[col] + Random.Range(-3f, 3f);
                     float zPos = z + Random.Range(-12f, 12f);
-                    CreateTargetRing(new Vector3(xPos, curWaterY + 0.04f, zPos));
+                    entityFactory.CreateTargetRing(transform, new Vector3(xPos, curWaterY + 0.04f, zPos));
                 }
             }
         }
 
-        // 2. ?? ê°€??ë¶€?¤íŠ¸ ?¨ë“œ ?˜ë©´ ?„ì—­ ë°°ì¹˜
         for (float z = minZ + 50f; z < endZ - 60f; z += 60f)
         {
             float x1 = Random.Range(minX * 0.8f, minX * 0.2f);
             float x2 = Random.Range(maxX * 0.2f, maxX * 0.8f);
-            CreateBoostPad(new Vector3(x1, curWaterY + 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
-            CreateBoostPad(new Vector3(x2, curWaterY + 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
+            entityFactory.CreateBoostPad(transform, new Vector3(x1, curWaterY + 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
+            entityFactory.CreateBoostPad(transform, new Vector3(x2, curWaterY + 0.05f, z + Random.Range(-10f, 10f)), Quaternion.identity);
         }
 
-        // 3. ?Ÿ ?€?´ì˜¤ë¥´ëŠ” ë¬¼ê³ ê¸?(Jumping Fish) ?˜ë©´ ?„ì—­ ë°°ì¹˜
         for (float z = minZ + 45f; z < endZ - 50f; z += 45f)
         {
             float xPos = Random.Range(minX * 0.85f, maxX * 0.85f);
-            SpawnSingleFish(new Vector3(xPos, curWaterY, z + Random.Range(-10f, 10f)), z);
+            entityFactory.SpawnSingleFish(transform, new Vector3(xPos, curWaterY, z + Random.Range(-10f, 10f)), z);
         }
 
-        // 4. ?ª¨ ?¥ì• ë¬?ë°”ìœ„ ?˜ë©´ ?„ì—­ ë°°ì¹˜
         for (float z = minZ + 60f; z < endZ - 50f; z += 50f)
         {
             float xPos = Random.Range(minX * 0.9f, maxX * 0.9f);
-            CreateObstacleRock(new Vector3(xPos, curWaterY, z + Random.Range(-12f, 12f)));
+            entityFactory.CreateObstacleRock(transform, new Vector3(xPos, curWaterY, z + Random.Range(-12f, 12f)));
         }
 
-        // 5. ?š© ì¹œêµ¬ ê±°ë¦¬ ê¹ƒë°œ
-        string[] friends = { "?¼ì´??(3??", "?´í”¼ì¹?(2??", "?„ë¡œ??(1??", "ì½?(?„ì„¤)" };
+        string[] friends = { "ë¼ì´ì–¸ (3ìœ„)", "ì–´í”¼ì¹˜ (2ìœ„)", "í”„ë¡œë„ (1ìœ„)", "ì½˜ (ì „ì„¤)" };
         float[] friendZDistances = { 120f, 310f, 580f, 920f, 1200f };
         for (int i = 0; i < friends.Length; i++)
         {
             float zPos = friendZDistances[i];
             if (zPos < minZ + 40f || zPos > endZ - 40f) continue;
             float xSide = (i % 2 == 0) ? minX * 0.6f : maxX * 0.6f;
-            CreateFriendFlag(new Vector3(xSide, curWaterY, zPos), friends[i], $"{i + 1}??, zPos);
+            entityFactory.CreateFriendFlag(transform, new Vector3(xSide, curWaterY, zPos), friends[i], $"{i + 1}ìœ„", zPos);
         }
 
-        // 6. ?ª· ?ì„±???°ì ë°??°ê½ƒ êµ°ë½
         CreateLilyPadsGrid(minX, maxX, minZ + 20f, endZ - 20f, curWaterY);
-        CleanupOldGroundObjects();
     }
 
     private void ClearExistingEntities()
@@ -246,265 +258,6 @@ public class RiverSpawner : MonoBehaviour
         }
     }
 
-    [Header("?¤í° ?„ë¦¬???¬ë¡¯ (?¸ìŠ¤?™í„° ?œë˜ê·??œë¡­)")]
-    [Tooltip("ê°€??ë¶€?¤íŠ¸ ?¨ë“œ ?„ë¦¬??)]
-    public GameObject boostPadPrefab;
-    [Tooltip("?? ë¦¬ë“¬ ?„ì??´ë“œ ?„ìš© ?œë¤ ë§??„ë¦¬??)]
-    public GameObject randomRingPrefab;
-    [Tooltip("?¥ì• ë¬?ë°”ìœ„ ?„ë¦¬??)]
-    public GameObject obstacleRockPrefab;
-    [Tooltip("?€ê²?ê³¼ë… ?„ë¦¬??)]
-    public GameObject targetZonePrefab;
-    [Tooltip("ì¹œêµ¬ ??‚¹ ê¹ƒë°œ ?„ë¦¬??)]
-    public GameObject friendFlagPrefab;
-    [Tooltip("? ì¢… ê°•ë¬¼ê³ ê¸° 10ì¢??„ë¦¬??ë°°ì—´")]
-    public GameObject[] fishPrefabs = new GameObject[10];
-    [Tooltip("?°ì/?°ê½ƒ êµ°ë½ ?„ë¦¬??)]
-    public GameObject lilyPadClusterPrefab;
-
-    private void EnsurePrefabsLoaded()
-    {
-#if UNITY_EDITOR
-        if (boostPadPrefab == null) boostPadPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/BoostPad.prefab");
-        if (randomRingPrefab == null) randomRingPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/Ingame_Object/Random_Ring.fbx");
-        if (obstacleRockPrefab == null) obstacleRockPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/ObstacleRock.prefab");
-        if (targetZonePrefab == null) targetZonePrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/TargetZone.prefab");
-        if (friendFlagPrefab == null) friendFlagPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/FriendFlag.prefab");
-        if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/prefab/BG_Deco/LilyPadCluster.prefab");
-
-        for (int i = 1; i <= 10; i++)
-        {
-            if (fishPrefabs[i - 1] == null)
-            {
-                string p = $"Assets/Resources/FishPrefabs/River_Fish_{i:D2}.prefab";
-                fishPrefabs[i - 1] = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(p);
-            }
-        }
-#endif
-        if (boostPadPrefab == null) boostPadPrefab = Resources.Load<GameObject>("BoostPad");
-        if (randomRingPrefab == null) randomRingPrefab = Resources.Load<GameObject>("Random_Ring");
-        if (obstacleRockPrefab == null) obstacleRockPrefab = Resources.Load<GameObject>("ObstacleRock");
-        if (targetZonePrefab == null) targetZonePrefab = Resources.Load<GameObject>("TargetZone");
-        if (friendFlagPrefab == null) friendFlagPrefab = Resources.Load<GameObject>("FriendFlag");
-        if (lilyPadClusterPrefab == null) lilyPadClusterPrefab = Resources.Load<GameObject>("LilyPadCluster");
-
-        for (int i = 1; i <= 10; i++)
-        {
-            if (fishPrefabs[i - 1] == null)
-            {
-                fishPrefabs[i - 1] = Resources.Load<GameObject>($"FishPrefabs/River_Fish_{i:D2}");
-            }
-        }
-    }
-
-    private void CreateTargetRing(Vector3 pos)
-    {
-        EnsurePrefabsLoaded();
-        if (targetZonePrefab != null)
-        {
-            GameObject obj = Instantiate(targetZonePrefab, pos, Quaternion.identity, transform);
-            obj.name = $"TargetZone_{pos.x:F0}x{pos.z:F0}";
-        }
-        else
-        {
-            GameObject ring = new GameObject($"TargetZone_{pos.x:F0}x{pos.z:F0}");
-            ring.transform.SetParent(transform);
-            ring.transform.position = pos;
-            ring.AddComponent<FloatingTargetZone>();
-        }
-    }
-
-    private void CreateBoostPad(Vector3 pos, Quaternion rot)
-    {
-        EnsurePrefabsLoaded();
-        if (boostPadPrefab != null)
-        {
-            GameObject obj = Instantiate(boostPadPrefab, pos, rot, transform);
-            obj.name = $"BoostPad_{pos.x:F0}x{pos.z:F0}";
-        }
-        else
-        {
-            GameObject pad = new GameObject($"BoostPad_{pos.x:F0}x{pos.z:F0}");
-            pad.transform.SetParent(transform);
-            pad.transform.position = pos;
-            pad.transform.rotation = rot;
-            pad.AddComponent<BoostPad>();
-        }
-    }
-
-    private void CreateRandomRing(Vector3 pos, Quaternion rot)
-    {
-        EnsurePrefabsLoaded();
-        GameObject ringObj = new GameObject($"RandomRing_{pos.x:F0}x{pos.z:F0}");
-        ringObj.transform.SetParent(transform);
-        ringObj.transform.position = pos;
-        ringObj.transform.rotation = rot;
-        ringObj.AddComponent<SkippingStones.Arcade.RandomRing>();
-    }
-
-    private void CreateObstacleRock(Vector3 pos)
-    {
-        EnsurePrefabsLoaded();
-        if (obstacleRockPrefab != null)
-        {
-            GameObject obj = Instantiate(obstacleRockPrefab, pos, Quaternion.identity, transform);
-            obj.name = $"ObstacleRock_{pos.x:F0}x{pos.z:F0}";
-        }
-        else
-        {
-            GameObject rock = new GameObject($"ObstacleRock_{pos.x:F0}x{pos.z:F0}");
-            rock.transform.SetParent(transform);
-            rock.transform.position = pos;
-            rock.AddComponent<ObstacleRock>();
-        }
-    }
-
-    private void CreateFriendFlag(Vector3 pos, string name, string rank, float targetDist)
-    {
-        EnsurePrefabsLoaded();
-        GameObject flagObj;
-        if (friendFlagPrefab != null)
-        {
-            flagObj = Instantiate(friendFlagPrefab, pos, Quaternion.identity, transform);
-            flagObj.name = $"FriendFlag_{name}_{pos.z:F0}";
-        }
-        else
-        {
-            flagObj = new GameObject($"FriendFlag_{name}_{pos.z:F0}");
-            flagObj.transform.SetParent(transform);
-            flagObj.transform.position = pos;
-            flagObj.AddComponent<FriendFlag>();
-        }
-
-        FriendFlag ff = flagObj.GetComponent<FriendFlag>();
-        if (ff != null)
-        {
-            ff.friendName = name;
-            ff.rankText = rank;
-            ff.targetDistance = targetDist;
-        }
-    }
-
-    private void SpawnSingleFish(Vector3 pos, float dist)
-    {
-        EnsurePrefabsLoaded();
-
-        // 10ì¢?ë¬¼ê³ ê¸??„ë¦¬??ì¤?ê±°ë¦¬?€ ?œë¤?±ì„ ê³ ë ¤?˜ì—¬ ? íƒ
-        // ?ìª½?€ ??ì¤‘í˜• ?´ì¢…(1~5ë²?, ?¤ìª½?¼ë¡œ ê°ˆìˆ˜ë¡??€???´ì¢…(6~10ë²? ?•ë¥  ì¦ê?
-        int minFishIdx = 0;
-        int maxFishIdx = 9;
-
-        if (dist < 150f)
-        {
-            minFishIdx = 0; // ë²„ë“¤ì¹?
-            maxFishIdx = 3; // ?€??
-        }
-        else if (dist < 400f)
-        {
-            minFishIdx = 1; // ?¼ë¼ë¯?
-            maxFishIdx = 6; // ?˜ê?ë¦?
-        }
-        else if (dist < 800f)
-        {
-            minFishIdx = 3; // ?€??
-            maxFishIdx = 8; // ë¬´ì?ê°œì†¡??
-        }
-        else
-        {
-            minFishIdx = 4; // ?°ì²œ??
-            maxFishIdx = 9; // ê°•ì?ì¹?
-        }
-
-        int chosenIdx = Random.Range(minFishIdx, maxFishIdx + 1);
-        GameObject chosenPrefab = (fishPrefabs != null && chosenIdx < fishPrefabs.Length) 
-            ? fishPrefabs[chosenIdx] 
-            : null;
-
-        GameObject fishObj;
-        if (chosenPrefab != null)
-        {
-            fishObj = Instantiate(chosenPrefab, pos, Quaternion.identity, transform);
-            fishObj.name = $"Fish_{chosenIdx + 1:D2}_{pos.x:F0}x{pos.z:F0}";
-        }
-        else
-        {
-            fishObj = new GameObject($"Fish_{chosenIdx + 1:D2}_{pos.x:F0}x{pos.z:F0}");
-            fishObj.transform.SetParent(transform);
-            fishObj.transform.position = pos;
-            fishObj.AddComponent<JumpingFish>();
-        }
-
-        JumpingFish jf = fishObj.GetComponent<JumpingFish>();
-        if (jf != null)
-        {
-            FishSpeciesData preset = FishPresetDatabase.GetPreset(chosenIdx + 1);
-            jf.fishIndex = preset.index;
-            jf.speciesId = preset.id;
-            jf.speciesName = preset.nameKor;
-            jf.jumpHeight = Random.Range(preset.minJumpHeight, preset.maxJumpHeight);
-            jf.jumpDuration = preset.jumpDuration;
-            // ?Ÿ ê°œì²´ë³?1.0 ~ 2.5 ë²”ìœ„???œì›?˜ê³  ?ˆì— ???„ëŠ” ?¤ì????ìš©
-            float randomVariation = Random.Range(0.95f, 1.1f);
-            jf.scaleFactor = Mathf.Clamp(preset.scaleFactor * randomVariation, 1.0f, 2.6f);
-            jf.rewardCoins = preset.rewardCoins;
-        }
-    }
-
-    private void CreateLilyPadsGrid(float minX, float maxX, float minZ, float maxZ, float waterY)
-    {
-        EnsurePrefabsLoaded();
-        for (float z = minZ; z < maxZ; z += Random.Range(20f, 35f))
-        {
-            float x1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-            float x2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-            float x3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-
-            Vector3 p1 = new Vector3(x1, waterY + 0.04f, z + Random.Range(-5f, 5f));
-            Vector3 p2 = new Vector3(x2, waterY + 0.04f, z + Random.Range(-5f, 5f));
-            Vector3 p3 = new Vector3(x3, waterY + 0.04f, z + Random.Range(-5f, 5f));
-
-            if (IsValidWaterPosition(p1)) SpawnSingleLilyCluster(p1);
-            if (IsValidWaterPosition(p2)) SpawnSingleLilyCluster(p2);
-            if (IsValidWaterPosition(p3)) SpawnSingleLilyCluster(p3);
-        }
-    }
-
-    private void SpawnSingleLilyCluster(Vector3 centerPos)
-    {
-        EnsurePrefabsLoaded();
-        if (lilyPadClusterPrefab != null)
-        {
-            GameObject cluster = Instantiate(lilyPadClusterPrefab, centerPos, Quaternion.identity, transform);
-            cluster.name = $"LilyCluster_{centerPos.x:F0}x{centerPos.z:F0}";
-        }
-    }
-
-
-
-    private void CleanupOldGroundObjects()
-    {
-        var allObjects = Resources.FindObjectsOfTypeAll<GameObject>();
-        foreach (var obj in allObjects)
-        {
-            if (obj != null && obj.name.StartsWith("PineTree_Sunset"))
-            {
-                SafeDestroy(obj);
-            }
-        }
-    }
-
-    // ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
-    // ?ŒŠ BG ì²?¬ ë¦´ë ˆ???°ë™: ??1500m ?˜ë©´ êµ¬ê°„ ?™ì  ?”í‹°???¬ìŠ¤??
-    // ?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€?€
-
-    /// <summary>
-    /// ?ŒŸ ??ë§?ì²?¬ê°€ ?ì„±(?¤íŠ¸ë¦¬ë°)?????¸ì¶œ??
-    /// ?ˆë¡œ ?ì„±??chunkStartZ ~ chunkStartZ+chunkSize êµ¬ê°„?ë§Œ ?•í™•???”í‹°???¤í°.
-    /// </summary>
-    /// <summary>
-    /// ?ŒŸ ??ë§?ì²?¬ê°€ ?ì„±(?¤íŠ¸ë¦¬ë°)?????¸ì¶œ??
-    /// ?´ë‹¹ ì²?¬ ê°ì²´??ë² ì´?¹ëœ ê³¡ì„  êµ¬ê°„(startDist ~ endDist)???”í‹°???•ë? ?¤í°.
-    /// </summary>
     public void SpawnChunkEntities(float chunkStartZ)
     {
         SpawnChunkEntities(-1, null, chunkStartZ);
@@ -513,6 +266,7 @@ public class RiverSpawner : MonoBehaviour
     public void SpawnChunkEntities(int chunkIndex, GameObject chunkObj, float chunkStartZ)
     {
         Physics.SyncTransforms();
+        SyncFactoryPrefabs();
 
         float chunkSize = (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 10f)
             ? LakeEnvironmentManager.Instance.autoChunkSize
@@ -521,8 +275,6 @@ public class RiverSpawner : MonoBehaviour
         float chunkEndZ = chunkStartZ + chunkSize;
         float curWaterY = GetCurrentWaterLevel();
 
-        // ?ŒŸ [?µì‹¬] ?¤í”Œ?¼ì¸ ê³¡ì„  ê±°ë¦¬ ?ë“:
-        // chunkObj ?ëŠ” chunkIndexë¥??µí•´ ?´ë‹¹ ì²?¬???¤ì œ ?¤í”Œ?¼ì¸ ?œì‘~??ê±°ë¦¬ë¥?100% ?•ë? ë§¤ì¹­
         float curveStartDist = chunkStartZ;
         float curveEndDist = chunkEndZ;
         bool hasRiverPath = false;
@@ -549,7 +301,6 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        // ?´ë‹¹ ì²?¬ ë²”ìœ„??ê¸°ì¡´ ?”í‹°???œê±°
         for (int i = transform.childCount - 1; i >= 0; i--)
         {
             Transform child = transform.GetChild(i);
@@ -561,412 +312,8 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        // Water_Surface BoxColliderë¡œë????¤ì œ ?˜ë©´ ê°€ë¡œí­ ë°??’ì´ ?™ì  ?ë“
         GetWaterColliderBounds(out float minX, out float maxX, out curWaterY);
 
-        // 1. ?? ê°€??ë¶€?¤íŠ¸ ?¨ë“œ / ?œë¤ ë§?(ê°ˆë¼ì§??‘ìª½ ë¬¼ê¸¸ ë°?ê³¡ì„  ê°•í­ ë¹„ë? ?ì‘???¤í° - ? ê¸°??ì§€ê·¸ì¬ê·??ë’¤ ë¶„ì‚°)
-        for (float z = curveStartDist + 35f; z < curveEndDist - 35f; z += Random.Range(35f, 65f))
-        {
-            if (hasRiverPath && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
-            {
-                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
-
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.6f, 30f), wY + 0.05f);
-
-                if (splitChannels.Count > 1)
-                {
-                    for (int chIdx = 0; chIdx < splitChannels.Count; chIdx++)
-                    {
-                        // ë¶„ê¸° ë¬¼ê¸¸ë§ˆë‹¤ ?ë’¤ë¡?ì§€ê·¸ì¬ê·?ê±°ë¦¬ ?¤í”„???ìš©
-                        float offsetZ = z + (chIdx % 2 == 0 ? Random.Range(-6f, 2f) : Random.Range(4f, 10f));
-                        if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(offsetZ, out Vector3 chEvalPos, out Vector3 chEvalTan, out _, out float chWY))
-                        {
-                            Vector3 chEvalNormal = Vector3.Cross(Vector3.up, chEvalTan).normalized;
-                            float lateralOffset = (chIdx == 0) ? -halfW * 0.5f : halfW * 0.5f;
-                            Vector3 chPos = chEvalPos + chEvalNormal * lateralOffset;
-                            chPos.y = chWY + 0.05f;
-                            TrySpawnBoostPad(chPos, chEvalTan);
-                        }
-                        else
-                        {
-                            TrySpawnBoostPad(splitChannels[chIdx], tan);
-                        }
-                    }
-                }
-                else
-                {
-                    float effectiveWidth = halfW * 2f;
-                    if (effectiveWidth < 15f)
-                    {
-                        // ?‘ê³¡: ?ë’¤ ?œë¤ ?¤í”„???ìš© ???¨ì¼ ?¤í°
-                        float offsetZ = z + Random.Range(-5f, 5f);
-                        if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(offsetZ, out Vector3 evalPos, out Vector3 evalTan, out _, out float evalWY))
-                        {
-                            Vector3 evalNormal = Vector3.Cross(Vector3.up, evalTan).normalized;
-                            Vector3 midPos = evalPos + evalNormal * Random.Range(-1.5f, 1.5f);
-                            midPos.y = evalWY + 0.05f;
-                            TrySpawnBoostPad(midPos, evalTan);
-                        }
-                        else
-                        {
-                            Vector3 midPos = cPos + normal * Random.Range(-1.5f, 1.5f);
-                            midPos.y = wY + 0.05f;
-                            TrySpawnBoostPad(midPos, tan);
-                        }
-                    }
-                    else if (effectiveWidth < 25f)
-                    {
-                        // ì¤‘í˜• ?? ì¢????¨ë“œê°€ ?¼ìê°€ ?˜ì? ?Šë„ë¡?ê°ê° ?¤ë¥¸ z ê±°ë¦¬?ì„œ ?¤í°
-                        float z1 = z - Random.Range(3f, 8f);
-                        float z2 = z + Random.Range(3f, 8f);
-
-                        if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z1, out Vector3 evalPos1, out Vector3 evalTan1, out float rw1, out float wy1))
-                        {
-                            Vector3 n1 = Vector3.Cross(Vector3.up, evalTan1).normalized;
-                            Vector3 p1 = evalPos1 - n1 * (rw1 * 0.45f * 0.5f);
-                            p1.y = wy1 + 0.05f;
-                            TrySpawnBoostPad(p1, evalTan1);
-                        }
-
-                        if (Random.value < 0.7f && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z2, out Vector3 evalPos2, out Vector3 evalTan2, out float rw2, out float wy2))
-                        {
-                            Vector3 n2 = Vector3.Cross(Vector3.up, evalTan2).normalized;
-                            Vector3 p2 = evalPos2 + n2 * (rw2 * 0.45f * 0.5f);
-                            p2.y = wy2 + 0.05f;
-                            TrySpawnBoostPad(p2, evalTan2);
-                        }
-                    }
-                    else
-                    {
-                        // ?€???? ì¢?ì¤??°ê? ?¼ì§? ì´ ?˜ì? ?Šë„ë¡?3ì§€?ì˜ z ê±°ë¦¬ë¥??„ì „??ë¹„ë™ê¸?ì§€ê·¸ì¬ê·?ë¶„ì‚°
-                        float zLeft = z - Random.Range(4f, 10f);
-                        float zMid = z + Random.Range(-3f, 3f);
-                        float zRight = z + Random.Range(4f, 10f);
-
-                        if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(zLeft, out Vector3 leftPos, out Vector3 leftTan, out float rwL, out float wyL))
-                        {
-                            Vector3 nL = Vector3.Cross(Vector3.up, leftTan).normalized;
-                            Vector3 posL = leftPos - nL * (rwL * 0.45f * 0.65f);
-                            posL.y = wyL + 0.05f;
-                            TrySpawnBoostPad(posL, leftTan);
-                        }
-
-                        if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(zMid, out Vector3 midPos, out Vector3 midTan, out float rwM, out float wyM))
-                        {
-                            Vector3 nM = Vector3.Cross(Vector3.up, midTan).normalized;
-                            Vector3 posM = midPos + nM * Random.Range(-rwM * 0.45f * 0.2f, rwM * 0.45f * 0.2f);
-                            posM.y = wyM + 0.05f;
-                            TrySpawnBoostPad(posM, midTan);
-                        }
-
-                        if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(zRight, out Vector3 rightPos, out Vector3 rightTan, out float rwR, out float wyR))
-                        {
-                            Vector3 nR = Vector3.Cross(Vector3.up, rightTan).normalized;
-                            Vector3 posR = rightPos + nR * (rwR * 0.45f * 0.65f);
-                            posR.y = wyR + 0.05f;
-                            TrySpawnBoostPad(posR, rightTan);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                float leftX = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-                float centerX = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-                float rightX = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-
-                TrySpawnBoostPad(new Vector3(leftX, curWaterY + 0.05f, z - Random.Range(4f, 8f)), Vector3.forward);
-                TrySpawnBoostPad(new Vector3(centerX, curWaterY + 0.05f, z + Random.Range(-3f, 3f)), Vector3.forward);
-                TrySpawnBoostPad(new Vector3(rightX, curWaterY + 0.05f, z + Random.Range(4f, 8f)), Vector3.forward);
-            }
-        }
-
-        // 2. ?ª¨ ?¥ì• ë¬?ë°”ìœ„ (ê°•í­ ë°?ë¶„ê¸° ë¬¼ê¸¸ ë¹„ë? ?µë¡œ ?•ë³´ ?¤í°)
-        for (float z = curveStartDist + 40f; z < curveEndDist - 30f; z += Random.Range(25f, 42f))
-        {
-            if (hasRiverPath && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
-            {
-                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
-
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.6f, 30f), wY);
-
-                if (splitChannels.Count > 1)
-                {
-                    foreach (var chPos in splitChannels)
-                    {
-                        if (Random.value < 0.6f)
-                        {
-                            Vector3 rockPos = chPos + normal * (Random.value < 0.5f ? -2f : 2f);
-                            rockPos.y = wY;
-                            TrySpawnObstacleRock(rockPos);
-                        }
-                    }
-                }
-                else
-                {
-                    float effectiveWidth = halfW * 2f;
-                    if (effectiveWidth < 15f)
-                    {
-                        if (Random.value < 0.5f)
-                        {
-                            float side = (Random.value < 0.5f) ? -halfW * 0.75f : halfW * 0.75f;
-                            Vector3 rockPos = cPos + normal * side;
-                            rockPos.y = wY;
-                            TrySpawnObstacleRock(rockPos);
-                        }
-                    }
-                    else
-                    {
-                        float offset = Random.Range(-halfW * 0.75f, halfW * 0.75f);
-                        Vector3 rockPos = cPos + normal * offset;
-                        rockPos.y = wY;
-                        TrySpawnObstacleRock(rockPos);
-                    }
-                }
-            }
-            else
-            {
-                float x = Random.Range(minX, maxX);
-                TrySpawnObstacleRock(new Vector3(x, curWaterY, z + Random.Range(-4f, 4f)));
-            }
-        }
-
-        // 3. ?Ÿ ë¬¼ê³ ê¸?(ê°ˆë¼ì§??‘ìª½ ë¬¼ê¸¸ ë°?ê°•í­ ?ì‘???¤í° - ê°œì²´ ???ì„± ë°°ì¹˜)
-        for (float z = curveStartDist + 25f; z < curveEndDist - 25f; z += Random.Range(20f, 42f))
-        {
-            if (hasRiverPath && SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
-            {
-                Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
-
-                List<Vector3> splitChannels = DetectSplitWaterChannels(cPos, normal, Mathf.Max(halfW * 1.6f, 30f), wY);
-
-                if (splitChannels.Count > 1)
-                {
-                    for (int chIdx = 0; chIdx < splitChannels.Count; chIdx++)
-                    {
-                        TrySpawnFish(splitChannels[chIdx], z + (chIdx * 6f));
-                        if (Random.value < 0.55f)
-                        {
-                            Vector3 sidePos = splitChannels[chIdx] + normal * Random.Range(-2.5f, 2.5f);
-                            TrySpawnFish(sidePos, z + (chIdx * 6f) + Random.Range(3f, 8f));
-                        }
-                    }
-                }
-                else
-                {
-                    float effectiveWidth = halfW * 2f;
-                    if (effectiveWidth < 15f)
-                    {
-                        Vector3 fPos = cPos + normal * Random.Range(-halfW * 0.5f, halfW * 0.5f);
-                        fPos.y = wY;
-                        TrySpawnFish(fPos, z);
-                    }
-                    else
-                    {
-                        Vector3 fPos1 = cPos - normal * (halfW * 0.65f);
-                        Vector3 fPos2 = cPos + normal * Random.Range(-halfW * 0.25f, halfW * 0.25f);
-                        Vector3 fPos3 = cPos + normal * (halfW * 0.65f);
-                        fPos1.y = wY;
-                        fPos2.y = wY;
-                        fPos3.y = wY;
-
-                        TrySpawnFish(fPos1, z);
-                        TrySpawnFish(fPos2, z + Random.Range(4f, 10f));
-                        TrySpawnFish(fPos3, z + Random.Range(8f, 16f));
-                    }
-                }
-            }
-            else
-            {
-                float x1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
-                float x2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
-                float x3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
-                TrySpawnFish(new Vector3(x1, curWaterY, z), z);
-                TrySpawnFish(new Vector3(x2, curWaterY, z + Random.Range(4f, 10f)), z);
-                TrySpawnFish(new Vector3(x3, curWaterY, z + Random.Range(8f, 16f)), z);
-            }
-        }
-
-        // 4. ?ª· ?°ì êµ°ë½ (ê°•ì¤„ê¸?ì¢Œìš° ê°€?¥ìë¦??˜ë©´???ì—°?¤ëŸ½ê²?ë°°ì¹˜)
-        if (hasRiverPath)
-        {
-            for (float z = curveStartDist + 15f; z < curveEndDist - 15f; z += Random.Range(25f, 45f))
-            {
-                if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
-                {
-                    Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
-                    float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
-
-                    float side = (Random.value < 0.5f) ? -halfW * Random.Range(0.65f, 0.9f) : halfW * Random.Range(0.65f, 0.9f);
-                    Vector3 lilyPos = cPos + normal * side;
-                    lilyPos.y = wY + 0.04f;
-
-                    if (IsValidWaterPosition(lilyPos, false))
-                    {
-                        SpawnSingleLilyCluster(lilyPos);
-                    }
-                }
-            }
-        }
-        else
-        {
-            CreateLilyPadsGrid(minX, maxX, chunkStartZ + 20f, chunkEndZ - 20f, curWaterY);
-        }
-    }
-
-    /// <summary>
-    /// ?ï¸??¹ì • ?¨ë©´(Distance)?ì„œ ?¬ìœ¼ë¡??¸í•´ ë¶„ë¦¬???¤ì¤‘ ?˜ë©´ ì±„ë„(Water Channels) ì¤‘ì‹¬??ê²€ì¶?
-    /// </summary>
-    private List<Vector3> DetectSplitWaterChannels(Vector3 centerPos, Vector3 normal, float maxScanWidth, float waterY)
-    {
-        List<Vector3> channels = new List<Vector3>();
-        // ??ì£¼ë? ë°˜ë???ë¬¼ê¸¸ê¹Œì? ?¬ìš©?????ˆë„ë¡??¤ìº” ë°˜ê²½ ?•ì¥ (ìµœì†Œ 75m)
-        float scanRange = Mathf.Max(maxScanWidth, 75f);
-        float step = 2.5f;
-
-        bool inWater = false;
-        float segmentStartOffset = 0f;
-
-        for (float offset = -scanRange; offset <= scanRange; offset += step)
-        {
-            Vector3 testPos = centerPos + normal * offset;
-            testPos.y = waterY;
-
-            bool isWater = IsValidWaterPosition(testPos, false);
-
-            if (isWater && !inWater)
-            {
-                inWater = true;
-                segmentStartOffset = offset;
-            }
-            else if (!isWater && inWater)
-            {
-                inWater = false;
-                float segEndOffset = offset - step;
-                if (segEndOffset - segmentStartOffset >= 4.0f) // ??4m ?´ìƒ??? íš¨ ?˜ë¡œë§?ì±„ë„ë¡??¸ì •
-                {
-                    float midOffset = (segmentStartOffset + segEndOffset) * 0.5f;
-                    Vector3 chPos = centerPos + normal * midOffset;
-                    chPos.y = waterY;
-                    channels.Add(chPos);
-                }
-            }
-        }
-
-        if (inWater)
-        {
-            float segEndOffset = scanRange;
-            if (segEndOffset - segmentStartOffset >= 4.0f)
-            {
-                float midOffset = (segmentStartOffset + segEndOffset) * 0.5f;
-                Vector3 chPos = centerPos + normal * midOffset;
-                chPos.y = waterY;
-                channels.Add(chPos);
-            }
-        }
-
-        return channels;
-    }
-
-    /// <summary>
-    /// ?ê³µ?ì„œ ?˜ì§ ?ˆì´ìºìŠ¤?? MeshCollider ë°?TerrainColliderë¥?ëª¨ë‘ ?„ë²½ ê²€??
-    /// 1) ì§€??MeshCollider/TerrainCollider)???˜ë©´ ?„ë¡œ ?Ÿì•„ ?ˆëŠ” ?¡ì???ê²½ìš° -> False
-    /// 2) ?˜ì‹¬???ˆë¬´ ?•ì•„(?˜ë©´ê³?ì§€???¬ì´ < 0.35m) ë°”ë‹¥???Œë¬»?ˆëŠ” ê²½ìš° -> False
-    /// 3) ?ˆê³µ(ì½œë¼?´ë” ?†ìŒ)??ê²½ìš° -> False
-    /// 4) ì¶©ë¶„???˜ì‹¬(waterDepth >= 0.35m)???•ë³´??? íš¨???˜ë©´ ?ì—­??ê²½ìš° -> True
-    /// </summary>
-    private bool IsValidWaterPosition(Vector3 pos, bool checkZBounds = false, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
-    {
-        // 1. ?¨ìˆœ Z ê²½ê³„ ê²€??(ê³¡ì„  ê°•ì¤„ê¸°ëŠ” ?†ìœ¼ë¡?êµ½ì´ì¹˜ë?ë¡?ê¸°ë³¸ ë¹„í™œ?±í™”)
-        if (checkZBounds && chunkEndZ < float.MaxValue)
-        {
-            if (pos.z < chunkStartZ - 50f || pos.z > chunkEndZ + 50f) return false;
-        }
-
-        float curWater = pos.y;
-        if (Mathf.Abs(curWater) < 0.001f) curWater = GetCurrentWaterLevel();
-
-        // 2. ì´ˆê³ ???ê³µ(Y = curWater + 250m)?ì„œ ?„ë˜ë¡??˜ì§ ?ˆì´ìºìŠ¤??
-        float rayStart = curWater + 250f;
-        Vector3 rayOrigin = new Vector3(pos.x, rayStart, pos.z);
-
-        RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 400f, ~0, QueryTriggerInteraction.Collide);
-        if (hits == null || hits.Length == 0)
-        {
-            // ?ˆê³µ(ì½œë¼?´ë” ?†ìŒ)?€ ë¬´ì¡°ê±??¤í° ì°¨ë‹¨
-            return false;
-        }
-
-        bool hasWaterSurface = false;
-        float groundY = float.MinValue;
-        bool hasGround = false;
-
-        foreach (var hit in hits)
-        {
-            if (hit.collider == null) continue;
-
-            if (hit.collider.GetComponent<WaterSurface>() != null || hit.collider.name.ToLower().Contains("water"))
-            {
-                hasWaterSurface = true;
-                curWater = hit.point.y;
-            }
-            else
-            {
-                if (hit.point.y > groundY)
-                {
-                    groundY = hit.point.y;
-                    hasGround = true;
-                }
-            }
-        }
-
-        // ?˜ë©´ ì½œë¼?´ë”ê°€ ?„ì˜ˆ ?†ëŠ” ?ˆê³µ ?ì—­ ?¤í° ì°¨ë‹¨
-        if (!hasWaterSurface && !hasGround) return false;
-
-        // ì§€?•ì´ ?˜ë©´ë³´ë‹¤ ?’ì´ ?Ÿì•„ ?ˆëŠ” ?¡ì?/?¸ë•??ê²½ìš° ?¤í° ì°¨ë‹¨
-        if (hasGround && groundY >= curWater - 0.15f)
-        {
-            return false;
-        }
-
-        // ?˜ì‹¬(waterDepth)???ˆë¬´ ?•ì•„ ?™ë°”?¥ì— ë°•íˆ??ê²½ìš° ?¤í° ì°¨ë‹¨
-        if (hasGround && (curWater - groundY) < 0.35f)
-        {
-            return false;
-        }
-
-        return true;
-    }
-
-    /// <summary>
-    /// ?ŒŸ ?¤ë¸Œ?íŠ¸ ê°?ê²¹ì¹¨ ë°©ì? (ìµœì†Œ 3.8m ?´ê²© ê±°ë¦¬ ê²€??
-    /// </summary>
-    private bool HasNearbySpawnedEntity(Vector3 pos, float minRadius = 3.8f)
-    {
-        float minSq = minRadius * minRadius;
-        for (int i = 0; i < transform.childCount; i++)
-        {
-            Transform child = transform.GetChild(i);
-            if (child == null) continue;
-            Vector3 diff = child.position - pos;
-            diff.y = 0f; // ?˜í‰ ê±°ë¦¬ ê¸°ì?
-            if (diff.sqrMagnitude < minSq)
-            {
-                return true;
-            }
-        }
-        return false;
-    }
-
-    private void TrySpawnBoostPad(Vector3 pos, Vector3 tangent = default)
-    {
-        if (!IsValidWaterPosition(pos, false)) return;
-        if (HasNearbySpawnedEntity(pos, 3.8f)) return;
-
-        // ?? ë¦¬ë“¬ ?„ì??´ë“œ (ìºì??? ëª¨ë“œ: ì§€??ë¶€?¤íŠ¸ ?¨ë“œ ?€??ê³µì¤‘ RandomRing ?¤í° (GameController SSOT ?™ê¸°??
         bool isRhythmArcade = (currentSpawningMode == GameController.GameMode.RhythmArcade);
         if (!isRhythmArcade)
         {
@@ -978,28 +325,40 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        if (isRhythmArcade)
+        RiverChunkPlacementStrategy.PlaceChunkEntities(
+            transform,
+            entityFactory,
+            curveStartDist,
+            curveEndDist,
+            hasRiverPath,
+            minX,
+            maxX,
+            curWaterY,
+            isRhythmArcade
+        );
+
+        if (!hasRiverPath)
         {
-            Quaternion rot = (tangent.sqrMagnitude > 0.01f) ? Quaternion.LookRotation(tangent, Vector3.up) : Quaternion.identity;
-            CreateRandomRing(pos, rot);
-            return;
+            CreateLilyPadsGrid(minX, maxX, chunkStartZ + 20f, chunkEndZ - 20f, curWaterY);
         }
-
-        CreateBoostPad(pos, Quaternion.identity);
     }
 
-    private void TrySpawnObstacleRock(Vector3 pos)
+    private void CreateLilyPadsGrid(float minX, float maxX, float minZ, float maxZ, float waterY)
     {
-        if (!IsValidWaterPosition(pos, false)) return;
-        if (HasNearbySpawnedEntity(pos, 4.2f)) return;
-        CreateObstacleRock(pos);
-    }
+        for (float z = minZ; z < maxZ; z += Random.Range(20f, 35f))
+        {
+            float x1 = Random.Range(minX, Mathf.Lerp(minX, maxX, 0.35f));
+            float x2 = Random.Range(Mathf.Lerp(minX, maxX, 0.35f), Mathf.Lerp(minX, maxX, 0.65f));
+            float x3 = Random.Range(Mathf.Lerp(minX, maxX, 0.65f), maxX);
 
-    private void TrySpawnFish(Vector3 pos, float dist)
-    {
-        if (!IsValidWaterPosition(pos, false)) return;
-        if (HasNearbySpawnedEntity(pos, 2.0f)) return;
-        SpawnSingleFish(pos, dist);
+            Vector3 p1 = new Vector3(x1, waterY + 0.04f, z + Random.Range(-5f, 5f));
+            Vector3 p2 = new Vector3(x2, waterY + 0.04f, z + Random.Range(-5f, 5f));
+            Vector3 p3 = new Vector3(x3, waterY + 0.04f, z + Random.Range(-5f, 5f));
+
+            if (RiverWaterValidator.IsValidWaterPosition(p1, waterY, false)) entityFactory.SpawnSingleLilyCluster(transform, p1);
+            if (RiverWaterValidator.IsValidWaterPosition(p2, waterY, false)) entityFactory.SpawnSingleLilyCluster(transform, p2);
+            if (RiverWaterValidator.IsValidWaterPosition(p3, waterY, false)) entityFactory.SpawnSingleLilyCluster(transform, p3);
+        }
     }
 
     private static void SafeDestroy(UnityEngine.Object obj)

@@ -10,6 +10,14 @@
 - **모드별 격리**: `LongDistance`와 `TargetAccuracy` 모드별로 적합한 엔티티 패턴 유지.
 
 ## 3. 변경 이력 (Changelog)
+- ### [2026-09-04] 🏗️ RiverSpawner 모듈화 및 책임 분리 (Validator / Factory / Strategy)
+  - **수정 목적**: 1,000줄 이상의 대형 과밀 파일이었던 `RiverSpawner.cs`의 수면 검증, 프리팹 생성 팩토리, 지그재그 배치 알고리즘을 독립 모듈로 객체화하여 단일 책임 원칙(SRP) 확립.
+  - **핵심 구조**:
+    - `RiverWaterValidator.cs`: 초고도 250m `RaycastAll` 기반 수심(waterDepth >= 0.35m) 검증, 섬 분기 수로 검출(`DetectSplitWaterChannels`), 겹침 방지(`HasNearbySpawnedEntity`) 분리.
+    - `RiverEntityFactory.cs`: 10종 물고기, 부스트 패드, 랜덤 링, 바위, 과녁, 깃발, 연꽃 생성 및 프리팹 로드 캡슐화.
+    - `RiverChunkPlacementStrategy.cs`: 곡선 스플라인 및 강폭별(협곡/중형/대형) 지그재그 분산 배치 알고리즘 분리.
+    - `RiverSpawner.cs`: 씬 내 청크 이벤트 및 모드별 생성을 오케스트레이션하는 경량 컴포넌트로 재구성.
+  - **컴파일 & MCP 검증**: 0 Errors, 0 Warnings 통과 및 Unity MCP 인엔진 단위 테스트 통과.
 - ### [2026-09-04] 🌀 리듬 아케이드 모드 부스트 패드 잔류 차단 & 랜덤 링/부스트 패드 유기적 지그재그 분산 배치
   - **수정 목적**: 
     1. 청크 스트리밍 릴레이 중 특정 상황에서 부스트 패드가 링 대신 섞여 생성되던 현상 원천 차단.
