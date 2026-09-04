@@ -734,8 +734,31 @@ public class RiverSpawner : MonoBehaviour
             }
         }
 
-        // 4. 🪷 연잎 군락
-        CreateLilyPadsGrid(minX, maxX, chunkStartZ + 20f, chunkEndZ - 20f, curWaterY);
+        // 4. 🪷 연잎 군락 (강줄기 좌우 가장자리 수면에 자연스럽게 배치)
+        if (hasRiverPath)
+        {
+            for (float z = curveStartDist + 15f; z < curveEndDist - 15f; z += Random.Range(25f, 45f))
+            {
+                if (SkippingStones.Terrain.GlobalRiverPath.Instance.EvaluateAtDistance(z, out Vector3 cPos, out Vector3 tan, out float rWidth, out float wY))
+                {
+                    Vector3 normal = Vector3.Cross(Vector3.up, tan).normalized;
+                    float halfW = Mathf.Clamp(rWidth * 0.45f, 4f, 35f);
+
+                    float side = (Random.value < 0.5f) ? -halfW * Random.Range(0.65f, 0.9f) : halfW * Random.Range(0.65f, 0.9f);
+                    Vector3 lilyPos = cPos + normal * side;
+                    lilyPos.y = wY + 0.04f;
+
+                    if (IsValidWaterPosition(lilyPos, false))
+                    {
+                        SpawnSingleLilyCluster(lilyPos);
+                    }
+                }
+            }
+        }
+        else
+        {
+            CreateLilyPadsGrid(minX, maxX, chunkStartZ + 20f, chunkEndZ - 20f, curWaterY);
+        }
     }
 
     /// <summary>
@@ -796,7 +819,8 @@ public class RiverSpawner : MonoBehaviour
     /// 상공에서 수직 레이캐스트: MeshCollider 및 TerrainCollider를 모두 완벽 검사
     /// 1) 지형(MeshCollider/TerrainCollider)이 수면 위로 솟아 있는 육지인 경우 -> False
     /// 2) 수심이 너무 얕아(수면과 지형 사이 < 0.35m) 바닥에 파묻히는 경우 -> False
-    /// 3) 충분한 수심(waterDepth >= 0.35m)이 확보된 유효한 수면 영역인 경우 -> True
+    /// 3) 허공(콜라이더 없음)인 경우 -> False
+    /// 4) 충분한 수심(waterDepth >= 0.35m)이 확보된 유효한 수면 영역인 경우 -> True
     /// </summary>
     private bool IsValidWaterPosition(Vector3 pos, bool checkZBounds = false, float chunkStartZ = 0f, float chunkEndZ = float.MaxValue)
     {
@@ -816,8 +840,8 @@ public class RiverSpawner : MonoBehaviour
         RaycastHit[] hits = Physics.RaycastAll(rayOrigin, Vector3.down, 400f, ~0, QueryTriggerInteraction.Collide);
         if (hits == null || hits.Length == 0)
         {
-            // 베이킹된 강줄기 상의 점이면 안전 수면 인정
-            return true;
+            // 허공(콜라이더 없음)은 무조건 스폰 차단
+            return false;
         }
 
         bool hasWaterSurface = false;
@@ -842,6 +866,9 @@ public class RiverSpawner : MonoBehaviour
                 }
             }
         }
+
+        // 수면 콜라이더가 아예 없는 허공 영역 스폰 차단
+        if (!hasWaterSurface && !hasGround) return false;
 
         // 지형이 수면보다 높이 솟아 있는 육지/언덕인 경우 스폰 차단
         if (hasGround && groundY >= curWater - 0.15f)
