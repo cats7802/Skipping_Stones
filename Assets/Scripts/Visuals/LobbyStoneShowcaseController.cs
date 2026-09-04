@@ -168,7 +168,7 @@ namespace SkippingStones.Visuals
                         prefab = Resources.Load<GameObject>(fileName) ?? Resources.Load<GameObject>($"Stone/{fileName}");
                     }
 #endif
-                    if (prefab != null)
+                    if (prefab != null && !scannedList.Contains(prefab))
                     {
                         scannedList.Add(prefab);
                     }
@@ -177,13 +177,8 @@ namespace SkippingStones.Visuals
                 if (scannedList.Count > 0)
                 {
                     unlockedStonePrefabs = scannedList;
+                    return;
                 }
-            }
-
-            // 프리팹에 인스펙터로 사전 등록된 직렬화 목록이 이미 존재하면 그대로 보존
-            if (unlockedStonePrefabs != null && unlockedStonePrefabs.Count > 0)
-            {
-                return;
             }
 
             // 폴백: 에디터에서 직접 4종 스캔
@@ -246,12 +241,10 @@ namespace SkippingStones.Visuals
                     Ray ray = cam.ScreenPointToRay(currentPointerPos);
                     if (Physics.Raycast(ray, out RaycastHit hit, 100f))
                     {
-                        // 1. 다이얼 또는 하위
+                        // 1. 다이얼 또는 직속 하위
                         if (dialTransform != null && (hit.transform == dialTransform || hit.transform.IsChildOf(dialTransform))) hitDial = true;
-                        // 2. 스탠드 또는 하위
+                        // 2. 스탠드 또는 직속 하위
                         else if (stageTransform != null && (hit.transform == stageTransform || hit.transform.IsChildOf(stageTransform))) hitDial = true;
-                        // 3. 로비 쇼케이스 하위 전체
-                        else if (hit.transform.IsChildOf(transform)) hitDial = true;
                     }
                 }
 
@@ -298,8 +291,8 @@ namespace SkippingStones.Visuals
             int total = unlockedStonePrefabs.Count;
             currentStoneIndex = (currentStoneIndex + direction + total) % total;
 
-            // 스탠드가 direction 만큼 시계 회전(+120도)하면 좌측 뒤(-120도, Slot 1) 슬롯이 정면으로 진입
-            currentSlotFacingIndex = (currentSlotFacingIndex + direction + 3) % 3;
+            // 스탠드가 direction 만큼 시계 회전(+120도)하면 물리적으로 정면에 오는 슬롯 인덱스 갱신 (-direction)
+            currentSlotFacingIndex = (currentSlotFacingIndex - direction + 3) % 3;
 
             float startDialY = currentStep * dialStepAngle;
             float startStageY = currentStep * stageStepAngle;
@@ -353,9 +346,8 @@ namespace SkippingStones.Visuals
             {
                 int diff = (i - currentSlotFacingIndex + 3) % 3;
                 int offset = 0;
-                if (diff == 0) offset = 0;       // 현재 정면 슬롯
-                else if (diff == 1) offset = 1;  // 다음 슬롯 (우측 뒤)
-                else if (diff == 2) offset = -1; // 이전 슬롯 (좌측 뒤)
+                if (diff == 2) offset = 1;       // +120도 회전 시 정면으로 올 슬롯 (다음 돌)
+                else if (diff == 1) offset = -1; // -120도 회전 시 정면으로 올 슬롯 (이전 돌)
 
                 int stoneIdx = (currentStoneIndex + offset + total) % total;
                 SpawnStoneAtSlot(i, stoneIdx);
@@ -369,12 +361,12 @@ namespace SkippingStones.Visuals
 
             for (int i = 0; i < 3; i++)
             {
-                if (i == currentSlotFacingIndex) continue; // 정면 슬롯은 이미 회전해왔으므로 건드리지 않음
+                if (i == currentSlotFacingIndex) continue; // 정면 슬롯은 회전해왔으므로 건드리지 않음
 
                 int diff = (i - currentSlotFacingIndex + 3) % 3;
                 int offset = 0;
-                if (diff == 1) offset = 1;       // 다음 슬롯
-                else if (diff == 2) offset = -1; // 이전 슬롯
+                if (diff == 2) offset = 1;       // 다음 돌 슬롯
+                else if (diff == 1) offset = -1; // 이전 돌 슬롯
 
                 int targetStoneIdx = (currentStoneIndex + offset + total) % total;
                 SpawnStoneAtSlot(i, targetStoneIdx);

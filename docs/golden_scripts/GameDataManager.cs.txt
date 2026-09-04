@@ -11,12 +11,13 @@ namespace SkippingStones.Data
 
         private const string SAVE_KEY = "USER_SAVE_DATA_V1";
         private const int STAMINA_RECOVERY_SECONDS = 600; // 10분당 1 스태미나
+        private const float SECRET_TAP_WINDOW = 0.8f;
 
         public UserPersistentData UserData { get; private set; } = new UserPersistentData();
 
         [Header("🛠️ 개발자 테스트 설정")]
         [Tooltip("에디터 플레이 시 모든 캐릭터/돌/맵을 항상 ALL 해금 상태로 시작합니다.")]
-        [SerializeField] private bool devUnlockAllByDefault = true;
+        [SerializeField] private bool devUnlockAllByDefault = false;
 
         [Header("마스터 카탈로그")]
         public List<CharacterInfoData> characterCatalog = new List<CharacterInfoData>();
@@ -63,20 +64,10 @@ namespace SkippingStones.Data
         private void Update()
         {
             UpdateStaminaRegeneration();
-            HandleDevUnlockInput();
-        }
-
-        private float lastSecretTapTime = 0f;
-        private int secretTapCount = 0;
-
-        /// <summary>
-        /// 🛠️ 개발자 해금 단축키 (PC: F5 키 / 모바일: 화면 상단 헤더 영역 5연속 탭)
-        /// </summary>
-        private void HandleDevUnlockInput()
-        {
+            
+            // 🛠️ 개발자 단축키: F5 누르면 ALL 해금 토글/발동
 #if ENABLE_INPUT_SYSTEM
-            var kb = UnityEngine.InputSystem.Keyboard.current;
-            if (kb != null && kb.f5Key.wasPressedThisFrame)
+            if (UnityEngine.InputSystem.Keyboard.current != null && UnityEngine.InputSystem.Keyboard.current.f5Key.wasPressedThisFrame)
             {
                 DevUnlockAll();
             }
@@ -88,12 +79,15 @@ namespace SkippingStones.Data
 #endif
         }
 
+        private float lastSecretTapTime = 0f;
+        private int secretTapCount = 0;
+
         /// <summary>
         /// 모바일용 시크릿 5연속 탭 (상단 프로필/헤더 영역)
         /// </summary>
         public void TriggerSecretTap()
         {
-            if (Time.unscaledTime - lastSecretTapTime > 0.8f)
+            if (Time.unscaledTime - lastSecretTapTime > SECRET_TAP_WINDOW)
             {
                 secretTapCount = 1;
             }
@@ -108,6 +102,8 @@ namespace SkippingStones.Data
             }
             lastSecretTapTime = Time.unscaledTime;
         }
+
+        public void HandleSecretTap() => TriggerSecretTap();
 
         private void InitializeCatalog()
         {
@@ -137,7 +133,7 @@ namespace SkippingStones.Data
                     angleAssist = 0f,
                     perfectTimingAssist = 0.08f,
                     unlockGoldCost = 3000,
-                    isUnlocked = true // 테스트 편의를 위해 기본 해금
+                    isUnlocked = false
                 });
 
                 characterCatalog.Add(new CharacterInfoData
@@ -151,7 +147,7 @@ namespace SkippingStones.Data
                     angleAssist = 5.0f,
                     perfectTimingAssist = 0.15f,
                     unlockGoldCost = 10000,
-                    isUnlocked = true // 테스트 편의를 위해 기본 해금
+                    isUnlocked = false
                 });
 
                 characterCatalog.Add(new CharacterInfoData
@@ -165,7 +161,7 @@ namespace SkippingStones.Data
                     angleAssist = 3.0f,
                     perfectTimingAssist = 0.10f,
                     unlockGoldCost = 5000,
-                    isUnlocked = true // 테스트용 해금 지원
+                    isUnlocked = false
                 });
             }
 
