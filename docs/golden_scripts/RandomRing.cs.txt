@@ -1,4 +1,4 @@
-﻿using System.Collections;
+using System.Collections;
 using UnityEngine;
 
 namespace SkippingStones.Arcade
@@ -193,7 +193,7 @@ namespace SkippingStones.Arcade
             // 개체별 고유 위상(phaseOffset)이 더해져 각 링마다 다른 타이밍에 둥실거림
             float idleBobbingOffset = Mathf.Sin(bobbingTimer + phaseOffset) * bobbingAmplitude;
 
-            float stoneArcHeight = (cachedStone != null) ? cachedStone.fixedBounceArcHeight : 1.8f;
+            float stoneArcHeight = (cachedStone != null) ? cachedStone.CurrentBounceArcHeight : 1.8f;
             float defaultIdleY = waterLevel + stoneArcHeight + idleBobbingOffset;
 
             float targetY = defaultIdleY;

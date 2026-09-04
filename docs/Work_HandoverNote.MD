@@ -27,6 +27,14 @@
   - `RiverSpawner.cs`: `defaultWaterHeight` 및 레거시 슬롯 완전 삭제. `WaterSurface` 직접 실시간 쿼리 단일화. 스폰 간격(45~85m ➔ 20~42m) 대폭 단축하여 개체 수 2.5배 증량.
   - `FishData.cs` & `JumpingFish.cs`: 물고기 크기를 **`1.05 ~ 2.50`** 배율로 시원하게 확대. 수심 `0.35m ~ 4.5m`까지 입체적 깊이 부여 및 `Start()` 스케일 동적 갱신 보장.
 
+### ✅ 4. 🔀 집 & 회사 작업 완전 병합 (물고기 10종 + 캐릭터 패시브 고도 단일 진실 공급원 + 링 곡선 유도)
+- **배경 및 원인**:
+  - 집에서 작업하여 푸시한 커밋(물고기 10종 생태계, 지형 강심선 곡선 궤적 런치 연동)과 회사 로컬에서 작업한 내용(캐릭터 패시브 고도 오프셋 및 단일 진실 공급원 `CurrentBounceArcHeight`, 링 마중 높이 동기화)을 충돌 없이 100% 통합.
+- **해결 내역**:
+  - `ArcadeSkippingStone.cs`: `characterHeightModifier`, `CurrentBounceArcHeight` 프로퍼티 추가 및 `GlobalRiverPath` 기반 곡선 궤적 런치 완벽 결합.
+  - `RandomRing.cs`: `CurrentBounceArcHeight` 연동, 실시간 마중 높이 및 3D 실린더 감지/기즈모 유지.
+  - 골든 스크립트 100% 동기화 및 Unity 컴파일 0 Errors 확인 완료.
+
 ---
 
 ## 2. 📁 수정된 주요 파일 및 골든 스크립트 동기화 현황
@@ -34,6 +42,7 @@
 | 분류 | 수정 파일 경로 | 골든 스냅샷 동기화 |
 | :--- | :--- | :--- |
 | **Arcade Stone** | `Assets/Scripts/Arcade/ArcadeSkippingStone.cs` | `docs/golden_scripts/ArcadeSkippingStone.cs.txt` |
+| **Random Ring** | `Assets/Scripts/Arcade/RandomRing.cs` | `docs/golden_scripts/RandomRing.cs.txt` |
 | **Spawner** | `Assets/Scripts/Gameplay/RiverSpawner.cs` | `docs/golden_scripts/RiverSpawner.cs.txt` |
 | **Fish Data** | `Assets/Scripts/Gameplay/FishData.cs` | `docs/golden_scripts/FishData.cs.txt` |
 | **Fish AI** | `Assets/Scripts/Gameplay/JumpingFish.cs` | `docs/golden_scripts/JumpingFish.cs.txt` |

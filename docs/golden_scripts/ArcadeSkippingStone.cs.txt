@@ -95,9 +95,16 @@ namespace SkippingStones.Arcade
         public event Action<int, string> OnSkipBounced;
         public event Action<float> OnStoneSunk;
 
+        [Header("🎛️ 캐릭터 특성/패시브 고도 오프셋 (확장용)")]
+        [Tooltip("캐릭터별 고유 패시브 고도 증감(m)")]
+        public float characterHeightModifier = 0f;
+
+        public Vector3 CycleStartPosition => cycleStartPos;
         public Vector3 CycleEndPosition => cycleEndPos;
         public float CycleElapsedTime => cycleElapsedTime;
         public Vector3 CurrentForwardDirection => currentForwardDir;
+        // 🌟 단일 진실 공급원 (Single Source of Truth): 기본 높이 + 캐릭터 패시브 + 하이점프 버프
+        public float CurrentBounceArcHeight => fixedBounceArcHeight + characterHeightModifier + (isInvincibleToObstacles ? 1.2f : 0f);
 
         private Rigidbody rb;
         private Vector3 cycleStartPos;
@@ -310,8 +317,8 @@ namespace SkippingStones.Arcade
             cycleElapsedTime += Time.deltaTime;
             float t = cycleElapsedTime / currentCycleDuration;
 
-            // 1. 디렉터 확정: 고정 높이 1.8m (하이점프 버프 시 +1.2m 솟구침)
-            float currentHeight = isInvincibleToObstacles ? (fixedBounceArcHeight + 1.2f) : fixedBounceArcHeight;
+            // 1. 단일 진실 공급원(CurrentBounceArcHeight) 기반 포물선 비행
+            float currentHeight = CurrentBounceArcHeight;
             Vector3 horizPos = Vector3.Lerp(cycleStartPos, cycleEndPos, Mathf.Clamp01(t));
             // y = waterLevel + 4 * H * t * (1 - t)
             float yPos = waterLevel + 4f * currentHeight * t * (1f - t);
