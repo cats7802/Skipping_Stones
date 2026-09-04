@@ -489,11 +489,8 @@ public class TopDownReplayManager : MonoBehaviour
         boundMinZ = minZ - 25f;
         boundMaxZ = maxZ + 25f;
 
-        minOrthoSize = 18f;
-
-        float spanX = Mathf.Max(35f, boundMaxX - boundMinX);
-        float spanZ = Mathf.Max(50f, boundMaxZ - boundMinZ);
-        maxOrthoSize = Mathf.Clamp(Mathf.Max(spanX * 0.95f, spanZ * 0.52f), 35f, 400f);
+        minOrthoSize = 12f;
+        maxOrthoSize = 350f;
     }
 
     public void NextPage()
