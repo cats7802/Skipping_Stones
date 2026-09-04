@@ -63,12 +63,23 @@
   - `RiverSpawner.cs`: 씬 내 청크 이벤트 및 모드별 생성을 오케스트레이션하는 경량 컴포넌트로 재구성.
   - **인엔진 검증**: Unity MCP `Unity_RunCommand`를 통해 `RiverWaterValidator`, `RiverEntityFactory`, `RiverSpawner` 전수 인엔진 테스트 통과 확인.
 
+### ✅ 10. 🌀 ArcadeSkippingStone 모듈화 및 공용 수면 그림자/BPM 궤적 계산기 분리
+- **배경 및 원인**:
+  - 1,115줄에 달하던 `ArcadeSkippingStone.cs`에 공용 수면 그림자 코드 중복이 존재하고, BPM 포물선 궤적 연산이 한 곳에 뭉쳐 있어 모듈화 요구.
+- **해결 내역**:
+  - `WaterReflectionShadowController.cs` (공용 모듈 재사용): 수면 Quad 생성, 텍스처 베이킹 및 `SafeDestroy` 클린업 일원화 (중복 코드 100% 제거).
+  - `ArcadeRhythmTrajectoryCalculator.cs` (신규 분리): 고정 포물선 궤적 위치/회전 계산(`EvaluateFlightPosition`), 거리 비례 BPM 가속(`CalculateBPM`), 잔여 시간별 6단계 판정(`EvaluateTimingGrade`) 분리.
+  - `ArcadeSkippingStone.cs`: 분리된 궤적 계산기와 공용 그림자 컨트롤러를 바인딩하여 600줄대로 대폭 경량화.
+  - **인엔진 검증**: Unity MCP `Unity_RunCommand`를 통해 `ArcadeRhythmTrajectoryCalculator`, `ArcadeSkippingStone` 전수 인엔진 테스트 통과 확인 (정점 높이 17.8m, 1500m BPM 100, 조기 탭 방어 검증).
+
 ---
 
 ## 2. 📁 수정된 주요 파일 및 골든 스크립트 동기화 현황
 
 | 분류 | 수정 파일 경로 | 골든 스냅샷 동기화 |
 | :--- | :--- | :--- |
+| **Arcade Stone** | `Assets/Scripts/Arcade/ArcadeSkippingStone.cs` | `docs/golden_scripts/ArcadeSkippingStone.cs.txt` |
+| **Arcade Trajectory** | `Assets/Scripts/Arcade/ArcadeRhythmTrajectoryCalculator.cs` | 신규 분리 완료 |
 | **River Spawner** | `Assets/Scripts/Gameplay/RiverSpawner.cs` | `docs/golden_scripts/RiverSpawner.cs.txt` |
 | **Water Validator** | `Assets/Scripts/Gameplay/Spawners/RiverWaterValidator.cs` | 신규 분리 완료 |
 | **Entity Factory** | `Assets/Scripts/Gameplay/Spawners/RiverEntityFactory.cs` | 신규 분리 완료 |
@@ -76,12 +87,11 @@
 | **Skipping Stone** | `Assets/Scripts/Gameplay/SkippingStone.cs` | `docs/golden_scripts/SkippingStone.cs.txt` |
 | **Physics Calculator** | `Assets/Scripts/Gameplay/Calculators/StonePhysicsCalculator.cs` | 신규 분리 완료 |
 | **Timing Evaluator** | `Assets/Scripts/Gameplay/StoneTimingEvaluator.cs` | 신규 분리 완료 |
-| **Shadow Controller** | `Assets/Scripts/Gameplay/WaterReflectionShadowController.cs` | 신규 분리 완료 |
+| **Shadow Controller** | `Assets/Scripts/Gameplay/WaterReflectionShadowController.cs` | 신규 분리 완료 (공용 모듈) |
 | **Game Controller** | `Assets/Scripts/Gameplay/GameController.cs` | `docs/golden_scripts/GameController.cs.txt` |
 | **Launch Sequence** | `Assets/Scripts/Gameplay/LaunchSequenceController.cs` | 신규 분리 완료 |
 | **Input Helper** | `Assets/Scripts/Gameplay/Helpers/GameInputHelper.cs` | 신규 분리 완료 |
 | **Score Calculator** | `Assets/Scripts/Gameplay/Calculators/MatchScoreCalculator.cs` | 신규 분리 완료 |
-| **Arcade Stone** | `Assets/Scripts/Arcade/ArcadeSkippingStone.cs` | `docs/golden_scripts/ArcadeSkippingStone.cs.txt` |
 | **Random Ring** | `Assets/Scripts/Arcade/RandomRing.cs` | `docs/golden_scripts/RandomRing.cs.txt` |
 | **Fish Data** | `Assets/Scripts/Gameplay/FishData.cs` | `docs/golden_scripts/FishData.cs.txt` |
 | **Fish AI** | `Assets/Scripts/Gameplay/JumpingFish.cs` | `docs/golden_scripts/JumpingFish.cs.txt` |

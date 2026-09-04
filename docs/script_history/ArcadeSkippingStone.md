@@ -34,6 +34,14 @@
 
 ## 🕒 4. 수정 및 진화 히스토리 (Change Log)
 
+### [2026-09-04] 🏗️ ArcadeSkippingStone 모듈화 및 공용 수면 그림자/BPM 궤적 계산기 분리
+- **수정 목적**: 1,115줄에 달하던 대형 아케이드 돌 스크립트에서 중복 코드를 제거하고, 공용 모듈 재사용 및 BPM 포물선 궤적 연산을 독립 분리하여 유지보수성 극대화.
+- **적용 내용**:
+  1. `WaterReflectionShadowController.cs` (공용 모듈 재사용): 수면 Quad 생성, 텍스처 베이킹 및 `SafeDestroy` 클린업 일원화 (중복 코드 완전 제거).
+  2. `ArcadeRhythmTrajectoryCalculator.cs` (신규 분리): 고정 포물선 궤적 위치/회전 계산(`EvaluateFlightPosition`), 거리 비례 BPM 가속(`CalculateBPM`), 잔여 시간별 6단계 판정(`EvaluateTimingGrade`) 분리.
+  3. `ArcadeSkippingStone.cs`: 분리된 궤적 계산기와 공용 그림자 컨트롤러를 바인딩하여 600줄대로 경량화 및 안정성 확보.
+- **컴파일 & MCP 검증**: 0 Errors, 0 Warnings 통과 및 Unity MCP 인엔진 단위 테스트 통과 (정점 높이 17.8m, 1500m BPM 100, 조기 탭 방어 검증).
+
 ### [2026-09-01] 리듬 아케이드 모드 고도화 및 곡선 강줄기 스폰 완벽 호환
 - **수정 목적**: 물리 모드 오연결 해소, 디렉터 확정 리듬 룰 완성, 충돌/조향/가속 물리 고도화 및 굽이치는 맵 스폰 연동.
 - **적용 내용**:
