@@ -97,6 +97,9 @@ namespace SkippingStones.Arcade
         [Header("🪷 연잎(Lily Pad) 착수 3턴 높이 보너스")]
         public int lilyBonusRemainingTurns = 0;
 
+        [Header("📜 물수제비 바운스 히스토리 (탑다운 리플레이 연동)")]
+        public System.Collections.Generic.List<SkippingStone.BounceRecord> bounceHistory = new System.Collections.Generic.List<SkippingStone.BounceRecord>();
+
         public Vector3 CycleStartPosition => cycleStartPos;
         public Vector3 CycleEndPosition => cycleEndPos;
         public float CycleElapsedTime => cycleElapsedTime;
@@ -203,6 +206,9 @@ namespace SkippingStones.Arcade
             skipCount = 0;
             totalDistance = 0f;
             currentCombo = 0;
+
+            bounceHistory.Clear();
+            bounceHistory.Add(new SkippingStone.BounceRecord { position = transform.position, skipIndex = 0, grade = "START", distance = 0f });
             
             PresetData preset = GetCurrentPresetData();
             initialLaunchPower = Mathf.Clamp(powerMultiplier, 0.5f, 2.0f);
@@ -488,6 +494,14 @@ namespace SkippingStones.Arcade
                 AudioManager.Instance.SetBGMPitchByBPM(currentBPM, 60f);
             }
 
+            bounceHistory.Add(new SkippingStone.BounceRecord
+            {
+                position = transform.position,
+                skipIndex = skipCount,
+                grade = grade,
+                distance = totalDistance
+            });
+
             OnSkipBounced?.Invoke(skipCount, grade);
 
             if (currentMomentum <= 0.1f)
@@ -651,6 +665,14 @@ namespace SkippingStones.Arcade
             isSunk = true;
             isSkimming = false;
             if (AudioManager.Instance != null) AudioManager.Instance.Play(SoundType.StoneSink);
+
+            bounceHistory.Add(new SkippingStone.BounceRecord
+            {
+                position = transform.position,
+                skipIndex = skipCount + 1,
+                grade = "FINISH",
+                distance = totalDistance
+            });
 
             OnStoneSunk?.Invoke(totalDistance);
         }
