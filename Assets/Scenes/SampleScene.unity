@@ -311,14 +311,14 @@ MonoBehaviour:
     stonePrefabOverride: {fileID: 0}
     mapPrefabOverride: {fileID: 0}
   lastResultData:
-    finalDistance: 0
+    finalDistance: 100
     skipCount: 0
     perfectTimingCount: 0
     fishSnipeCount: 0
     friendOvertakeCount: 0
     boostPadCount: 0
-    earnedCoins: 0
-    totalScore: 0
+    earnedCoins: 40
+    totalScore: 1000
     isNewRecord: 0
     snipedFishSpecies: []
   currentMode: 2
@@ -355,11 +355,11 @@ MonoBehaviour:
   showAquariumModal: 0
   showStoneSelectorModal: 0
   requireTouchRelease: 0
-  distanceScore: 0
+  distanceScore: 1000
   skipScore: 0
   specialScore: 0
-  totalScore: 0
-  earnedCoins: 0
+  totalScore: 1000
+  earnedCoins: 40
   perfectTimingCount: 0
   fishSnipeCount: 0
   friendOvertakeCount: 0
@@ -826,6 +826,63 @@ Transform:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 832575517}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 0, y: 0, z: 0}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!1 &1238127598
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 1238127600}
+  - component: {fileID: 1238127599}
+  m_Layer: 0
+  m_Name: AudioManager
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!114 &1238127599
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238127598}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 02a2478607899a84491c84825243907b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::AudioManager
+  masterVolume: 1
+  sfxVolume: 1
+  throwWhooshClip: {fileID: 8300000, guid: a8178af1693b4dc49ae93f0c9f38cf32, type: 3}
+  bounceWaterClip: {fileID: 8300000, guid: 34bdf8eadd0e57b419b7f56a45783dfe, type: 3}
+  bounceGoodClip: {fileID: 8300000, guid: 3f5bb9b33f4e6d04189f2af618979b71, type: 3}
+  bouncePerfectClip: {fileID: 8300000, guid: 6928cdeb54c5a244ea753e876759b645, type: 3}
+  skimSlideClip: {fileID: 8300000, guid: d2fa9eb097e4fc54ab0423016847fe4e, type: 3}
+  boostPadClip: {fileID: 8300000, guid: a62a1d4838d80f64f9c53bbad4b4e4ef, type: 3}
+  coinJingleClip: {fileID: 8300000, guid: e2862f289c2f9ca4497fa8af52f94dce, type: 3}
+  stoneSinkClip: {fileID: 8300000, guid: fcf62903cb9ddc1438249e6f0daa8562, type: 3}
+  buttonClickClip: {fileID: 8300000, guid: c57996c3d7a9d0d49b8b3c09fe150a88, type: 3}
+  bgmMusicClip: {fileID: 8300000, guid: f6686d1035b99dd4392c9920584eca0b, type: 3}
+  bgmSource: {fileID: 0}
+--- !u!4 &1238127600
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1238127598}
   serializedVersion: 2
   m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
   m_LocalPosition: {x: 0, y: 0, z: 0}
@@ -1404,3 +1461,4 @@ SceneRoots:
   - {fileID: 71603751}
   - {fileID: 1275375418626926442}
   - {fileID: 1677123636}
+  - {fileID: 1238127600}
