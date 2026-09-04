@@ -27,4 +27,14 @@
      - 스탠드 슬롯 인덱스(`Stage_01` 정면, `Stage_02` 다음 돌, `Stage_03` 이전 돌) 매핑으로 1:1 완벽 동기화.
 * **컴파일 검증**: `dotnet build Assembly-CSharp.csproj` / `Assembly-CSharp-Editor.csproj` 경고 0개, 오류 0개 완료.
 
-
+### [2026-09-04] 초반 돌 스폰 이상 원인 분석 및 해결 방안 수립
+* **현상**: 로비 진입 시 3D 쇼케이스 스탠드에 돌이 즉시 스폰되지 않거나 일부 슬롯이 누락되는 현상.
+* **원인 분석**:
+  1. `GameDataManager`의 싱글톤/카탈로그 로드 시점과 `LobbyStoneShowcaseController.Awake()/Start()`의 스캔 시점 불일치 시 해금 목록이 불완전하게 로드될 가능성.
+  2. `InitializeShowcase()` 시점에 이전 오브젝트/슬롯 인덱스 캐시(`slotStoneIndices`)가 남아있어 `SpawnStoneAtSlot`의 캐시 스킵 조건에 걸려 스폰이 누락됨.
+  3. 해금된 돌 개수가 3개 미만(1~2개)일 때의 슬롯별 인덱스 분배 예외 처리 필요.
+  4. `MetaUIManager`의 `UpdateLobbyShowcase()`에서 `OnSelectedStoneChanged` 이벤트가 중복 구독되는 이슈.
+* **해결 방안**:
+  - `InitializeShowcase()` 시 슬롯의 기존 자식 오브젝트 완전 정리(`ClearAllSlots()`) 및 슬롯 인덱스 캐시 초기화(`[-1, -1, -1]`).
+  - 카탈로그 로드 실패 시에도 4종 돌(`Stone`, `Stone_Blue`, `Stone_Green`, `Stone_red`)을 즉각 확보하도록 안전 폴백 보강.
+  - 1개, 2개, 4개 이상 모든 조건에서 3개 슬롯 매핑 안정화 및 `MetaUIManager` 이벤트 중복 바인딩 방지.

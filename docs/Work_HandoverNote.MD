@@ -1,4 +1,4 @@
-﻿# 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
+# 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
 **작성 일시**: 2026-09-04 23:35  
 **현재 브랜치**: feature/sandbox-momentum-rhythm  
@@ -38,6 +38,14 @@
 | **Stone Showcase** | Assets/Scripts/Visuals/LobbyStoneShowcaseController.cs | docs/golden_scripts/LobbyStoneShowcaseController.cs.txt |
 | **Game Data** | Assets/Scripts/Data/GameDataManager.cs | docs/golden_scripts/GameDataManager.cs.txt |
 | **Arcade Stone** | Assets/Scripts/Arcade/ArcadeSkippingStone.cs | docs/golden_scripts/ArcadeSkippingStone.cs.txt |
+
+---
+
+### 4. 🪨 로비 조약돌 스탠드 초반 스폰 이슈 분석 및 해결 준비 완료
+- **현상**: 로비 진입 시 3D 스탠드에 돌이 바로 나타나지 않거나 일부 슬롯이 누락되는 현상.
+- **기록 및 계획**:
+  1. `docs/script_history/LobbyStoneShowcaseController.md`에 원인(로드 타이밍, 슬롯 인덱스 캐시 미초기화, 이벤트 중복 바인딩) 및 해결 방안 상세 기록 완료.
+  2. 추후 UI/그래픽 작업 단계 또는 디렉터님 지시 시 즉시 적용 가능하도록 정리 완료.
 
 ---
 
