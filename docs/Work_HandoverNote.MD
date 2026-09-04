@@ -27,18 +27,14 @@
   - `RiverSpawner.cs`: `defaultWaterHeight` 및 레거시 슬롯 완전 삭제. `WaterSurface` 직접 실시간 쿼리 단일화. 스폰 간격(45~85m ➔ 20~42m) 대폭 단축하여 개체 수 2.5배 증량.
   - `FishData.cs` & `JumpingFish.cs`: 물고기 크기를 **`1.05 ~ 2.50`** 배율로 시원하게 확대. 수심 `0.35m ~ 4.5m`까지 입체적 깊이 부여 및 `Start()` 스케일 동적 갱신 보장.
 
-### ✅ 5. 🌊 2번째 청크 및 급커브/섬 분기 맵 수면 오브젝트 스폰 정상화
+### ✅ 6. 🌀 리듬 아케이드 모드 부스트 패드 혼입 차단 & 링/패드 유기적 지그재그 분산 배치
 - **배경 및 원인**:
-  - 청크 스트리밍 도입 후 `IsValidWaterPosition`의 단순 Z축 경계 검사식으로 인해 곡선/도킹 맵에서 2번째 청크 이후 엔티티가 모두 탈락하던 문제 해결.
-  - 섬(Island)으로 인해 물길이 둘로 갈라질 때 베이킹되지 않은 반대편 물길에도 정상 스폰되도록 보장.
+  - 청크 스트리밍 릴레이 중 특정 타이밍에 캐쥬얼 모드임에도 부스트 패드가 랜덤 링 대신 섞여 생성되던 현상 발생.
+  - 동일한 Z 계산 지점에서 좌/중/우 링 및 패드가 강을 가로질러 일직선 행렬로 스폰되어 부자연스럽던 배치 개선 요청.
 - **해결 내역**:
-  - `GlobalRiverPath.cs`: 청크 실제 도킹 순서(`DynamicChunks`) 기반 스플라인 체인 결합 및 청크별 거리(`GetSegmentDistanceRange`) 100% 정밀 매칭.
   - `RiverSpawner.cs`:
-    - 청크 생성 즉시 `Physics.SyncTransforms()`로 물리 콜라이더 트리 강제 동기화.
-    - 베이킹된 강줄기 스플라인 기반 곡선 스폰 시 단순 Z축 필터를 면제하여 급커브/회전 맵에서도 100% 정상 스폰.
-    - `DetectSplitWaterChannels` 스캔 반경을 75m로 확장하여 섬으로 나뉜 반대편 물길(하늘색 영역)까지 정확히 탐지하고 양쪽 물길 모두 균등 스폰.
-    - 게임 시작 시 로드된 모든 청크(0번, 1번...)를 순회하여 시작부터 전 구간 수면 오브젝트 생성 보장.
-  - `LakeEnvironmentManager.cs`: `DynamicChunks` 프로퍼티 및 `OnChunkSpawned` 이벤트 연동.
+    - `TrySpawnBoostPad` 내에서 `GameController.Instance.currentMode`를 SSOT(단일 진실 공급원)로 실시간 동기화하여 캐쥬얼 모드에서는 어떠한 청크에서도 100% `RandomRing` 생성 보장.
+    - 강폭별(협곡/중형/대형) 및 분기 물길 스폰 시 오브젝트마다 독립된 거리 오프셋($\pm 4\text{m} \sim 10\text{m}$)을 부여하고, `GlobalRiverPath.EvaluateAtDistance`로 곡선 물길 흐름과 접선 각도를 각각 개별 평가하여 유기적인 지그재그(Stagger) 분산 배치 완성.
 
 ---
 
