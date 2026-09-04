@@ -631,6 +631,9 @@ public class TopDownReplayManager : MonoBehaviour
         return Mathf.Clamp(lookLeadZ, boundMinZ, boundMaxZ);
     }
 
+    private Vector2 lastRightMousePos;
+    private bool isRightMouseDragging = false;
+
     private void HandleFreeNavigation()
     {
         DualCameraSetup dualCam = (gameController != null && gameController.dualCamera != null)
@@ -638,10 +641,13 @@ public class TopDownReplayManager : MonoBehaviour
                                   : FindAnyObjectByType<DualCameraSetup>();
         if (dualCam == null || dualCam.mainCam == null) return;
 
+        // 🌟 디렉터님 원칙: 드로잉이 완전히 끝난 후에만 자유 줌 & 패닝 오픈!
+        if (!isReplayFinished || isDrawing) return;
+
         float screenH = Mathf.Max(Screen.height, 100f);
         float worldPerPixel = (currentOrthoSize * 2f) / screenH;
 
-        // 🌟 1. 줌인 / 줌아웃 (마우스 휠 스크롤 & 2터치 핀치 줌 최우선 처리)
+        // 🌟 1. 줌인 / 줌아웃 (A. 마우스 휠 스크롤)
         float scrollDelta = 0f;
 
 #if ENABLE_INPUT_SYSTEM
@@ -653,8 +659,8 @@ public class TopDownReplayManager : MonoBehaviour
                 scrollDelta = s.y;
             }
         }
-#endif
-        if (Mathf.Abs(scrollDelta) < 0.001f)
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        try
         {
             float legScroll = Input.mouseScrollDelta.y;
             if (Mathf.Abs(legScroll) > 0.001f) scrollDelta = legScroll * 120f;
@@ -664,13 +670,59 @@ public class TopDownReplayManager : MonoBehaviour
                 if (Mathf.Abs(axisScroll) > 0.001f) scrollDelta = axisScroll * 1200f;
             }
         }
+        catch { }
+#endif
 
         if (Mathf.Abs(scrollDelta) > 0.001f)
         {
-            float zoomRate = (scrollDelta > 0f) ? 0.82f : 1.22f; // 휠 1틱당 18~22% 시원하게 줌 영역 증감
-            targetOrthoSize = Mathf.Clamp(targetOrthoSize * zoomRate, minOrthoSize, maxOrthoSize);
+            float zoomFactor = (scrollDelta > 0f) ? 0.82f : 1.22f; // 휠 1틱당 18~22% 시원하게 줌 영역 증감
+            targetOrthoSize = Mathf.Clamp(targetOrthoSize * zoomFactor, minOrthoSize, maxOrthoSize);
         }
 
+        // 🌟 1-B. 안전 조건: 마우스 우클릭(Right Click) 드래그 줌 (위로 드래그 = 줌인, 아래로 드래그 = 줌아웃)
+        bool isRightDown = false;
+        Vector2 rightMousePos = Vector2.zero;
+
+#if ENABLE_INPUT_SYSTEM
+        if (Mouse.current != null)
+        {
+            isRightDown = Mouse.current.rightButton.isPressed;
+            rightMousePos = Mouse.current.position.ReadValue();
+        }
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        try
+        {
+            isRightDown = Input.GetMouseButton(1);
+            rightMousePos = Input.mousePosition;
+        }
+        catch { }
+#endif
+
+        if (isRightDown)
+        {
+            if (!isRightMouseDragging)
+            {
+                isRightMouseDragging = true;
+                lastRightMousePos = rightMousePos;
+            }
+            else
+            {
+                float dy = rightMousePos.y - lastRightMousePos.y;
+                if (Mathf.Abs(dy) > 0.1f)
+                {
+                    // 위로 드래그(dy > 0): 줌인(orthoSize 감소), 아래로 드래그(dy < 0): 줌아웃(orthoSize 증가)
+                    float zoomDelta = -dy * (targetOrthoSize * 0.008f);
+                    targetOrthoSize = Mathf.Clamp(targetOrthoSize + zoomDelta, minOrthoSize, maxOrthoSize);
+                    lastRightMousePos = rightMousePos;
+                }
+            }
+        }
+        else
+        {
+            isRightMouseDragging = false;
+        }
+
+        // 🌟 1-C. 모바일 2터치 핀치 줌
 #if ENABLE_INPUT_SYSTEM
         if (Touchscreen.current != null && Touchscreen.current.touches.Count >= 2)
         {
@@ -693,7 +745,7 @@ public class TopDownReplayManager : MonoBehaviour
                 }
             }
         }
-#endif
+#elif ENABLE_LEGACY_INPUT_MANAGER
         try
         {
             if (Input.touchCount == 2)
@@ -713,8 +765,9 @@ public class TopDownReplayManager : MonoBehaviour
             }
         }
         catch { }
+#endif
 
-        // 🌟 2. 화면 드래그 패닝 (드로잉 완료 후에만 활성화)
+        // 🌟 2. 화면 드래그 패닝 (마우스 좌클릭/휠클릭 및 모바일 1터치)
         Vector2 mousePos = Vector2.zero;
         bool isMouseDown = false;
 
@@ -722,16 +775,23 @@ public class TopDownReplayManager : MonoBehaviour
         if (Mouse.current != null)
         {
             mousePos = Mouse.current.position.ReadValue();
-            isMouseDown = Mouse.current.leftButton.isPressed || Mouse.current.rightButton.isPressed || Mouse.current.middleButton.isPressed;
+            isMouseDown = Mouse.current.leftButton.isPressed || Mouse.current.middleButton.isPressed;
         }
-#endif
-        if (!isMouseDown)
+        if (!isMouseDown && Touchscreen.current != null && Touchscreen.current.primaryTouch.isInProgress && Touchscreen.current.touches.Count < 2)
         {
-            isMouseDown = Input.GetMouseButton(0) || Input.GetMouseButton(1) || Input.GetMouseButton(2);
+            mousePos = Touchscreen.current.primaryTouch.position.ReadValue();
+            isMouseDown = true;
+        }
+#elif ENABLE_LEGACY_INPUT_MANAGER
+        try
+        {
+            isMouseDown = Input.GetMouseButton(0) || Input.GetMouseButton(2);
             mousePos = Input.mousePosition;
         }
+        catch { }
+#endif
 
-        if (isMouseDown && mousePos.y > screenH * 0.18f && isReplayFinished && !isDrawing)
+        if (isMouseDown && mousePos.y > screenH * 0.18f)
         {
             if (!isMouseDragging)
             {
@@ -965,12 +1025,13 @@ public class TopDownReplayManager : MonoBehaviour
             SpawnBounceMarker(markerRecords[markerRecords.Count - 1], markerRecords.Count - 1);
         }
 
-        // 🌟 종료 시 엉뚱한 곳으로 점프하지 않고 마지막 돌 위치에 부드럽게 유지
+        // 🌟 종료 시 엉뚱한 곳으로 점프하지 않고 마지막 돌 위치에 정밀하게 카메라 안착
         if (dualCam != null && currentHistory.Count > 0)
         {
             Vector3 lastPos = currentHistory[currentHistory.Count - 1].position;
             currentCamCenter.x = Mathf.Clamp(lastPos.x, boundMinX, boundMaxX);
-            currentCamCenter.z = CalculateCameraZForLeadPosition(lastPos.z);
+            currentCamCenter.z = Mathf.Clamp(lastPos.z, boundMinZ, boundMaxZ);
+            targetOrthoSize = Mathf.Clamp(targetOrthoSize, 25f, 60f); // 마무리 시 너무 멀거나 가깝지 않게
             dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
             SyncTerrainByZ(currentCamCenter.z);
         }
