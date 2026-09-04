@@ -9,6 +9,8 @@ public static class BuildPlayerHelper
     [MenuItem("Stone Skipping/📦 Build Windows Standalone (EXE)")]
     public static void BuildWindowsEXE()
     {
+        ResourceSyncTool.SyncResources();
+
         string outputDir = Path.GetFullPath("Builds/Windows");
         if (!Directory.Exists(outputDir))
         {
@@ -63,6 +65,8 @@ public static class BuildPlayerHelper
 
     private static void ExecuteAndroidBuild(bool autoRun)
     {
+        ResourceSyncTool.SyncResources();
+
         string outputDir = Path.GetFullPath("Builds/Android");
         if (!Directory.Exists(outputDir))
         {
@@ -116,6 +120,8 @@ public static class BuildPlayerHelper
     [MenuItem("Stone Skipping/🍎 Build iOS (Xcode Project)")]
     public static void BuildIOSProject()
     {
+        ResourceSyncTool.SyncResources();
+
         string outputDir = Path.GetFullPath("Builds/iOS");
         if (!Directory.Exists(outputDir))
         {

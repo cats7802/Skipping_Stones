@@ -31,6 +31,9 @@
 | 19 | **로비 쇼케이스 프리팹** | `Assets/prefab/Lobby.prefab` | `Assets/Resources/Lobby.prefab` | ✅ 동기화됨 |
 | 20 | **캐릭터 프리팹 일체 (4종)** | `Assets/prefab/Character/*.prefab` (Kai 추가) | `Assets/Resources/Character/*.prefab` | ✅ 동기화됨 |
 | 21 | **돌 프리팹 일체 (4종)** | `Assets/prefab/Stone/*.prefab` | `Assets/Resources/Stone/*.prefab` | ✅ 동기화됨 |
+| 22 | **랜덤 링 3D 모델** | `Assets/3D/Ingame_Object/Random_Ring.fbx` | `Assets/Resources/Random_Ring.fbx` | ✅ 동기화됨 |
+| 23 | **연잎/연꽃 프리팹 (5종)** | `Assets/Design_sources/3D/Environments/SoStylized/Environment/Foliage/Prefabs/P_LilyPad*.prefab` | `Assets/Resources/LilyPad_1~5.prefab` | ✅ 동기화됨 |
+| 24 | **나룻터 나무 선착장** | `Assets/prefab/Lakeside_WoodenPier.prefab` | `Assets/Resources/Lakeside_WoodenPier.prefab` | ✅ 동기화됨 |
 
 ---
 

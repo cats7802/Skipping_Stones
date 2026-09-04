@@ -21,9 +21,13 @@
 - 회전이 끝난 후 등 뒤로 숨은 슬롯만 다음 돌로 조용히 갱신(UpdateBehindSlot)하여 돌 4종(기본, 파랑, 초록, 빨강)이 120도씩 매끄럽게 무한 캐러셀 회전.
 - IsChildOf(transform) 포괄 레이캐스트를 제거하여 캐릭터 터치(360도 자유 회전)와 돌 스탠드 터치(120도 스텝 회전)를 완벽하게 상호 독립 분리.
 
-### ✅ 3. 👤 유저 데이터 및 개발자 ALL 해금(DevUnlockAll) 정상화
-- devUnlockAllByDefault = false로 변경하여 기본 실행 시 순정 신규 유저 상태(기본 캐릭터 1명 + 기본 돌)로 시작.
-- F5 키 또는 **로비 상단 코인/헤더 5연속 탭** 시 DevUnlockAll()이 안전하게 발동하여 4종 캐릭터/돌 및 재화가 즉시 해금되도록 지원.
+### ✅ 4. 📦 Standalone & Mobile 빌드 Resources 에셋 동기화 체계 구축
+- **빌드 런타임 누락 프리팹 동기화**:
+  - `Random_Ring.fbx` 모델을 `Assets/Resources/Random_Ring.fbx`로 동기화하여 빌드 시 분홍/보라색(Magenta) 셰이더 에러 실린더가 생성되던 문제 원천 차단.
+  - 연잎/연꽃 5종(`P_LilyPad1~3`, `P_LilyPadCluster1~2`)을 `Assets/Resources/LilyPad_1~5.prefab`으로 동기화하여 빌드 런타임에서도 정상 스폰되도록 보장.
+  - `BoostPad`, `ObstacleRock`, `TargetZone`, `FriendFlag`, `Lakeside_WoodenPier` 등 핵심 인터랙션 프리팹 일체 `Assets/Resources/` 복제 완료.
+- **자동 동기화 툴 (`ResourceSyncTool`)**:
+  - `BuildPlayerHelper.cs` 빌드 파이프라인(Windows/Android/iOS) 시작 전 `ResourceSyncTool.SyncResources()`를 자동 호출하여 누락 방지 자동화.
 
 ---
 
