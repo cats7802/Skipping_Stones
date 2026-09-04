@@ -647,83 +647,65 @@ public class TopDownReplayManager : MonoBehaviour
         float screenH = Mathf.Max(Screen.height, 100f);
         float worldPerPixel = (currentOrthoSize * 2f) / screenH;
 
-        // 🌟 1. 줌인 / 줌아웃 (A. 마우스 휠 스크롤)
-        float scrollDelta = 0f;
-
+        float scrollY = 0f;
 #if ENABLE_INPUT_SYSTEM
+        // 🌟 1. 줌인 / 줌아웃 (A. 마우스 휠)
         if (Mouse.current != null)
         {
-            Vector2 s = Mouse.current.scroll.ReadValue();
-            if (Mathf.Abs(s.y) > 0.001f)
-            {
-                scrollDelta = s.y;
-            }
+            scrollY = Mouse.current.scroll.ReadValue().y;
         }
-#elif ENABLE_LEGACY_INPUT_MANAGER
-        try
-        {
-            float legScroll = Input.mouseScrollDelta.y;
-            if (Mathf.Abs(legScroll) > 0.001f) scrollDelta = legScroll * 120f;
-            else
-            {
-                float axisScroll = Input.GetAxis("Mouse ScrollWheel");
-                if (Mathf.Abs(axisScroll) > 0.001f) scrollDelta = axisScroll * 1200f;
-            }
-        }
-        catch { }
 #endif
 
-        if (Mathf.Abs(scrollDelta) > 0.001f)
-        {
-            float zoomFactor = (scrollDelta > 0f) ? 0.82f : 1.22f; // 휠 1틱당 18~22% 시원하게 줌 영역 증감
-            targetOrthoSize = Mathf.Clamp(targetOrthoSize * zoomFactor, minOrthoSize, maxOrthoSize);
-        }
-
-        // 🌟 1-B. 안전 조건: 마우스 우클릭(Right Click) 드래그 줌 (위로 드래그 = 줌인, 아래로 드래그 = 줌아웃)
-        bool isRightDown = false;
-        Vector2 rightMousePos = Vector2.zero;
-
-#if ENABLE_INPUT_SYSTEM
-        if (Mouse.current != null)
-        {
-            isRightDown = Mouse.current.rightButton.isPressed;
-            rightMousePos = Mouse.current.position.ReadValue();
-        }
-#elif ENABLE_LEGACY_INPUT_MANAGER
         try
         {
-            isRightDown = Input.GetMouseButton(1);
-            rightMousePos = Input.mousePosition;
-        }
-        catch { }
-#endif
-
-        if (isRightDown)
-        {
-            if (!isRightMouseDragging)
+            // 🌟 신형 Input System에서 스크롤 검출이 안 될 경우를 위해 레거시 및 하이브리드 축 백업 처리!
+            if (Mathf.Abs(scrollY) < 0.001f)
             {
-                isRightMouseDragging = true;
-                lastRightMousePos = rightMousePos;
-            }
-            else
-            {
-                float dy = rightMousePos.y - lastRightMousePos.y;
-                if (Mathf.Abs(dy) > 0.1f)
+                scrollY = Input.mouseScrollDelta.y;
+                if (Mathf.Abs(scrollY) < 0.001f)
                 {
-                    // 위로 드래그(dy > 0): 줌인(orthoSize 감소), 아래로 드래그(dy < 0): 줌아웃(orthoSize 증가)
-                    float zoomDelta = -dy * (targetOrthoSize * 0.008f);
-                    targetOrthoSize = Mathf.Clamp(targetOrthoSize + zoomDelta, minOrthoSize, maxOrthoSize);
-                    lastRightMousePos = rightMousePos;
+                    scrollY = Input.GetAxis("Mouse ScrollWheel") * 10f; // 일반화 보정
                 }
             }
         }
-        else
+        catch { }
+
+        if (Mathf.Abs(scrollY) > 0.001f)
         {
-            isRightMouseDragging = false;
+            float zoomFactor = (scrollY > 0f) ? 0.82f : 1.22f; // 휠 1틱당 18~22% 줌인/줌아웃
+            targetOrthoSize = Mathf.Clamp(targetOrthoSize * zoomFactor, minOrthoSize, maxOrthoSize);
+        }
+
+#if ENABLE_INPUT_SYSTEM
+        // 🌟 1-B. 안전 조건: 마우스 우클릭 드래그 상하 줌
+        if (Mouse.current != null)
+        {
+            if (Mouse.current.rightButton.isPressed)
+            {
+                Vector2 rightPos = Mouse.current.position.ReadValue();
+                if (!isRightMouseDragging)
+                {
+                    isRightMouseDragging = true;
+                    lastRightMousePos = rightPos;
+                }
+                else
+                {
+                    float dy = rightPos.y - lastRightMousePos.y;
+                    if (Mathf.Abs(dy) > 0.1f)
+                    {
+                        float zoomDelta = -dy * (targetOrthoSize * 0.008f);
+                        targetOrthoSize = Mathf.Clamp(targetOrthoSize + zoomDelta, minOrthoSize, maxOrthoSize);
+                        lastRightMousePos = rightPos;
+                    }
+                }
+            }
+            else
+            {
+                isRightMouseDragging = false;
+            }
         }
 
         // 🌟 1-C. 모바일 2터치 핀치 줌
-#if ENABLE_INPUT_SYSTEM
         if (Touchscreen.current != null && Touchscreen.current.touches.Count >= 2)
         {
             var t0 = Touchscreen.current.touches[0];
@@ -745,51 +727,21 @@ public class TopDownReplayManager : MonoBehaviour
                 }
             }
         }
-#elif ENABLE_LEGACY_INPUT_MANAGER
-        try
-        {
-            if (Input.touchCount == 2)
-            {
-                Touch t0 = Input.GetTouch(0);
-                Touch t1 = Input.GetTouch(1);
-                Vector2 prevP0 = t0.position - t0.deltaPosition;
-                Vector2 prevP1 = t1.position - t1.deltaPosition;
-                float prevDist = (prevP0 - prevP1).magnitude;
-                float currDist = (t0.position - t1.position).magnitude;
-                float delta = currDist - prevDist;
 
-                if (Mathf.Abs(delta) > 0.1f)
-                {
-                    targetOrthoSize = Mathf.Clamp(targetOrthoSize - delta * (targetOrthoSize * 0.004f), minOrthoSize, maxOrthoSize);
-                }
-            }
-        }
-        catch { }
-#endif
-
-        // 🌟 2. 화면 드래그 패닝 (마우스 좌클릭/휠클릭 및 모바일 1터치)
+        // 🌟 2. 화면 드래그 패닝 (마우스 좌클릭 또는 모바일 1터치)
         Vector2 mousePos = Vector2.zero;
         bool isMouseDown = false;
 
-#if ENABLE_INPUT_SYSTEM
-        if (Mouse.current != null)
+        if (Mouse.current != null && Mouse.current.leftButton.isPressed)
         {
             mousePos = Mouse.current.position.ReadValue();
-            isMouseDown = Mouse.current.leftButton.isPressed || Mouse.current.middleButton.isPressed;
+            isMouseDown = true;
         }
-        if (!isMouseDown && Touchscreen.current != null && Touchscreen.current.primaryTouch.isInProgress && Touchscreen.current.touches.Count < 2)
+        else if (Touchscreen.current != null && Touchscreen.current.primaryTouch.isInProgress && Touchscreen.current.touches.Count < 2)
         {
             mousePos = Touchscreen.current.primaryTouch.position.ReadValue();
             isMouseDown = true;
         }
-#elif ENABLE_LEGACY_INPUT_MANAGER
-        try
-        {
-            isMouseDown = Input.GetMouseButton(0) || Input.GetMouseButton(2);
-            mousePos = Input.mousePosition;
-        }
-        catch { }
-#endif
 
         if (isMouseDown && mousePos.y > screenH * 0.18f)
         {
@@ -813,6 +765,7 @@ public class TopDownReplayManager : MonoBehaviour
         {
             isMouseDragging = false;
         }
+#endif
 
         currentCamCenter.x = Mathf.Clamp(currentCamCenter.x, boundMinX, boundMaxX);
         currentCamCenter.z = Mathf.Clamp(currentCamCenter.z, boundMinZ, boundMaxZ);
@@ -820,6 +773,7 @@ public class TopDownReplayManager : MonoBehaviour
         currentOrthoSize = Mathf.Lerp(currentOrthoSize, targetOrthoSize, Time.unscaledDeltaTime * 16f);
         UpdateVisualsScale(currentOrthoSize);
 
+        // 🌟 카메라 및 DualCameraSetup에 실시간 동기화 반영
         dualCam.SetReplayTopDownView(new Vector3(currentCamCenter.x, baseReplayLevel + 80f, currentCamCenter.z), currentOrthoSize);
         SyncTerrainByZ(currentCamCenter.z);
     }
