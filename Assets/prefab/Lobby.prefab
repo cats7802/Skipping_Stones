@@ -46,24 +46,27 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: c685f499c6c12714895f5d904c511eb5, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Visuals.LobbyStoneShowcaseController
+  stoneDatabase: {fileID: 11400000, guid: 9ef6ddf7ffdcd25409e07bda6e0c49e5, type: 2}
   targetCamera: {fileID: 5510438674477548156}
   dialTransform: {fileID: 4011924925076610479}
   stageTransform: {fileID: 8808148862420122259}
   stageSlots:
-  - {fileID: 0}
-  - {fileID: 0}
-  - {fileID: 0}
+  - {fileID: 2802448094593529490}
+  - {fileID: 2483098733678065920}
+  - {fileID: 6584817534850956507}
   unlockedStonePrefabs:
-  - {fileID: 1123660413367043095, guid: 0a5f7596819abed49897effe880e4581, type: 3}
-  - {fileID: 1123660413367043095, guid: 975c7c23a642adc49ad09b97cd4923b1, type: 3}
-  - {fileID: 1123660413367043095, guid: d5aa6dc644310bd4e9322de77b9fa9a3, type: 3}
-  - {fileID: 1123660413367043095, guid: 5e20567f163a22e4fb7da35d4a13b367, type: 3}
+  - {fileID: 7764890063275383968, guid: 0a5f7596819abed49897effe880e4581, type: 3}
+  - {fileID: 7889662438711938954, guid: 975c7c23a642adc49ad09b97cd4923b1, type: 3}
+  - {fileID: 6003704184451318120, guid: d5aa6dc644310bd4e9322de77b9fa9a3, type: 3}
+  - {fileID: 7889662438711938954, guid: 5e20567f163a22e4fb7da35d4a13b367, type: 3}
   rotationDuration: 0.45
   dialStepAngle: 30
   stageStepAngle: 120
   dragThresholdPixels: 35
+  stoneLocalOffset: {x: 0, y: 0.015, z: 0}
+  stoneLocalScale: {x: 1.35, y: 1.35, z: 1.35}
   currentStoneIndex: 0
-  currentSlotFacingIndex: 0
+  currentFacingSlotIndex: 0
   isRotating: 0
 --- !u!114 &9079714862716778933
 MonoBehaviour:
@@ -79,14 +82,14 @@ MonoBehaviour:
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Visuals.LobbyCharacterShowcaseController
   targetCamera: {fileID: 5510438674477548156}
   stagingPosition: {fileID: 8958744429749833219}
-  standPrefab: {fileID: 1827226128182048838, guid: faf82f0fc445e6148b54ee37d4f0b3de, type: 3}
   characterPrefabs:
   - {fileID: 4424490057512640635, guid: 31a1e07c8895f704e990d5e8f83aad68, type: 3}
   - {fileID: 4424490057512640635, guid: be5b98db32eaffb4ca59e516f6ed073d, type: 3}
   - {fileID: 4424490057512640635, guid: c6c8a086a072e414fb5c97067589ec87, type: 3}
   - {fileID: 3307212811502473416, guid: 980041f97f3429d4388064c82f870594, type: 3}
-  transitionDuration: 1
-  entryOffsetDistance: 3.5
+  slideExitDuration: 0.22
+  slideEnterDuration: 0.28
+  slideDistance: 3.2
   entryAngleOffset: 55
   rotationSensitivity: 0.4
   currentCharacterIndex: 0
@@ -176,9 +179,24 @@ Transform:
   m_CorrespondingSourceObject: {fileID: -8679921383154817045, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
   m_PrefabInstance: {fileID: 1314814892213885610}
   m_PrefabAsset: {fileID: 0}
+--- !u!4 &2483098733678065920 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3479756431842288554, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
+  m_PrefabInstance: {fileID: 1314814892213885610}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &2802448094593529490 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 3808746332168580152, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
+  m_PrefabInstance: {fileID: 1314814892213885610}
+  m_PrefabAsset: {fileID: 0}
 --- !u!4 &4011924925076610479 stripped
 Transform:
   m_CorrespondingSourceObject: {fileID: -6516126627314317563, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
+  m_PrefabInstance: {fileID: 1314814892213885610}
+  m_PrefabAsset: {fileID: 0}
+--- !u!4 &6584817534850956507 stripped
+Transform:
+  m_CorrespondingSourceObject: {fileID: 5286893383221028465, guid: 6af006fcf14f3e744aecd258483f9c6d, type: 3}
   m_PrefabInstance: {fileID: 1314814892213885610}
   m_PrefabAsset: {fileID: 0}
 --- !u!1 &7149915343957481047 stripped

@@ -73,4 +73,9 @@
   3. `RandomRing`과의 완벽한 궤적 및 고도 싱크 유지.
 - **컴파일 검증**: 0 Errors, 0 Warnings 통과.
 
-
+### [2026-09-08] 인스펙터 불필요 런타임 필드 숨김 및 정리
+- **수정 목적**: `EnsureTrail()` 및 `EnsureRhythmRing()`을 통해 내부적으로 자동 보장되는 `trail`, `rhythmRing` 및 런타임 동적 감지되는 `waterLevel`이 인스펙터에 노출되어 발생하던 혼선 및 중복 슬롯 제거.
+- **적용 내용**:
+  - `ArcadeSkippingStone.cs`: `trail`, `rhythmRing`, `waterLevel`에 `[HideInInspector]` 적용하여 인스펙터 UI 슬림화.
+  - `RhythmRingIndicator.cs`: 중복 선언된 `[Header]` 정리.
+- **컴파일 검증**: 0 Errors, 0 Warnings 통과.

@@ -5,7 +5,6 @@ using UnityEditor;
 [CustomEditor(typeof(SkippingStone))]
 public class SkippingStoneEditor : Editor
 {
-    private SerializedProperty customStonePrefab;
     private SerializedProperty forwardPower;
     private SerializedProperty initialUpwardForce;
     private SerializedProperty baseBounceUpForce;
@@ -15,9 +14,6 @@ public class SkippingStoneEditor : Editor
     private SerializedProperty inFlightVisualScale;
 
     private SerializedProperty timingWindowHeight;
-    private SerializedProperty perfectDistance;
-    private SerializedProperty greatDistance;
-    private SerializedProperty goodDistance;
 
     private SerializedProperty minSkimSkips;
     private SerializedProperty maxSkimSkips;
@@ -30,7 +26,6 @@ public class SkippingStoneEditor : Editor
 
     private void OnEnable()
     {
-        customStonePrefab = serializedObject.FindProperty("customStonePrefab");
         forwardPower = serializedObject.FindProperty("forwardPower");
         initialUpwardForce = serializedObject.FindProperty("initialUpwardForce");
         baseBounceUpForce = serializedObject.FindProperty("baseBounceUpForce");
@@ -40,9 +35,6 @@ public class SkippingStoneEditor : Editor
         inFlightVisualScale = serializedObject.FindProperty("inFlightVisualScale");
 
         timingWindowHeight = serializedObject.FindProperty("timingWindowHeight");
-        perfectDistance = serializedObject.FindProperty("perfectDistance");
-        greatDistance = serializedObject.FindProperty("greatDistance");
-        goodDistance = serializedObject.FindProperty("goodDistance");
 
         minSkimSkips = serializedObject.FindProperty("minSkimSkips");
         maxSkimSkips = serializedObject.FindProperty("maxSkimSkips");
@@ -65,13 +57,8 @@ public class SkippingStoneEditor : Editor
             alignment = TextAnchor.MiddleLeft
         };
 
-        // 1. 프리팹 설정
-        EditorGUILayout.Space(4);
-        EditorGUILayout.LabelField("📦 3D 모델 및 프리팹", titleStyle);
-        EditorGUILayout.PropertyField(customStonePrefab, new GUIContent("조약돌 프리팹 (Prefab)"));
-
-        // 2. 물리 및 투척 속도 슬라이더
-        EditorGUILayout.Space(8);
+        // 1. 물리 및 투척 속도 슬라이더
+        EditorGUILayout.Space(6);
         EditorGUILayout.LabelField("🚀 물리 및 투척/바운스 속도", titleStyle);
 
         DrawSliderField(forwardPower, "전방 투척 속도 (Power)", 5f, 50f, "기본 투척 수평 전진 속도 (m/s)");
@@ -81,39 +68,24 @@ public class SkippingStoneEditor : Editor
         DrawSliderField(gravityScale, "중력 가속도 배율", 0.5f, 3.0f, "낙하 속도 및 체공 시간 제어");
         DrawSliderField(airDrag, "공기 저항 감쇠", 0.95f, 1.0f, "공기 중 전진 속도 보존율");
 
-        // 3. 비행 시 시각 연출 (돌 크기)
+        // 2. 비행 시 시각 연출 (돌 크기)
         EditorGUILayout.Space(8);
         EditorGUILayout.LabelField("✨ 비행 시 비주얼 연출 (돌 크기)", titleStyle);
         DrawSliderField(inFlightVisualScale, "비행 중 돌 크기 배율", 0.5f, 5.0f, "1.0 = 원본 크기 유지 / 수치를 올리면 날아갈 때 돌이 시원하게 커집니다");
 
-        // 4. 리듬 타이밍 판정 범위
+        // 3. 리듬 타이밍 판정 범위
         EditorGUILayout.Space(8);
         EditorGUILayout.LabelField("🎯 리듬 탭 판정 거리 (수면 위 m)", titleStyle);
-        DrawSliderField(timingWindowHeight, "타이밍 윈도우 시작 높이", 1.0f, 5.0f, "판정 링이 표시되는 수면 위 높이");
-        DrawSliderField(perfectDistance, "PERFECT 판정 거리", 0.1f, 2.0f, "퍼펙트 인정 착수 직전 높이");
-        DrawSliderField(greatDistance, "GREAT 판정 거리", 0.2f, 3.0f, "그레이트 인정 높이");
-        DrawSliderField(goodDistance, "GOOD 판정 거리", 0.5f, 4.0f, "굿 인정 높이");
+        DrawSliderField(timingWindowHeight, "타이밍 윈도우 시작 높이", 1.0f, 5.0f, "판정 링이 표시되는 수면 위 높이 (기본: 2.8m)");
+        EditorGUILayout.HelpBox("💡 착수 판정 및 모멘텀 계산은 StoneTimingEvaluator에서 단일 진실 공급원으로 통합 처리됩니다.\n⭕ 리듬 링의 세부 비주얼(크기, 색상 등)은 하단의 RhythmRingIndicator 컴포넌트에서 조절하세요.", MessageType.None);
 
-        // 5. 리듬 링 비주얼 세부 설정 (통합 슬라이더)
-        EditorGUILayout.Space(8);
-        EditorGUILayout.LabelField("⭕ 리듬 링 비주얼 및 두께 설정", titleStyle);
-        SerializedProperty ringLineWidth = serializedObject.FindProperty("ringLineWidth");
-        SerializedProperty ringTargetRadius = serializedObject.FindProperty("ringTargetRadius");
-        SerializedProperty ringMaxMultiplier = serializedObject.FindProperty("ringMaxMultiplier");
-        SerializedProperty dropLineWidth = serializedObject.FindProperty("dropLineWidth");
-
-        if (ringLineWidth != null) DrawSliderField(ringLineWidth, "수면 링 선 두께", 0.005f, 0.15f, "수면 위에 렌더링되는 링의 굵기");
-        if (ringTargetRadius != null) DrawSliderField(ringTargetRadius, "퍼펙트 타깃 링 반경", 0.1f, 1.5f, "중앙 퍼펙트 링의 크기");
-        if (ringMaxMultiplier != null) DrawSliderField(ringMaxMultiplier, "바깥 링 시작 수축 배율", 1.5f, 10.0f, "수축 시작 시 바깥 링의 최대 크기 배율");
-        if (dropLineWidth != null) DrawSliderField(dropLineWidth, "수직 드롭 가이드 선 두께", 0.001f, 0.04f, "돌에서 수면까지 잇는 수직 레이저 선 두께");
-
-        // 6. 피니시 스키밍
+        // 4. 피니시 스키밍
         EditorGUILayout.Space(8);
         EditorGUILayout.LabelField("🌊 피니시 스키밍 설정", titleStyle);
         EditorGUILayout.PropertyField(minSkimSkips, new GUIContent("최소 스키밍 발동 스킵 수"));
         EditorGUILayout.PropertyField(maxSkimSkips, new GUIContent("최대 스키밍 효과 스킵 수"));
 
-        // 7. 트레일 및 이펙트
+        // 5. 트레일 및 이펙트
         EditorGUILayout.Space(8);
         EditorGUILayout.LabelField("🌈 트레일 및 머티리얼", titleStyle);
         EditorGUILayout.PropertyField(trail, new GUIContent("트레일 렌더러"));
@@ -122,7 +94,7 @@ public class SkippingStoneEditor : Editor
         EditorGUILayout.PropertyField(trailStartColor, new GUIContent("트레일 시작 색상"));
         EditorGUILayout.PropertyField(trailEndColor, new GUIContent("트레일 끝 색상"));
 
-        // 8. 원클릭 물리 프리셋 버튼
+        // 6. 원클릭 물리 프리셋 버튼
         EditorGUILayout.Space(12);
         EditorGUILayout.LabelField("⚙️ 원클릭 물리 밸런스 프리셋", EditorStyles.boldLabel);
         EditorGUILayout.BeginHorizontal();
@@ -155,7 +127,7 @@ public class SkippingStoneEditor : Editor
         GUI.backgroundColor = Color.white;
         EditorGUILayout.EndHorizontal();
 
-        // 8. 런타임 상태 표시 (Play 모드 전용)
+        // 7. 런타임 상태 표시 (Play 모드 전용)
         if (Application.isPlaying)
         {
             EditorGUILayout.Space(10);

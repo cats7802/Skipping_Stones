@@ -53,7 +53,7 @@ namespace SkippingStones.Arcade
         [Header("🌊 포물선 형상 (고정 높이)")]
         public float fixedBounceArcHeight = 1.8f;
         public float currentBounceDistance = 10.0f;
-        public float waterLevel = 16.0f;
+        [HideInInspector] public float waterLevel = 0f;
 
         [Header("🌊 리듬 BPM 및 타이밍 설정")]
         public float baseBPM = 60f;
@@ -76,9 +76,9 @@ namespace SkippingStones.Arcade
         public float totalDistance = 0f;
         public float skimDistance = 0f;
 
-        [Header("비주얼 및 트레일")]
-        public TrailRenderer trail;
-        public RhythmRingIndicator rhythmRing;
+        // 🌟 런타임 자동 보장 내부 참조 (인스펙터 노출 불필요)
+        [HideInInspector] public TrailRenderer trail;
+        [HideInInspector] public RhythmRingIndicator rhythmRing;
 
         [Header("🌀 랜덤 링 (Random Ring) 상태 및 버프")]
         public bool isInRandomRing = false;

@@ -13,6 +13,7 @@ GameObject:
   - component: {fileID: 1015882188392218248}
   - component: {fileID: 5507051009561829050}
   - component: {fileID: 8548560131798176245}
+  - component: {fileID: 2847950004680391469}
   - component: {fileID: 6858175712008058772}
   m_Layer: 0
   m_Name: Stone
@@ -207,7 +208,6 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 7c4f316e0d1ab964ca7c7eae2980b583, type: 3}
   m_Name: 
   m_EditorClassIdentifier: Assembly-CSharp::SkippingStone
-  customStonePrefab: {fileID: 0}
   forwardPower: 13
   initialUpwardForce: 4.2
   baseBounceUpForce: 4
@@ -216,12 +216,6 @@ MonoBehaviour:
   airDrag: 0.998
   inFlightVisualScale: 1
   timingWindowHeight: 2.8
-  perfectWindowTime: 0.1
-  greatWindowTime: 0.22
-  goodWindowTime: 0.38
-  perfectDistance: 0.7
-  greatDistance: 1.45
-  goodDistance: 2.4
   minSkimSkips: 5
   maxSkimSkips: 30
   trail: {fileID: 0}
@@ -229,10 +223,6 @@ MonoBehaviour:
   stoneCustomMaterial: {fileID: 0}
   trailStartColor: {r: 0.25, g: 0.85, b: 1, a: 0.4}
   trailEndColor: {r: 0.15, g: 0.7, b: 1, a: 0}
-  ringLineWidth: 0.032
-  ringTargetRadius: 0.29
-  ringMaxMultiplier: 5.2
-  dropLineWidth: 0.006
   isThrown: 0
   isSunk: 0
   isCrashed: 0
@@ -245,9 +235,59 @@ MonoBehaviour:
   isInTimingWindow: 0
   currentMomentum: 5
   maxMomentum: 10
+  lilyBonusRemainingTurns: 0
   bounceHistory: []
   tapDebugHistory: []
   waterLevel: 0
+--- !u!114 &2847950004680391469
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 7764890063275383968}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 8664ae3ab2386ea40a18a5ad8213ae7e, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Arcade.ArcadeSkippingStone
+  activePreset: 0
+  customPreset:
+    baseDistance: 10
+    perfectDelta: 0.5
+    greatDelta: 0.2
+    goodDelta: 0
+    lateDelta: -0.3
+    tooLateDelta: -0.6
+  fixedBounceArcHeight: 1.8
+  currentBounceDistance: 10
+  waterLevel: 16
+  baseBPM: 60
+  currentCombo: 0
+  currentBPM: 60
+  currentCycleDuration: 1
+  enableComboAcceleration: 1
+  currentMomentum: 60
+  maxMomentum: 100
+  initialLaunchPower: 1
+  isThrown: 0
+  isSunk: 0
+  isCrashed: 0
+  isSkimming: 0
+  skipCount: 0
+  totalDistance: 0
+  skimDistance: 0
+  trail: {fileID: 0}
+  rhythmRing: {fileID: 0}
+  isInRandomRing: 0
+  activeBuffRemainingBounces: 0
+  steerAngleBonus: 0
+  isInvincibleToObstacles: 0
+  speedMultiplierBonus: 1
+  characterHeightModifier: 0
+  lilyBonusRemainingTurns: 0
+  bounceHistory: []
+  showDebugHUD: 0
 --- !u!114 &6858175712008058772
 MonoBehaviour:
   m_ObjectHideFlags: 0

@@ -30,3 +30,13 @@
   - `WaterReflectionShadowController.cs` 생성: Quad 메쉬 동적 생성, 소프트 알파 텍스처 베이킹, 비행 고도별 크기/알파 트래킹 및 `SafeDestroy` 클린업 분리.
   - `SkippingStone.cs`: 분리된 3대 모듈 클래스들과 바인딩 연동, EditMode 및 런타임 Null-Safety 강화.
 - **컴파일 & MCP 검증**: C# 컴파일 0 Errors, 0 Warnings, Unity MCP `Unity_RunCommand` 인엔진 모듈 단위/통합 테스트 전수 통과.
+
+### [2026-09-08] 레거시 미사용 필드 및 중복 리듬링 설정 완전 정리
+- **수정 목적**: `customStonePrefab`, 미사용 판정 변수들, 그리고 `RhythmRingIndicator`와 중복되던 링 파라미터들을 정리하여 인스펙터와 코드의 단일 진실 공급원(SSOT) 확립.
+- **적용 내용**:
+  - `SkippingStone.cs`: `customStonePrefab` 및 `SetupVisualModel()` 제거 (모든 돌 프리팹이 자체 3D 모델을 지니므로 불필요).
+  - `SkippingStone.cs`: 미사용 죽은 코드(`perfectWindowTime`, `greatWindowTime`, `goodWindowTime`, `perfectDistance`, `greatDistance`, `goodDistance`) 및 중복 링 설정(`ringLineWidth`, `ringTargetRadius`, `ringMaxMultiplier`, `dropLineWidth`) 완전 삭제.
+  - `RhythmRingIndicator.cs`: 자체 인스펙터 필드(`targetRingRadius`, `lineWidth`, `maxRingMultiplier` 등)를 기준으로 링 비주얼 설정 일원화.
+  - `SkippingStoneEditor.cs`: 삭제된 레거시 프로퍼티들을 에디터 인스펙터 GUI에서 제거하고, 가독성 높은 구조로 재정리.
+- **컴파일 검증**: `dotnet build` 0 Warnings, 0 Errors 통과.
+

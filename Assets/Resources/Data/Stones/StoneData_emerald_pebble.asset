@@ -1,0 +1,26 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 7184223b3eba69e4ab4e3b4f0e6783c2, type: 3}
+  m_Name: StoneData_emerald_pebble
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Data.StoneDataSO
+  id: emerald_pebble
+  displayName: "\uC5D0\uBA54\uB784\uB4DC \uC790\uAC08"
+  description: "\uD638\uC22B\uAC00 \uAE4A\uC740 \uACF3\uC5D0\uC11C \uBC1C\uACAC\uB418\uB294
+    \uCD08\uB85D\uBE5B \uD589\uC6B4\uC758 \uB3CC"
+  prefab: {fileID: 6003704184451318120, guid: 3a68315c9118c9f4ea33a09e81d41649, type: 3}
+  icon: {fileID: 0}
+  isDefaultUnlocked: 0
+  unlockGoldCost: 2000
+  unlockDiaCost: 0
+  bounceMultiplier: 1.25
+  speedMultiplier: 1
+  stabilityMultiplier: 1

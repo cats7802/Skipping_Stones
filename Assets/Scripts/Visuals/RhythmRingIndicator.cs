@@ -7,7 +7,6 @@ public class RhythmRingIndicator : MonoBehaviour
     public SkippingStones.Arcade.ArcadeSkippingStone arcadeStone;
 
     [Header("링 크기 및 설정")]
-    [Header("링 크기 및 설정")]
     public float targetRingRadius = 0.15f; // 1/2로 콤팩트하게 축소된 정밀 타깃 반경
     public float maxRingMultiplier = 8.5f; // 바깥 링 시작 영역 유지
     public int segments = 56;
@@ -367,9 +366,9 @@ public class RhythmRingIndicator : MonoBehaviour
         if (innerBorderObj != null) innerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
         if (outerBorderObj != null) outerBorderObj.transform.rotation = Quaternion.Euler(90f, 0f, 0f);
 
-        float compensatedTargetRadius = (stone != null && stone.ringTargetRadius > 0.01f) ? stone.ringTargetRadius : targetRingRadius;
-        float compensatedLineWidth = (stone != null && stone.ringLineWidth > 0.001f) ? stone.ringLineWidth : lineWidth;
-        float curMaxMultiplier = (stone != null && stone.ringMaxMultiplier > 1.0f) ? stone.ringMaxMultiplier : maxRingMultiplier;
+        float compensatedTargetRadius = targetRingRadius;
+        float compensatedLineWidth = lineWidth;
+        float curMaxMultiplier = maxRingMultiplier;
 
         if (innerRingBorder != null)
         {

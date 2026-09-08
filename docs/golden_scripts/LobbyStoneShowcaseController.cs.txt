@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
@@ -8,38 +8,44 @@ namespace SkippingStones.Visuals
 {
     /// <summary>
     /// 로비 3D 스톤 쇼케이스 회전 및 슬롯 캐러셀 컨트롤러
-    /// - 하단 다이얼(StoneSelector, 30도)과 상단 스탠드(Stone_Stand, 120도)를 코루틴과 SmoothStep으로 연동 회전
-    /// - 더미 3개(Stone_Stage_01~03)는 부모 트랜스폼에 고정 유지
-    /// - 쇼케이스용 돌 인스턴스는 물리(Rigidbody, Collider, SkippingStone)를 완전히 제거하여 스탠드 접시 홈에 납작하게 결합
-    /// - 회전 완료 후 등 뒤로 돌아간 슬롯만 다음 돌로 조용히 갱신하는 완벽한 무한 링 버퍼
+    /// - StoneDatabaseSO 기반의 단일 진실 공급원 직접 참조
+    /// - 하단 다이얼(StoneSelector, 30도)과 상단 스탠드(Stone_Stand, 120도) 연동 회전
+    /// - 3개 슬롯(Stage_01: 정면, Stage_02: +120° 정면진입, Stage_03: -120° 정면진입)
+    /// - 회전 전 다음 정면 슬롯 돌 사전 스폰 보장 + 무한 링 버퍼 완벽 캐러셀
     /// </summary>
     public class LobbyStoneShowcaseController : MonoBehaviour
     {
+        [Header("🪨 조약돌 데이터베이스 (직접 참조)")]
+        [SerializeField] private StoneDatabaseSO stoneDatabase;
+
         [Header("하이어라키 참조 (자동 검색 또는 직접 연결)")]
-        [SerializeField] private Camera targetCamera;          // 로비 뷰 카메라 (직접 할당 또는 자동 검색)
+        [SerializeField] private Camera targetCamera;          // 로비 뷰 카메라
         [SerializeField] private Transform dialTransform;      // 하단 다이얼 (StoneSelector)
         [SerializeField] private Transform stageTransform;     // 상단 3개 슬롯 회전대 (Stone_Stand)
-        [SerializeField] private Transform[] stageSlots = new Transform[3]; // Stone_Stage_01, 03, 02
+        [SerializeField] private Transform[] stageSlots = new Transform[3]; // [0]=Stage_01, [1]=Stage_02, [2]=Stage_03
 
-        [Header("돌 프리팹 목록 (해금 돌 카탈로그 연동)")]
+        [Header("돌 프리팹 목록 (해금 돌 목록)")]
         [SerializeField] private List<GameObject> unlockedStonePrefabs = new List<GameObject>();
 
         [Header("회전 및 인터랙션 설정")]
-        [SerializeField] private float rotationDuration = 0.45f;
+        [SerializeField] private float rotationDuration = 0.40f;
         [SerializeField] private float dialStepAngle = 30f;
         [SerializeField] private float stageStepAngle = 120f;
         [SerializeField] private float dragThresholdPixels = 35f;
 
+        [Header("쇼케이스 돌 비주얼 설정")]
+        [SerializeField] private Vector3 stoneLocalOffset = new Vector3(0f, 0.02f, 0f); // 접시 홈 위에 도톰하게 안착
+        [SerializeField] private Vector3 stoneLocalScale = new Vector3(1.4f, 1.4f, 1.4f); // 접시 크기에 맞는 볼륨감
+
         [Header("현재 상태 모니터링")]
         [SerializeField] private int currentStoneIndex = 0;
-        [SerializeField] private int currentSlotFacingIndex = 0; // 0=Stage01(정면), 1=Stage03(우뒤), 2=Stage02(좌뒤)
+        [SerializeField] private int currentFacingSlotIndex = 0;
         [SerializeField] private bool isRotating = false;
 
         private GameObject[] spawnedStones = new GameObject[3];
         private int[] slotStoneIndices = new int[3] { -1, -1, -1 };
-        private int currentStep = 0; // 누적 회전 스텝 수
+        private int currentStep = 0;
 
-        // 터치/드래그 입력 감지
         private Vector2 dragStartPos;
         private Vector2 currentPointerPos;
         private bool isDragging = false;
@@ -49,7 +55,7 @@ namespace SkippingStones.Visuals
         private void Awake()
         {
             AutoFindReferences();
-            ScanUnlockedStonesFromCatalog();
+            ScanUnlockedStones();
         }
 
         private void Start()
@@ -60,17 +66,13 @@ namespace SkippingStones.Visuals
         public void InitializeShowcase()
         {
             AutoFindReferences();
+            ScanUnlockedStones();
 
-            ScanUnlockedStonesFromCatalog();
-
-            // 유저가 이전에 선택해둔 돌(selectedStoneId)이 있다면 해당 돌부터 쇼케이스 시작
             int savedIndex = 0;
             var dm = GameDataManager.Instance;
             if (dm != null && dm.UserData != null && !string.IsNullOrEmpty(dm.UserData.selectedStoneId))
             {
                 string targetId = dm.UserData.selectedStoneId;
-                
-                // 1. 카탈로그 ID 또는 프리팹 이름으로 일치 검사
                 for (int i = 0; i < unlockedStonePrefabs.Count; i++)
                 {
                     if (unlockedStonePrefabs[i] == null) continue;
@@ -82,41 +84,52 @@ namespace SkippingStones.Visuals
                         break;
                     }
 
-                    // 카탈로그 ID와 프리팹 이름 상호 매핑 (예: crimson_flint <-> Stone_red)
-                    var catalogItem = dm.stoneCatalog?.Find(s => s.id.Equals(targetId, StringComparison.OrdinalIgnoreCase));
-                    if (catalogItem != null && !string.IsNullOrEmpty(catalogItem.prefabPath) && catalogItem.prefabPath.Contains(pName))
+                    if (stoneDatabase != null)
                     {
-                        savedIndex = i;
-                        break;
+                        var sData = stoneDatabase.GetStoneById(targetId);
+                        if (sData != null && sData.prefab != null && sData.prefab.name.Equals(pName, StringComparison.OrdinalIgnoreCase))
+                        {
+                            savedIndex = i;
+                            break;
+                        }
                     }
                 }
             }
 
             currentStep = 0;
-            currentStoneIndex = savedIndex;
-            currentSlotFacingIndex = 0;
+            currentStoneIndex = (unlockedStonePrefabs.Count > 0) ? Mathf.Clamp(savedIndex, 0, unlockedStonePrefabs.Count - 1) : 0;
+            currentFacingSlotIndex = GetFacingSlotIndex(currentStep);
 
-            // 회전 코루틴과 동일하게 스탠드 및 다이얼의 초기 로컬 회전을 0도(수평)로 정렬
-            if (stageTransform != null) stageTransform.localRotation = Quaternion.Euler(0f, 0f, 0f);
-            if (dialTransform != null) dialTransform.localRotation = Quaternion.Euler(0f, 0f, 0f);
+            if (stageTransform != null) stageTransform.localRotation = Quaternion.identity;
+            if (dialTransform != null) dialTransform.localRotation = Quaternion.identity;
 
+            ClearAllSpawnedStones();
             RefreshAllSlots();
 
-            // 선택된 돌 이벤트 동기화 호출
             if (unlockedStonePrefabs.Count > 0 && currentStoneIndex < unlockedStonePrefabs.Count)
             {
                 OnSelectedStoneChanged?.Invoke(currentStoneIndex, unlockedStonePrefabs[currentStoneIndex]);
             }
         }
 
-        /// <summary>
-        /// 계층 구조 내 부품 및 렌더링 카메라 자동 탐색
-        /// </summary>
-        private void AutoFindReferences()
+        private int GetFacingSlotIndex(int step)
+        {
+            int mod = step % 3;
+            return (mod + 3) % 3;
+        }
+
+        public void ClearAllSpawnedStones()
+        {
+            for (int i = 0; i < 3; i++)
+            {
+                ClearSlot(i);
+            }
+        }
+
+        public void AutoFindReferences()
         {
             if (targetCamera == null)
             {
-                // 1. 하이어라키 내의 Camera001 또는 자식 카메라 우선 탐색
                 Camera[] allCams = FindObjectsByType<Camera>(FindObjectsInactive.Exclude);
                 foreach (var cam in allCams)
                 {
@@ -133,66 +146,73 @@ namespace SkippingStones.Visuals
             if (dialTransform == null) dialTransform = FindDeepChild(transform, "StoneSelector");
             if (stageTransform == null) stageTransform = FindDeepChild(transform, "Stone_Stand");
 
-            if (stageSlots[0] == null) stageSlots[0] = FindDeepChild(transform, "Stone_Stage_01"); // 정면 (0°)
-            if (stageSlots[1] == null) stageSlots[1] = FindDeepChild(transform, "Stone_Stage_02"); // 다음 슬롯 (좌측 뒤, 240°/-120°, 시계 회전 시 정면 진입)
-            if (stageSlots[2] == null) stageSlots[2] = FindDeepChild(transform, "Stone_Stage_03"); // 이전 슬롯 (우측 뒤, 120°, 반시계 회전 시 정면 진입)
+            if (stageSlots == null || stageSlots.Length != 3) stageSlots = new Transform[3];
+            if (stageSlots[0] == null) stageSlots[0] = FindDeepChild(transform, "Stone_Stage_01");
+            if (stageSlots[1] == null) stageSlots[1] = FindDeepChild(transform, "Stone_Stage_02");
+            if (stageSlots[2] == null) stageSlots[2] = FindDeepChild(transform, "Stone_Stage_03");
+
+            if (stoneDatabase == null)
+            {
+                var dm = GameDataManager.Instance;
+                if (dm != null && dm.StoneDatabase != null)
+                {
+                    stoneDatabase = dm.StoneDatabase;
+                }
+                else
+                {
+                    stoneDatabase = Resources.Load<StoneDatabaseSO>("Data/StoneDatabase");
+                }
+            }
         }
 
-        /// <summary>
-        /// GameDataManager 카탈로그에서 해금된 돌 프리팹 자동 스캔
-        /// </summary>
-        public void ScanUnlockedStonesFromCatalog()
+        public void ScanUnlockedStones()
         {
             var dm = GameDataManager.Instance;
-            if (dm != null && dm.stoneCatalog != null && dm.stoneCatalog.Count > 0)
+            var scannedList = new List<GameObject>();
+
+            if (stoneDatabase == null)
             {
-                var scannedList = new List<GameObject>();
-                foreach (var stoneData in dm.stoneCatalog)
-                {
-                    if (!stoneData.isUnlocked) continue;
-                    if (string.IsNullOrEmpty(stoneData.prefabPath)) continue;
+                stoneDatabase = (dm != null && dm.StoneDatabase != null) ? dm.StoneDatabase : Resources.Load<StoneDatabaseSO>("Data/StoneDatabase");
+            }
 
-#if UNITY_EDITOR
-                    GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(stoneData.prefabPath);
-#else
-                    string resourcePath = stoneData.prefabPath;
-                    if (resourcePath.StartsWith("Assets/prefab/")) resourcePath = resourcePath.Substring("Assets/prefab/".Length);
-                    if (resourcePath.StartsWith("Assets/3D/prefab/")) resourcePath = resourcePath.Substring("Assets/3D/prefab/".Length);
-                    if (resourcePath.EndsWith(".prefab")) resourcePath = resourcePath.Substring(0, resourcePath.Length - ".prefab".Length);
-                    
-                    GameObject prefab = Resources.Load<GameObject>(resourcePath);
-                    if (prefab == null)
-                    {
-                        // 파일명만 추출하여 단독 폴백 시도 (예: "Stone", "Stone_Blue")
-                        string fileName = System.IO.Path.GetFileNameWithoutExtension(stoneData.prefabPath);
-                        prefab = Resources.Load<GameObject>(fileName) ?? Resources.Load<GameObject>($"Stone/{fileName}");
-                    }
-#endif
-                    if (prefab != null && !scannedList.Contains(prefab))
-                    {
-                        scannedList.Add(prefab);
-                    }
-                }
-
-                if (scannedList.Count > 0)
+            if (stoneDatabase != null && stoneDatabase.Count > 0)
+            {
+                foreach (var s in stoneDatabase.Stones)
                 {
-                    unlockedStonePrefabs = scannedList;
-                    return;
+                    if (s == null || s.prefab == null) continue;
+
+                    bool isUnlocked = s.isDefaultUnlocked;
+                    if (dm != null && dm.UserData != null && dm.UserData.unlockedStoneIds != null)
+                    {
+                        if (dm.UserData.unlockedStoneIds.Contains(s.id))
+                        {
+                            isUnlocked = true;
+                        }
+                    }
+
+                    if (isUnlocked && !scannedList.Contains(s.prefab))
+                    {
+                        scannedList.Add(s.prefab);
+                    }
                 }
             }
 
-            // 폴백: 에디터에서 직접 4종 스캔
-#if UNITY_EDITOR
-            if (unlockedStonePrefabs == null) unlockedStonePrefabs = new List<GameObject>();
-            unlockedStonePrefabs.Clear();
-            string[] prefabNames = { "Stone", "Stone_Blue", "Stone_Green", "Stone_red" };
-            foreach (string pName in prefabNames)
+            // 폴백: 스캔 결과가 없을 때 기본 4종 프리팹 로드
+            if (scannedList.Count == 0)
             {
-                string path = $"Assets/prefab/Stone/{pName}.prefab";
-                GameObject prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>(path);
-                if (prefab != null) unlockedStonePrefabs.Add(prefab);
-            }
+                string[] pNames = { "Stone", "Stone_Blue", "Stone_Green", "Stone_red" };
+                foreach (string pName in pNames)
+                {
+                    GameObject p = Resources.Load<GameObject>($"Stone/{pName}") ?? Resources.Load<GameObject>(pName);
+#if UNITY_EDITOR
+                    if (p == null) p = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/Resources/Stone/{pName}.prefab");
+                    if (p == null) p = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>($"Assets/prefab/Stone/{pName}.prefab");
 #endif
+                    if (p != null && !scannedList.Contains(p)) scannedList.Add(p);
+                }
+            }
+
+            unlockedStonePrefabs = scannedList;
         }
 
         private void Update()
@@ -200,9 +220,6 @@ namespace SkippingStones.Visuals
             HandleInput();
         }
 
-        /// <summary>
-        /// 마우스/터치 드래그 입력 처리 (지정 로비 카메라 Raycast 기반)
-        /// </summary>
         private void HandleInput()
         {
             if (isRotating || unlockedStonePrefabs == null || unlockedStonePrefabs.Count < 2) return;
@@ -241,9 +258,7 @@ namespace SkippingStones.Visuals
                     Ray ray = cam.ScreenPointToRay(currentPointerPos);
                     if (Physics.Raycast(ray, out RaycastHit hit, 100f))
                     {
-                        // 1. 다이얼 또는 직속 하위
                         if (dialTransform != null && (hit.transform == dialTransform || hit.transform.IsChildOf(dialTransform))) hitDial = true;
-                        // 2. 스탠드 또는 직속 하위
                         else if (stageTransform != null && (hit.transform == stageTransform || hit.transform.IsChildOf(stageTransform))) hitDial = true;
                     }
                 }
@@ -261,8 +276,6 @@ namespace SkippingStones.Visuals
 
                 if (Mathf.Abs(dragDelta.x) >= dragThresholdPixels)
                 {
-                    // 왼쪽 드래그(-) -> 시계방향 회전 (+1, 등록 순서 정방향 다음 돌)
-                    // 오른쪽 드래그(+) -> 반시계방향 회전 (-1, 등록 순서 역방향 이전 돌)
                     if (dragDelta.x < 0) RotateShowcase(1);
                     else RotateShowcase(-1);
                 }
@@ -281,23 +294,24 @@ namespace SkippingStones.Visuals
             StartCoroutine(RotateRoutine(direction));
         }
 
-        /// <summary>
-        /// 이징(Slow in - Fast - Slow out)을 적용하여 누적 스텝 기반의 순수 로컬 Y축 회전 (절대 오차 0%)
-        /// </summary>
         private IEnumerator RotateRoutine(int direction)
         {
             isRotating = true;
 
             int total = unlockedStonePrefabs.Count;
-            currentStoneIndex = (currentStoneIndex + direction + total) % total;
+            int nextStoneIndex = (currentStoneIndex + direction + total) % total;
+            int nextStep = currentStep + direction;
+            int targetFacingSlot = GetFacingSlotIndex(nextStep);
 
-            // 스탠드가 direction 만큼 시계 회전(+120도)하면 물리적으로 정면에 오는 슬롯 인덱스 갱신 (-direction)
-            currentSlotFacingIndex = (currentSlotFacingIndex - direction + 3) % 3;
+            // 🌟 회전 전 다음 정면 슬롯 돌 사전 스폰
+            SpawnStoneAtSlot(targetFacingSlot, nextStoneIndex);
 
             float startDialY = currentStep * dialStepAngle;
             float startStageY = currentStep * stageStepAngle;
 
-            currentStep += direction;
+            currentStep = nextStep;
+            currentStoneIndex = nextStoneIndex;
+            currentFacingSlotIndex = targetFacingSlot;
 
             float targetDialY = currentStep * dialStepAngle;
             float targetStageY = currentStep * stageStepAngle;
@@ -328,8 +342,7 @@ namespace SkippingStones.Visuals
             if (stageTransform != null)
                 stageTransform.localRotation = Quaternion.Euler(0f, targetStageY, 0f);
 
-            // 회전이 끝난 후 등 뒤로 돌아간 슬롯만 다음/이전 돌로 조용히 갱신
-            UpdateBehindSlot();
+            UpdateBehindSlots();
 
             GameObject currentPrefab = unlockedStonePrefabs.Count > 0 ? unlockedStonePrefabs[currentStoneIndex] : null;
             OnSelectedStoneChanged?.Invoke(currentStoneIndex, currentPrefab);
@@ -342,34 +355,82 @@ namespace SkippingStones.Visuals
             if (unlockedStonePrefabs == null || unlockedStonePrefabs.Count == 0) return;
             int total = unlockedStonePrefabs.Count;
 
-            for (int i = 0; i < 3; i++)
-            {
-                int diff = (i - currentSlotFacingIndex + 3) % 3;
-                int offset = 0;
-                if (diff == 2) offset = 1;       // +120도 회전 시 정면으로 올 슬롯 (다음 돌)
-                else if (diff == 1) offset = -1; // -120도 회전 시 정면으로 올 슬롯 (이전 돌)
+            int facingSlot = currentFacingSlotIndex;
+            int nextSlot = (facingSlot + 1) % 3;
+            int prevSlot = (facingSlot + 2) % 3;
 
-                int stoneIdx = (currentStoneIndex + offset + total) % total;
-                SpawnStoneAtSlot(i, stoneIdx);
+            SpawnStoneAtSlot(facingSlot, currentStoneIndex);
+
+            if (total == 1)
+            {
+                ClearSlot(nextSlot);
+                ClearSlot(prevSlot);
+            }
+            else if (total == 2)
+            {
+                int otherStone = (currentStoneIndex + 1) % total;
+                SpawnStoneAtSlot(nextSlot, otherStone);
+                SpawnStoneAtSlot(prevSlot, otherStone);
+            }
+            else
+            {
+                int nextStone = (currentStoneIndex + 1) % total;
+                int prevStone = (currentStoneIndex - 1 + total) % total;
+                SpawnStoneAtSlot(nextSlot, nextStone);
+                SpawnStoneAtSlot(prevSlot, prevStone);
             }
         }
 
-        private void UpdateBehindSlot()
+        private void UpdateBehindSlots()
         {
             if (unlockedStonePrefabs == null || unlockedStonePrefabs.Count == 0) return;
             int total = unlockedStonePrefabs.Count;
 
-            for (int i = 0; i < 3; i++)
+            int facingSlot = currentFacingSlotIndex;
+            int nextSlot = (facingSlot + 1) % 3;
+            int prevSlot = (facingSlot + 2) % 3;
+
+            if (total == 1)
             {
-                if (i == currentSlotFacingIndex) continue; // 정면 슬롯은 회전해왔으므로 건드리지 않음
+                ClearSlot(nextSlot);
+                ClearSlot(prevSlot);
+            }
+            else if (total == 2)
+            {
+                int otherStone = (currentStoneIndex + 1) % total;
+                SpawnStoneAtSlot(nextSlot, otherStone);
+                SpawnStoneAtSlot(prevSlot, otherStone);
+            }
+            else
+            {
+                int nextStone = (currentStoneIndex + 1) % total;
+                int prevStone = (currentStoneIndex - 1 + total) % total;
+                SpawnStoneAtSlot(nextSlot, nextStone);
+                SpawnStoneAtSlot(prevSlot, prevStone);
+            }
+        }
 
-                int diff = (i - currentSlotFacingIndex + 3) % 3;
-                int offset = 0;
-                if (diff == 2) offset = 1;       // 다음 돌 슬롯
-                else if (diff == 1) offset = -1; // 이전 돌 슬롯
+        private void ClearSlot(int slotIndex)
+        {
+            if (slotIndex < 0 || slotIndex >= 3) return;
 
-                int targetStoneIdx = (currentStoneIndex + offset + total) % total;
-                SpawnStoneAtSlot(i, targetStoneIdx);
+            if (spawnedStones[slotIndex] != null)
+            {
+                if (Application.isPlaying) Destroy(spawnedStones[slotIndex]);
+                else DestroyImmediate(spawnedStones[slotIndex]);
+                spawnedStones[slotIndex] = null;
+            }
+            slotStoneIndices[slotIndex] = -1;
+
+            if (stageSlots != null && slotIndex < stageSlots.Length && stageSlots[slotIndex] != null)
+            {
+                var dummy = stageSlots[slotIndex];
+                for (int c = dummy.childCount - 1; c >= 0; c--)
+                {
+                    var child = dummy.GetChild(c);
+                    if (Application.isPlaying) Destroy(child.gameObject);
+                    else DestroyImmediate(child.gameObject);
+                }
             }
         }
 
@@ -378,33 +439,25 @@ namespace SkippingStones.Visuals
             if (stageSlots == null || slotIndex >= stageSlots.Length || stageSlots[slotIndex] == null) return;
             Transform dummy = stageSlots[slotIndex];
 
-            // 이미 동일한 돌이 올라가 있다면 유지
             if (slotStoneIndices[slotIndex] == stoneIndex && spawnedStones[slotIndex] != null)
             {
                 return;
             }
 
-            // 기존 돌 삭제
-            if (spawnedStones[slotIndex] != null)
-            {
-                if (Application.isPlaying) Destroy(spawnedStones[slotIndex]);
-                else DestroyImmediate(spawnedStones[slotIndex]);
-                spawnedStones[slotIndex] = null;
-            }
+            ClearSlot(slotIndex);
 
             if (stoneIndex < 0 || stoneIndex >= unlockedStonePrefabs.Count) return;
             GameObject prefab = unlockedStonePrefabs[stoneIndex];
             if (prefab == null) return;
 
-            // 더미 밑에 자식으로 얹어놓기 (원래 프리팹 원형 그대로 링크)
             GameObject instance = Instantiate(prefab, dummy);
             instance.name = $"ShowcaseStone_Slot{slotIndex}_{prefab.name}";
-            instance.transform.localPosition = Vector3.zero;
-            instance.transform.localRotation = prefab.transform.localRotation;
-            instance.transform.localScale = Vector3.one;
 
-            // 전시용 인게임 물리/스크립트 완전 제거 (물리/자체회전/간섭 0% -> 부모 트랜스폼과 100% 한 몸 회전)
-            // 1. 커스텀 스크립트 먼저 제거하여 Rigidbody/Collider 의존성 해제
+            instance.transform.localPosition = stoneLocalOffset;
+            instance.transform.localRotation = prefab.transform.localRotation;
+            instance.transform.localScale = stoneLocalScale;
+
+            // 물리 및 인게임 컴포넌트 제거
             var customScripts = instance.GetComponentsInChildren<MonoBehaviour>(true);
             foreach (var script in customScripts)
             {
@@ -413,7 +466,6 @@ namespace SkippingStones.Visuals
                 else DestroyImmediate(script);
             }
 
-            // 2. 콜라이더 제거
             var cols = instance.GetComponentsInChildren<Collider>(true);
             foreach (var col in cols)
             {
@@ -422,13 +474,27 @@ namespace SkippingStones.Visuals
                 else DestroyImmediate(col);
             }
 
-            // 3. 리지드바디 마지막으로 제거 (의존 스크립트가 이미 파괴되었으므로 에러 미발생)
             var rbs = instance.GetComponentsInChildren<Rigidbody>(true);
             foreach (var rb in rbs)
             {
                 if (rb == null) continue;
                 if (Application.isPlaying) Destroy(rb);
                 else DestroyImmediate(rb);
+            }
+
+            // 기본 조약돌 가시성 보정
+            var renderers = instance.GetComponentsInChildren<MeshRenderer>(true);
+            foreach (var mr in renderers)
+            {
+                if (mr == null) continue;
+                if (prefab.name.Equals("Stone", StringComparison.OrdinalIgnoreCase) ||
+                    (mr.sharedMaterial != null && mr.sharedMaterial.name.Contains("Pebble")))
+                {
+                    var mpb = new MaterialPropertyBlock();
+                    mr.GetPropertyBlock(mpb);
+                    mpb.SetColor("_BaseColor", new Color(0.52f, 0.56f, 0.60f, 1f));
+                    mr.SetPropertyBlock(mpb);
+                }
             }
 
             spawnedStones[slotIndex] = instance;

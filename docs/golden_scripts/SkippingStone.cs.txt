@@ -8,10 +8,6 @@ using SkippingStones.Gameplay.Calculators;
 [RequireComponent(typeof(Rigidbody))]
 public class SkippingStone : MonoBehaviour
 {
-    [Header("3D 프리팹 모델")]
-    [Tooltip("사용자 지정 Stone 프리팹 (미지정 시 Assets/3D/prefab/Stone.prefab 자동 로드)")]
-    public GameObject customStonePrefab;
-
     [Header("물리 및 이동 속성")]
     [Tooltip("전방 투척 파워 (수평 속도, m/s)")]
     public float forwardPower = 13.0f;
@@ -39,24 +35,6 @@ public class SkippingStone : MonoBehaviour
     [Tooltip("타이밍 알림 및 판정이 시작되는 수면 위 높이 (m)")]
     public float timingWindowHeight = 2.8f;
 
-    [Tooltip("PERFECT 판정 기준 착수 잔여 시간 (초, 표준 리듬게임 100ms)")]
-    public float perfectWindowTime = 0.100f;
-
-    [Tooltip("GREAT 판정 기준 착수 잔여 시간 (초, 표준 리듬게임 220ms)")]
-    public float greatWindowTime = 0.220f;
-
-    [Tooltip("GOOD 판정 기준 착수 잔여 시간 (초, 표준 리듬게임 380ms)")]
-    public float goodWindowTime = 0.380f;
-
-    [Tooltip("PERFECT 판정 기준 거리 (참조용 m)")]
-    public float perfectDistance = 0.70f;
-
-    [Tooltip("GREAT 판정 기준 거리 (참조용 m)")]
-    public float greatDistance = 1.45f;
-
-    [Tooltip("GOOD 판정 기준 거리 (참조용 m)")]
-    public float goodDistance = 2.40f;
-
     [Header("마지막 '도로록~' 스키밍 피니시 설정")]
     [Tooltip("스키밍 피니시 발동 최소 스킵 횟수")]
     public int minSkimSkips = 5;
@@ -70,16 +48,6 @@ public class SkippingStone : MonoBehaviour
     public Material stoneCustomMaterial;
     public Color trailStartColor = new Color(0.25f, 0.85f, 1.0f, 0.40f);
     public Color trailEndColor = new Color(0.15f, 0.70f, 1.0f, 0f);
-
-    [Header("🎯 리듬 링 비주얼 세부 설정")]
-    [Tooltip("수면 링의 선 두께")]
-    public float ringLineWidth = 0.022f;
-    [Tooltip("퍼펙트 타깃 링의 기본 반경(m)")]
-    public float ringTargetRadius = 0.15f;
-    [Tooltip("바깥 수축 링의 시작 최대 배율")]
-    public float ringMaxMultiplier = 8.5f;
-    [Tooltip("돌-수면 수직 가이드 레이저 선 두께")]
-    public float dropLineWidth = 0.006f;
 
     [Header("상태 모니터링")]
     public bool isThrown = false;
@@ -161,7 +129,6 @@ public class SkippingStone : MonoBehaviour
         }
         startPosition = transform.position;
 
-        SetupVisualModel();
         SetupTrail();
         shadowController.Setup();
         EnsureRhythmRing();
@@ -184,73 +151,6 @@ public class SkippingStone : MonoBehaviour
         {
             Collider col = water.GetComponent<Collider>();
             waterLevel = (col != null) ? col.bounds.max.y : water.transform.position.y;
-        }
-    }
-
-    private void SetupVisualModel()
-    {
-        var rootRenderer = GetComponent<MeshRenderer>();
-        var rootFilter = GetComponent<MeshFilter>();
-        if (rootFilter != null && rootFilter.sharedMesh != null && (rootFilter.sharedMesh.name.Contains("Sphere") || rootFilter.sharedMesh.name.Contains("Pebble")))
-        {
-            if (Application.isPlaying)
-            {
-                Destroy(rootRenderer);
-                Destroy(rootFilter);
-            }
-            else
-            {
-                DestroyImmediate(rootRenderer);
-                DestroyImmediate(rootFilter);
-            }
-        }
-
-        for (int i = transform.childCount - 1; i >= 0; i--)
-        {
-            Transform child = transform.GetChild(i);
-            if (child.name.StartsWith("StoneModel_Fallback") || child.name.Contains("Fallback") || child.name.Contains("Sphere"))
-            {
-                if (Application.isPlaying) Destroy(child.gameObject);
-                else DestroyImmediate(child.gameObject);
-            }
-        }
-
-        var existingStoneModel = transform.Find("StoneModel_ZeroOffset");
-        if (existingStoneModel == null)
-        {
-            for (int i = 0; i < transform.childCount; i++)
-            {
-                Transform child = transform.GetChild(i);
-                if (child.GetComponentInChildren<MeshFilter>() != null)
-                {
-                    existingStoneModel = child;
-                    break;
-                }
-            }
-        }
-
-        if (existingStoneModel == null)
-        {
-            GameObject prefab = customStonePrefab;
-            if (prefab == null) prefab = Resources.Load<GameObject>("Stone");
-#if UNITY_EDITOR
-            if (prefab == null) prefab = UnityEditor.AssetDatabase.LoadAssetAtPath<GameObject>("Assets/3D/prefab/Stone.prefab");
-#endif
-            if (prefab != null)
-            {
-                transform.localScale = Vector3.one;
-                GameObject stoneInstance = Instantiate(prefab, transform);
-                stoneInstance.name = "StoneModel_ZeroOffset";
-                stoneInstance.transform.localPosition = Vector3.zero;
-                stoneInstance.transform.localRotation = Quaternion.identity;
-                stoneInstance.transform.localScale = Vector3.one;
-
-                foreach (var col in stoneInstance.GetComponentsInChildren<Collider>(true))
-                {
-                    if (Application.isPlaying) Destroy(col);
-                    else DestroyImmediate(col);
-                }
-            }
         }
     }
 

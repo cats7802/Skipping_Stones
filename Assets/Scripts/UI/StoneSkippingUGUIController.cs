@@ -1,6 +1,7 @@
 using System;
 using UnityEngine;
 using UnityEngine.UI;
+using SkippingStones.UI;
 
 public class StoneSkippingUGUIController : MonoBehaviour
 {
@@ -159,6 +160,7 @@ public class StoneSkippingUGUIController : MonoBehaviour
     private void Start()
     {
         InitializePanelStates();
+        ApplyLayouts();
     }
 
     private void BindButtonEvents()
@@ -733,22 +735,25 @@ public class StoneSkippingUGUIController : MonoBehaviour
 
     private void ApplyLayouts()
     {
-        // 1. 탑바 Safe Area 적용 (최상단 고정 및 노치 회피)
+        // SafeContainer에 부착된 SafeAreaFitter 즉시 갱신
+        Transform safeContainer = transform.Find("StoneSkipping_uGUICanvas/SafeContainer");
+        if (safeContainer != null)
+        {
+            var fitter = safeContainer.GetComponent<SafeAreaFitter>() ?? safeContainer.gameObject.AddComponent<SafeAreaFitter>();
+            fitter.ApplySafeArea();
+        }
+
+        // 1. 탑바 Safe Area 적용 (SafeContainer 최상단 노치 바로 아래 8px 여백 고정)
         if (topBarObj != null)
         {
             RectTransform topBarRt = topBarObj.GetComponent<RectTransform>();
             if (topBarRt != null)
             {
-                Rect safeArea = Screen.safeArea;
-                
-                // 스크린 높이 대비 안전 영역 상단(yMax)의 비율 계산
-                float safeTopRatio = safeArea.yMax / Screen.height;
-                
-                // TopBar의 anchors를 사단 노치 밑에 딱 고정
-                topBarRt.anchorMin = new Vector2(topBarRt.anchorMin.x, safeTopRatio);
-                topBarRt.anchorMax = new Vector2(topBarRt.anchorMax.x, safeTopRatio);
-                topBarRt.pivot = new Vector2(topBarRt.pivot.x, 1.0f); // 피벗 상단 고정
-                topBarRt.anchoredPosition = new Vector2(topBarRt.anchoredPosition.x, 0f); // 오프셋 0
+                topBarRt.anchorMin = new Vector2(0f, 1f);
+                topBarRt.anchorMax = new Vector2(1f, 1f);
+                topBarRt.pivot = new Vector2(0.5f, 1f);
+                topBarRt.anchoredPosition = new Vector2(0f, -8f);
+                topBarRt.sizeDelta = new Vector2(-20f, 56f);
             }
         }
 

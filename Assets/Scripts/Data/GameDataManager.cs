@@ -24,6 +24,10 @@ namespace SkippingStones.Data
         public List<MapInfoData> mapCatalog = new List<MapInfoData>();
         public List<StoneInfoData> stoneCatalog = new List<StoneInfoData>();
 
+        [Header("🪨 ScriptableObject 데이터베이스")]
+        [SerializeField] private StoneDatabaseSO stoneDatabase;
+        public StoneDatabaseSO StoneDatabase => stoneDatabase;
+
         public event Action<UserPersistentData> OnUserDataChanged;
         public event Action<int, int> OnStaminaChanged; // current, max
 
@@ -198,7 +202,29 @@ namespace SkippingStones.Data
                 });
             }
 
-            if (stoneCatalog.Count == 0)
+            if (stoneDatabase == null)
+            {
+                stoneDatabase = Resources.Load<StoneDatabaseSO>("Data/StoneDatabase");
+            }
+
+            if (stoneDatabase != null && stoneDatabase.Count > 0)
+            {
+                stoneCatalog.Clear();
+                foreach (var stoneSO in stoneDatabase.Stones)
+                {
+                    if (stoneSO == null) continue;
+                    stoneCatalog.Add(new StoneInfoData
+                    {
+                        id = stoneSO.id,
+                        name = stoneSO.displayName,
+                        description = stoneSO.description,
+                        prefabPath = (stoneSO.prefab != null) ? $"Stone/{stoneSO.prefab.name}" : "Stone/Stone",
+                        unlockGoldCost = stoneSO.unlockGoldCost,
+                        isUnlocked = stoneSO.isDefaultUnlocked
+                    });
+                }
+            }
+            else if (stoneCatalog.Count == 0)
             {
                 stoneCatalog = StoneCatalogManager.LoadMasterCatalog();
             }
