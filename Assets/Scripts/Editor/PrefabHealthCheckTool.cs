@@ -484,7 +484,6 @@ namespace SkippingStones.EditorTools
                         trail.startWidth = 0.045f;
                         trail.endWidth = 0.002f;
                         trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-                        stone.trail = trail;
                         modified = true;
                         Debug.Log($"🛠️ [{prefabRoot.name}] TrailRenderer 정식 추가 완료!");
                     }

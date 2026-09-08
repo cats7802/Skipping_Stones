@@ -42,12 +42,8 @@ public class SkippingStone : MonoBehaviour
     [Tooltip("최대 스키밍 효과 도달 스킵 횟수 (30회 이상 시 최대 효과)")]
     public int maxSkimSkips = 30;
 
-    [Header("비주얼 및 트레일")]
-    public TrailRenderer trail;
-    public Material trailCustomMaterial;
-    public Material stoneCustomMaterial;
-    public Color trailStartColor = new Color(0.25f, 0.85f, 1.0f, 0.40f);
-    public Color trailEndColor = new Color(0.15f, 0.70f, 1.0f, 0f);
+    public TrailRenderer trail => GetComponent<TrailRenderer>();
+    [HideInInspector] public Color trailStartColor = new Color(0.25f, 0.85f, 1.0f, 0.40f);
 
     [Header("상태 모니터링")]
     public bool isThrown = false;
@@ -129,7 +125,6 @@ public class SkippingStone : MonoBehaviour
         }
         startPosition = transform.position;
 
-        SetupTrail();
         shadowController.Setup();
         EnsureRhythmRing();
         UpdateWaterLevel();
@@ -152,59 +147,6 @@ public class SkippingStone : MonoBehaviour
             Collider col = water.GetComponent<Collider>();
             waterLevel = (col != null) ? col.bounds.max.y : water.transform.position.y;
         }
-    }
-
-    private void SetupTrail()
-    {
-        if (trail == null)
-        {
-            trail = GetComponent<TrailRenderer>();
-            if (trail == null)
-            {
-                Debug.LogWarning($"[SkippingStone] '{gameObject.name}'에 TrailRenderer 컴포넌트가 없습니다. 트레일 연출을 원하시면 프리팹에 TrailRenderer를 추가해주세요.");
-                return;
-            }
-        }
-
-        trail.time = 0.38f;
-        trail.startWidth = 0.045f;
-        trail.endWidth = 0.002f;
-        trail.minVertexDistance = 0.06f;
-        trail.textureMode = LineTextureMode.Stretch;
-        trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-        trail.receiveShadows = false;
-
-        if (trailCustomMaterial != null)
-        {
-            trail.material = trailCustomMaterial;
-        }
-        else
-        {
-            Material loaded = Resources.Load<Material>("StoneTrail_Mat");
-            if (loaded != null)
-            {
-                trailCustomMaterial = loaded;
-                trail.material = loaded;
-            }
-            else
-            {
-                Shader trailShader = Shader.Find("Universal Render Pipeline/Particles/Unlit")
-                                     ?? Shader.Find("Sprites/Default")
-                                     ?? Shader.Find("Legacy Shaders/Particles/Alpha Blended Premultiply");
-                if (trailShader != null)
-                {
-                    trail.material = new Material(trailShader);
-                }
-            }
-        }
-
-        Gradient gradient = new Gradient();
-        gradient.SetKeys(
-            new GradientColorKey[] { new GradientColorKey(trailStartColor, 0.0f), new GradientColorKey(trailEndColor, 1.0f) },
-            new GradientAlphaKey[] { new GradientAlphaKey(0.40f, 0.0f), new GradientAlphaKey(0.0f, 1.0f) }
-        );
-        trail.colorGradient = gradient;
-        trail.emitting = true;
     }
 
     private RhythmRingIndicator spawnedRhythmRing;
@@ -290,21 +232,10 @@ public class SkippingStone : MonoBehaviour
             rb.interpolation = RigidbodyInterpolation.Interpolate;
         }
 
-        if (trail != null)
+        var tr = GetComponent<TrailRenderer>();
+        if (tr != null)
         {
-            trail.Clear();
-            trail.time = 0.38f;
-            trail.startWidth = 0.045f;
-            trail.endWidth = 0.002f;
-            trail.minVertexDistance = 0.06f;
-            trail.textureMode = LineTextureMode.Stretch;
-
-            Gradient g = new Gradient();
-            g.SetKeys(
-                new GradientColorKey[] { new GradientColorKey(trailStartColor, 0.0f), new GradientColorKey(trailEndColor, 1.0f) },
-                new GradientAlphaKey[] { new GradientAlphaKey(0.40f, 0.0f), new GradientAlphaKey(0.0f, 1.0f) }
-            );
-            trail.colorGradient = g;
+            tr.Clear();
         }
     }
 

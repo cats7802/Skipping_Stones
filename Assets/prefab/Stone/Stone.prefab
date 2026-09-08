@@ -95,7 +95,7 @@ TrailRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 7764890063275383968}
   m_Enabled: 1
-  m_CastShadows: 1
+  m_CastShadows: 0
   m_ReceiveShadows: 1
   m_DynamicOccludee: 1
   m_StaticShadowCaster: 0
@@ -112,7 +112,7 @@ TrailRenderer:
   m_RenderingLayerMask: 1
   m_RendererPriority: 0
   m_Materials:
-  - {fileID: 0}
+  - {fileID: 2100000, guid: 8a4c9b21f37e411da1230491de14d08e, type: 2}
   m_StaticBatchInfo:
     firstSubMesh: 0
     subMeshCount: 0
@@ -135,8 +135,8 @@ TrailRenderer:
   m_SortingLayer: 0
   m_SortingOrder: 0
   m_MaskInteraction: 0
-  m_Time: 5
-  m_PreviewTimeScale: 1
+  m_Time: 1
+  m_PreviewTimeScale: 0.2
   m_Parameters:
     serializedVersion: 3
     widthMultiplier: 0.59727466
@@ -145,13 +145,22 @@ TrailRenderer:
       m_Curve:
       - serializedVersion: 3
         time: 0
-        value: 1
-        inSlope: 0
-        outSlope: 0
+        value: 0.16930962
+        inSlope: 0.8293656
+        outSlope: 0.8293656
         tangentMode: 0
         weightedMode: 0
         inWeight: 0.33333334
-        outWeight: 0.33333334
+        outWeight: 0.11483253
+      - serializedVersion: 3
+        time: 0.94019127
+        value: 0.6349182
+        inSlope: 0.06911425
+        outSlope: 0.06911425
+        tangentMode: 0
+        weightedMode: 0
+        inWeight: 0.15311009
+        outWeight: 0
       m_PreInfinity: 2
       m_PostInfinity: 2
       m_RotationOrder: 4
@@ -188,7 +197,7 @@ TrailRenderer:
     numCornerVertices: 0
     numCapVertices: 0
     alignment: 0
-    textureMode: 0
+    textureMode: 1
     textureScale: {x: 1, y: 1}
     shadowBias: 0.5
     generateLightingData: 0
@@ -218,11 +227,7 @@ MonoBehaviour:
   timingWindowHeight: 2.8
   minSkimSkips: 5
   maxSkimSkips: 30
-  trail: {fileID: 0}
-  trailCustomMaterial: {fileID: 0}
-  stoneCustomMaterial: {fileID: 0}
   trailStartColor: {r: 0.25, g: 0.85, b: 1, a: 0.4}
-  trailEndColor: {r: 0.15, g: 0.7, b: 1, a: 0}
   isThrown: 0
   isSunk: 0
   isCrashed: 0
@@ -277,7 +282,6 @@ MonoBehaviour:
   skipCount: 0
   totalDistance: 0
   skimDistance: 0
-  trail: {fileID: 0}
   rhythmRing: {fileID: 0}
   isInRandomRing: 0
   activeBuffRemainingBounces: 0

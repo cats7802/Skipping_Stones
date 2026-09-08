@@ -76,8 +76,6 @@ namespace SkippingStones.Arcade
         public float totalDistance = 0f;
         public float skimDistance = 0f;
 
-        // 🌟 런타임 자동 보장 내부 참조 (인스펙터 노출 불필요)
-        [HideInInspector] public TrailRenderer trail;
         [HideInInspector] public RhythmRingIndicator rhythmRing;
 
         [Header("🌀 랜덤 링 (Random Ring) 상태 및 버프")]
@@ -151,31 +149,8 @@ namespace SkippingStones.Arcade
                 rb.isKinematic = true;
                 rb.useGravity = false;
             }
-            EnsureTrail();
             EnsureRhythmRing();
             shadowController.Setup();
-        }
-
-        private void EnsureTrail()
-        {
-            if (trail == null) trail = GetComponent<TrailRenderer>();
-            if (trail == null) trail = gameObject.AddComponent<TrailRenderer>();
-
-            trail.time = 0.35f;
-            trail.startWidth = 0.05f;
-            trail.endWidth = 0.005f;
-            trail.minVertexDistance = 0.05f;
-            trail.shadowCastingMode = UnityEngine.Rendering.ShadowCastingMode.Off;
-            trail.receiveShadows = false;
-
-            Material trailMat = Resources.Load<Material>("StoneTrail_Mat");
-            if (trailMat == null)
-            {
-                Shader s = Shader.Find("Universal Render Pipeline/Particles/Unlit")
-                           ?? Shader.Find("Sprites/Default");
-                if (s != null) trailMat = new Material(s);
-            }
-            trail.material = trailMat;
         }
 
         private void EnsureRhythmRing()

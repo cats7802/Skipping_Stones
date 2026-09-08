@@ -18,12 +18,6 @@ public class SkippingStoneEditor : Editor
     private SerializedProperty minSkimSkips;
     private SerializedProperty maxSkimSkips;
 
-    private SerializedProperty trail;
-    private SerializedProperty trailCustomMaterial;
-    private SerializedProperty stoneCustomMaterial;
-    private SerializedProperty trailStartColor;
-    private SerializedProperty trailEndColor;
-
     private void OnEnable()
     {
         forwardPower = serializedObject.FindProperty("forwardPower");
@@ -38,12 +32,6 @@ public class SkippingStoneEditor : Editor
 
         minSkimSkips = serializedObject.FindProperty("minSkimSkips");
         maxSkimSkips = serializedObject.FindProperty("maxSkimSkips");
-
-        trail = serializedObject.FindProperty("trail");
-        trailCustomMaterial = serializedObject.FindProperty("trailCustomMaterial");
-        stoneCustomMaterial = serializedObject.FindProperty("stoneCustomMaterial");
-        trailStartColor = serializedObject.FindProperty("trailStartColor");
-        trailEndColor = serializedObject.FindProperty("trailEndColor");
     }
 
     public override void OnInspectorGUI()
@@ -85,16 +73,7 @@ public class SkippingStoneEditor : Editor
         EditorGUILayout.PropertyField(minSkimSkips, new GUIContent("최소 스키밍 발동 스킵 수"));
         EditorGUILayout.PropertyField(maxSkimSkips, new GUIContent("최대 스키밍 효과 스킵 수"));
 
-        // 5. 트레일 및 이펙트
-        EditorGUILayout.Space(8);
-        EditorGUILayout.LabelField("🌈 트레일 및 머티리얼", titleStyle);
-        EditorGUILayout.PropertyField(trail, new GUIContent("트레일 렌더러"));
-        EditorGUILayout.PropertyField(trailCustomMaterial, new GUIContent("트레일 머티리얼"));
-        EditorGUILayout.PropertyField(stoneCustomMaterial, new GUIContent("조약돌 전용 머티리얼"));
-        EditorGUILayout.PropertyField(trailStartColor, new GUIContent("트레일 시작 색상"));
-        EditorGUILayout.PropertyField(trailEndColor, new GUIContent("트레일 끝 색상"));
-
-        // 6. 원클릭 물리 프리셋 버튼
+        // 5. 원클릭 물리 프리셋 버튼
         EditorGUILayout.Space(12);
         EditorGUILayout.LabelField("⚙️ 원클릭 물리 밸런스 프리셋", EditorStyles.boldLabel);
         EditorGUILayout.BeginHorizontal();
