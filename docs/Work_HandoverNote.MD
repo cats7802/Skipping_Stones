@@ -1,6 +1,6 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
-**작성 일시**: 2026-09-08 23:41  
+**작성 일시**: 2026-09-09 00:50  
 **현재 브랜치**: feature/sandbox-momentum-rhythm  
 **빌드 검증**: 0 Errors, 0 Warnings (골든 스크립트 100% 동기화)
 
@@ -8,7 +8,23 @@
 
 ## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
 
-### ✅ 1. 🧹 SkippingStone.cs & ArcadeSkippingStone.cs 레거시 필드 및 런타임 인스펙터 SSOT 완전 정리
+### ✅ 1. 🎥 DualCameraSetup.cs 리듬 아케이드 모드 비행 카메라 기본값 튜닝 반영
+- **디렉터 확정 6대 카메라 파라미터 적용**:
+  - `followBounceY = true`
+  - `flightPivotOffsetY = -0.5f` (리그 높이 오프셋)
+  - `flightDistBack = 1.5f` (후방 거리 1.5m)
+  - `flightHeight = 1.5f` (카메라 높이 1.5m)
+  - `flightLookForward = 30.0f` (전방 시야 확장 30m)
+  - `flightLookHeight = -5.0f` (수면 내려다보는 피치각 -5.0)
+  - `headingCatchupSpeed = 4.2f`
+- `DualCameraSetup.cs` 내 인스펙터 기본 필드값 및 `CameraProfile.DefaultRhythmArcade()` 프리셋 동기화 완료.
+
+### ✅ 2. 🌈 스톤 프리팹 TrailRenderer 중복 설정 및 런타임 하드코딩 완전 정리
+- **프리팹 SSOT 확립**:
+  - `ArcadeSkippingStone.cs`: 런타임 강제 `AddComponent<TrailRenderer>()`를 수행하던 `EnsureTrail()` 및 미사용 `trail` 필드 완전 삭제.
+  - `SkippingStone.cs`: `SetupTrail()` 제거, 중복 인스펙터 필드(`trailCustomMaterial`, `stoneCustomMaterial`, `trailEndColor`) 삭제 및 `trail => GetComponent<TrailRenderer>()` 프로퍼티로 일원화.
+  - `SkippingStoneEditor.cs`: 인스펙터 GUI에서 불필요한 트레일 섹션 제거.
+  - `StoneTrail_Mat` 머티리얼을 `Universal Render Pipeline/Particles/Unlit` (Transparent, Additive)로 설정하여 꼬리 페이드아웃 최적화.
 - **3D 프리팹 모델 레거시 제거**:
   - `customStonePrefab` 및 `SetupVisualModel()` 내 런타임 fallback 인스턴스화 로직 완전 삭제 (모든 돌 프리팹이 자체 3D 모델과 렌더러를 보유).
 - **죽은 판정 코드(Dead Code) 박멸**:

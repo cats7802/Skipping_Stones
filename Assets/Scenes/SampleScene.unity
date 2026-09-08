@@ -938,11 +938,11 @@ MonoBehaviour:
   shoulderLookForward: 14
   shoulderLookHeight: 1.3
   followBounceY: 1
-  flightPivotOffsetY: 0
-  flightDistBack: 2.2
-  flightHeight: 1.7
-  flightLookForward: 10
-  flightLookHeight: -1.3
+  flightPivotOffsetY: -0.5
+  flightDistBack: 1.5
+  flightHeight: 1.5
+  flightLookForward: 30
+  flightLookHeight: -5
   headingCatchupSpeed: 4.2
   enableGuideCamera: 0
   guideCam: {fileID: 568813967}

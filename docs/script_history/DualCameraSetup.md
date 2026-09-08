@@ -38,6 +38,18 @@
 
 ## 3. 변경 이력 (Changelog)
 
+### [2026-09-09] 리듬 아케이드 모드 비행 추적 카메라 기본값 튜닝 반영
+- **수정 목적**: 리듬 아케이드 모드 비행 시 전방 시야 확장(LookForward 30) 및 쿼터뷰 착수/피치각 최적화.
+- **확정 기본값 (`DefaultRhythmArcade`)**:
+  - `followBounceY = true`
+  - `flightPivotOffsetY = -0.5f`
+  - `flightDistBack = 1.5f`
+  - `flightHeight = 1.5f`
+  - `flightLookForward = 30.0f`
+  - `flightLookHeight = -5.0f`
+  - `headingCatchupSpeed = 4.2f`
+- **컴파일 검증**: 0 Errors, 0 Warnings.
+
 ### [2026-08-31] 3단계 비행 추적 카메라 기본값 튜닝 반영
 - **수정 목적**: 돌의 박진감 넘치는 근접 시점 및 수면/착수점 시인성 개선.
 - **확정 기본값**:
