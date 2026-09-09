@@ -23,6 +23,10 @@ namespace SkippingStones.Gameplay.Modes
             {
                 MapPIPManager.Instance.UpdatePIPState(false);
             }
+            if (controller.dualCamera != null)
+            {
+                controller.dualCamera.ApplyProfileForMode(Mode);
+            }
         }
 
         public void OnPositioningUpdate(GameController controller)

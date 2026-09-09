@@ -123,7 +123,13 @@ namespace SkippingStones.UI
                 effectiveAngle = (baseAngle > 0f) ? (baseAngle + 3.0f) : (baseAngle - 3.0f); // 5° -> 8° / -5° -> -8°
             }
 
-            // 1. 터치 즉시 리듬 판정 실행 (0ms 지연)
+            // 1. 좌/우 조향 각도가 있을 경우 비행 중인 돌에 즉각 물리 조향 적용
+            if (Mathf.Abs(effectiveAngle) > 0.001f && GameController.Instance != null)
+            {
+                GameController.Instance.ApplySteerToCurrentStone(effectiveAngle);
+            }
+
+            // 2. 터치 즉시 리듬 판정 실행 (0ms 지연)
             if (controller != null)
             {
                 controller.OnButtonActionTriggered(effectiveAngle);
@@ -132,6 +138,9 @@ namespace SkippingStones.UI
             {
                 GameController.Instance.EvaluateRhythmTiming(effectiveAngle);
             }
+
+            // 3. UI 버튼 틴트 및 스케일 애니메이션 피드백
+            TriggerVisualFeedback();
         }
 
         public void OnDrag(PointerEventData eventData)

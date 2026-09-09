@@ -38,8 +38,8 @@
 
 ## 3. 변경 이력 (Changelog)
 
-### [2026-09-09] 리듬 아케이드 모드 비행 추적 카메라 기본값 튜닝 반영
-- **수정 목적**: 리듬 아케이드 모드 비행 시 전방 시야 확장(LookForward 30) 및 쿼터뷰 착수/피치각 최적화.
+### [2026-09-09] 리듬 아케이드 모드 비행 추적 카메라 기본값 튜닝 및 롱디 양방향 로드 보장
+- **수정 목적**: 리듬 아케이드 모드 비행 시 전방 시야 확장(LookForward 30) 및 쿼터뷰 착수/피치각 최적화, 롱디스턴스 ↔ 리듬아케이드 모드 전환 시 각각의 확정 기본값이 100% 양방향 자동 로드되도록 프로필 분리.
 - **확정 기본값 (`DefaultRhythmArcade`)**:
   - `followBounceY = true`
   - `flightPivotOffsetY = -0.5f`
@@ -48,6 +48,14 @@
   - `flightLookForward = 30.0f`
   - `flightLookHeight = -5.0f`
   - `headingCatchupSpeed = 4.2f`
+- **롱디스턴스 기본값 (`DefaultLongDistance`)**:
+  - `flightPivotOffsetY = -1.5f`
+  - `flightDistBack = 1.5f`
+  - `flightHeight = 2.5f`
+  - `flightLookForward = 10.0f`
+  - `flightLookHeight = -5.5f`
+  - `headingCatchupSpeed = 4.2f`
+- **양방향 연동**: `ApplyProfileForMode(mode)` 및 각 `IGameModeHandler.OnEnterMode()`에서 자동 호출.
 - **컴파일 검증**: 0 Errors, 0 Warnings.
 
 ### [2026-08-31] 3단계 비행 추적 카메라 기본값 튜닝 반영

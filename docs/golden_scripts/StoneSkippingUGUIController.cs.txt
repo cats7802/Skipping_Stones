@@ -382,11 +382,18 @@ public class StoneSkippingUGUIController : MonoBehaviour
         SetupFlightTouchButtons();
     }
 
+    private Transform GetSafeContainer()
+    {
+        var fitter = GetComponentInChildren<SafeAreaFitter>(true);
+        if (fitter != null) return fitter.transform;
+        Transform sc = transform.Find("SafeContainer") ?? transform.Find("StoneSkipping_uGUICanvas/SafeContainer");
+        if (sc != null) return sc;
+        return transform;
+    }
+
     private void SetupFlightTouchButtons()
     {
-        if (flightHudObj == null) return;
-
-        Transform safeContainer = transform.Find("StoneSkipping_uGUICanvas/SafeContainer") ?? transform;
+        Transform safeContainer = GetSafeContainer();
 
         // 컨테이너 탐색/생성
         if (flightTouchButtonsContainer == null)
@@ -404,7 +411,7 @@ public class StoneSkippingUGUIController : MonoBehaviour
             rootRt.anchorMin = new Vector2(0.5f, 0f);
             rootRt.anchorMax = new Vector2(0.5f, 0f);
             rootRt.pivot = new Vector2(0.5f, 0f);
-            rootRt.anchoredPosition = new Vector2(0f, 60f);
+            rootRt.anchoredPosition = new Vector2(0f, 10f);
             rootRt.sizeDelta = new Vector2(560f, 120f);
         }
         else
@@ -461,6 +468,7 @@ public class StoneSkippingUGUIController : MonoBehaviour
         rt.sizeDelta = new Vector2(120f, 120f);
 
         Image img = btnObj.GetComponent<Image>() ?? btnObj.AddComponent<Image>();
+        img.raycastTarget = true;
         if (sprite != null)
         {
             img.sprite = sprite;
@@ -736,7 +744,7 @@ public class StoneSkippingUGUIController : MonoBehaviour
     private void ApplyLayouts()
     {
         // SafeContainer에 부착된 SafeAreaFitter 즉시 갱신
-        Transform safeContainer = transform.Find("StoneSkipping_uGUICanvas/SafeContainer");
+        Transform safeContainer = GetSafeContainer();
         if (safeContainer != null)
         {
             var fitter = safeContainer.GetComponent<SafeAreaFitter>() ?? safeContainer.gameObject.AddComponent<SafeAreaFitter>();
@@ -806,6 +814,20 @@ public class StoneSkippingUGUIController : MonoBehaviour
                 bannerRt.anchorMax = new Vector2(0.5f, 1f);
                 bannerRt.pivot = new Vector2(0.5f, 1f);
                 bannerRt.anchoredPosition = new Vector2(0f, -240f); // 거리 텍스트 바로 밑
+            }
+        }
+
+        // 5. 🎮 하단 비행 조향 3버튼 (< O >) Safe Area 자동 밀착 정렬 (안드로이드 내비게이션 바 / 제스처 홈 인디케이터 바로 위)
+        if (flightTouchButtonsContainer != null)
+        {
+            RectTransform btnRt = flightTouchButtonsContainer.GetComponent<RectTransform>();
+            if (btnRt != null)
+            {
+                btnRt.anchorMin = new Vector2(0.5f, 0f);
+                btnRt.anchorMax = new Vector2(0.5f, 0f);
+                btnRt.pivot = new Vector2(0.5f, 0f);
+                btnRt.anchoredPosition = new Vector2(0f, 10f); // SafeContainer 최하단 10px 안전 여백
+                btnRt.sizeDelta = new Vector2(560f, 120f);
             }
         }
     }

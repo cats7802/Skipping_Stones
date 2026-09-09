@@ -34,6 +34,14 @@
 
 ## 🕒 4. 수정 및 진화 히스토리 (Change Log)
 
+### [2026-09-09] 공중 궤적 보존 및 착수 바운스 시점 방향 전환(Steer Buffering) 적용
+- **수정 목적**: 비행 중에는 자연스러운 포물선 공중 궤적을 100% 보존하고, 좌/우 탭된 조향 각도를 예약(`pendingSteerAngle`)하여 수면에 닿아 튕겨 오르는(착수 바운스 `ExecuteSurfaceImpact`) 순간에만 정확히 방향이 꺾이도록 개선.
+- **적용 내용**:
+  1. `TryRhythmTap()`: 조향 각도가 입력되면 조기 탭 여부와 무관하게 `pendingSteerAngle`을 안전하게 버퍼링.
+  2. `ExecuteSurfaceImpact()`: 착수 시점에 `pendingSteerAngle`을 `currentForwardDir`에 곱하여 다음 바운스 진행축을 회전시키고 예약 각도 리셋.
+  3. `ApplySteerAngle()`: 공중 궤적 임의 왜곡 없이 착수 예약용으로 일원화.
+- **컴파일 검증**: 0 Errors, 0 Warnings.
+
 ### [2026-09-04] 🏗️ ArcadeSkippingStone 모듈화 및 공용 수면 그림자/BPM 궤적 계산기 분리
 - **수정 목적**: 1,115줄에 달하던 대형 아케이드 돌 스크립트에서 중복 코드를 제거하고, 공용 모듈 재사용 및 BPM 포물선 궤적 연산을 독립 분리하여 유지보수성 극대화.
 - **적용 내용**:

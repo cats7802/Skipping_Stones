@@ -1,6 +1,6 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
-**작성 일시**: 2026-09-09 00:50  
+**작성 일시**: 2026-09-09 09:50  
 **현재 브랜치**: feature/sandbox-momentum-rhythm  
 **빌드 검증**: 0 Errors, 0 Warnings (골든 스크립트 100% 동기화)
 
@@ -8,7 +8,20 @@
 
 ## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
 
-### ✅ 1. 🎥 DualCameraSetup.cs 리듬 아케이드 모드 비행 카메라 기본값 튜닝 반영
+### ✅ 1. 📱 하단 `< O >` 비행 조향 3버튼 안드로이드 Safe Area 자동 밀착 & 터치 연동
+- **Safe Area 자동 피팅**:
+  - `StoneSkippingUGUIController.cs`: `GetSafeContainer()`를 통해 노치/홈 바(Navigation Indicator)가 반영된 SafeContainer를 탐색하고, `ApplyLayouts()`에서 하단 조향 3버튼 컨테이너(`FlightTouchButtons_Container`)를 최하단(`anchorMin/Max = (0.5, 0)`, `pivot = (0.5, 0)`, `anchoredPosition = (0, 10f)`)에 자동 밀착 정렬.
+  - `Image.raycastTarget = true`를 보장하여 터치/클릭 입력 수신 정상화.
+- **착수 바운스 시점 방향 전환 (Steer Buffering)**:
+  - `FlightTouchButtonHandler.cs` 및 `ArcadeSkippingStone.cs`: 공중 비행 중에는 포물선 궤적을 왜곡하지 않고 자연스러운 탄도 곡선을 100% 유지하며, 좌/우 탭 시 조향 각도(`±5°` / 더블탭 `±8°`)를 예약(`pendingSteerAngle`) 저장.
+  - 돌이 수면에 닿아 튕겨 오르는(착수 바운스 `ExecuteSurfaceImpact`) 순간에만 정확히 방향이 꺾이도록 구현하여 조기 탭("TOO EARLY") 시에도 의도된 조향이 씹히지 않고 안전하게 적용.
+
+### ✅ 2. 🎥 DualCameraSetup.cs 카메라 모드별 프로필 100% 양방향 자동 로드 보장
+- **양방향 프로필 분리**:
+  - `rhythmArcadeProfile` (Height 1.5, LookForward 30, LookHeight -5.0, PivotOffsetY -0.5, Catchup 4.2)
+  - `longDistanceProfile` (Height 2.5, LookForward 10, LookHeight -5.5, PivotOffsetY -1.5, Catchup 4.2)
+- **자동 스위칭 연동**:
+  - `ApplyProfileForMode(mode)` 구현 및 `LongDistanceModeHandler`, `RhythmArcadeModeHandler`, `TargetAccuracyModeHandler`의 `OnEnterMode()`에서 호출하여 모드 전환 시 각 모드의 확정 기본값이 100% 완벽 복원되도록 보장.
 - **디렉터 확정 6대 카메라 파라미터 적용**:
   - `followBounceY = true`
   - `flightPivotOffsetY = -0.5f` (리그 높이 오프셋)

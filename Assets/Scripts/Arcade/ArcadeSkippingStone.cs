@@ -301,12 +301,14 @@ namespace SkippingStones.Arcade
                 return false;
             }
 
+            // 🌟 좌/우 조향 각도가 전달된 경우 다음 착수 바운스 시점에 반영되도록 무조건 예약
+            if (Mathf.Abs(steerAngleDegrees) > 0.1f)
+            {
+                pendingSteerAngle = steerAngleDegrees;
+            }
+
             if (hasTappedInCycle)
             {
-                if (Mathf.Abs(steerAngleDegrees) > 0.1f)
-                {
-                    pendingSteerAngle = steerAngleDegrees;
-                }
                 resultGrade = "ALREADY TAPPED";
                 return false;
             }
@@ -331,7 +333,6 @@ namespace SkippingStones.Arcade
                 {
                     hasTappedInCycle = true;
                     pendingGrade = "MISS";
-                    pendingSteerAngle = steerAngleDegrees;
                     resultGrade = "❌ TOO EARLY MISS";
                     return true;
                 }
@@ -341,7 +342,6 @@ namespace SkippingStones.Arcade
             string grade = ArcadeRhythmTrajectoryCalculator.EvaluateTimingGrade(timeRemaining);
 
             pendingGrade = grade;
-            pendingSteerAngle = steerAngleDegrees;
             resultGrade = grade;
 
             if (AudioManager.Instance != null)
@@ -363,7 +363,7 @@ namespace SkippingStones.Arcade
             hasTappedInCycle = true;
             skipCount++;
 
-            float finalSteerAngle = steerAngle;
+            float finalSteerAngle = (Mathf.Abs(steerAngle) > 0.1f) ? steerAngle : pendingSteerAngle;
             if (Mathf.Abs(finalSteerAngle) > 0.1f && steerAngleBonus > 0.01f)
             {
                 float sign = Mathf.Sign(finalSteerAngle);

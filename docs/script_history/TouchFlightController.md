@@ -14,7 +14,10 @@
 
 ## 🕒 3. 수정 및 진화 히스토리 (Change Log)
 
-### [2026-08-31] 신규 컨트롤러 컴포넌트 생성
-- 하단 3버튼 uGUI 동적 인스턴스화(`[RuntimeInitializeOnLoadMethod]`), 캔버스 및 레이아웃 설정.
-- 단일 탭 / 스와이프 분기 핸들러(`FlightTouchButtonHandler`) 구현.
-- `dotnet build` 0 경고 0 오류 검증 완료.
+### [2026-09-09] Safe Area 자동 정렬 및 비행 조향 물리 즉시 연동
+- **수정 목적**: 하단 3버튼이 기기 해상도/노치에 따라 잘리던 문제를 안드로이드 Safe Area(SafeContainer) 최하단 자동 피팅으로 해결하고, 탭 시 착수 판정 외에 공중 조향 물리를 즉시 반영하도록 개선.
+- **주요 변경**:
+  1. `StoneSkippingUGUIController.cs`: `ApplyLayouts()`에서 `flightTouchButtonsContainer`를 `GetSafeContainer()` 최하단(`anchorMin/Max = (0.5, 0)`, `pivot = (0.5, 0)`, `anchoredPosition = (0, 10f)`)에 자동 밀착 정렬.
+  2. `FlightTouchButtonHandler.cs`: `OnPointerDown()` 시 `GameController.Instance.ApplySteerToCurrentStone(effectiveAngle)` 즉시 호출 및 비주얼 피드백(`TriggerVisualFeedback()`) 연동.
+  3. `Image.raycastTarget = true` 보장.
+- **컴파일 검증**: `dotnet build` 0 경고, 0 오류.
