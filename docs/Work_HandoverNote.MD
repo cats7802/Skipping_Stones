@@ -107,3 +107,7 @@
    - 객체화된 핸들러 구조(IMetaScreenHandler) 위에 정식 uGUI(Canvas, Image, Button, TextMeshPro, 9-Sliced 스프라이트)를 바인딩.
 2. **통합 메타 허브 팝업 (Unified Meta Modal) 구축**:
    - 하단 독 바의 상점, 도감, 랭킹을 단일 대형 팝업 내부에서 상단 탭 메뉴([🛒 상점] | [📖 도감] | [🏆 랭킹])로 자유롭게 스위칭하는 일체형 구조 구현.
+3. **🌊 실시간 수면 높이 감지 및 입체 지형/기믹 대응 시스템 구축**:
+   - `docs/Dynamic_Water_Height_Specification.md` 상세 명세 기반 구현.
+   - 단일 고정 수면 높이 탈피, 경사/계단식 수면 레이캐스트 탐색 및 물레방아/점프대(`IInteractiveGimmick`) 인터랙션 확장.
+
