@@ -77,9 +77,22 @@ public class TopDownReplayManager : MonoBehaviour
 
     public void ResetRealtimeTrajectory()
     {
+        ClearReplayVisuals();
         UpdateBaseReplayLevel();
         Vector3 startOrigin = GetExactStartPlatformPosition();
         sampler.Reset(startOrigin);
+    }
+
+    public void ClearReplayVisuals()
+    {
+        if (drawCoroutine != null)
+        {
+            StopCoroutine(drawCoroutine);
+            drawCoroutine = null;
+        }
+        isDrawing = false;
+        isReplayActive = false;
+        trajectoryRenderer.ClearAllVisuals();
     }
 
     public Vector3 GetExactStartPlatformPosition()
@@ -308,10 +321,8 @@ public class TopDownReplayManager : MonoBehaviour
 
     public void FinishReplayAndShowResult()
     {
-        if (drawCoroutine != null) StopCoroutine(drawCoroutine);
-        isDrawing = false;
+        ClearReplayVisuals();
         isReplayFinished = true;
-        isReplayActive = false;
 
         if (gameController != null)
         {

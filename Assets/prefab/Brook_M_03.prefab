@@ -1001,13 +1001,28 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   raycastHeight: 20
-  defaultWaterHeight: 16
   boostPadPrefab: {fileID: 0}
+  randomRingPrefab: {fileID: 0}
   obstacleRockPrefab: {fileID: 0}
   targetZonePrefab: {fileID: 0}
   friendFlagPrefab: {fileID: 0}
-  jumpingFishPrefab: {fileID: 0}
-  lilyPadClusterPrefab: {fileID: 0}
+  fishPrefabs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  lilyPadPrefabs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!1001 &270787107880598471
 PrefabInstance:
   m_ObjectHideFlags: 0
@@ -1060,6 +1075,10 @@ PrefabInstance:
       propertyPath: 'm_Materials.Array.data[0]'
       value: 
       objectReference: {fileID: 2100000, guid: c8b4adf750dc74f4289f738078083a02, type: 2}
+    - target: {fileID: -5754084199372789682, guid: 352fd9544ef8417428a0021222d93f00, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4803559095270227739, guid: 352fd9544ef8417428a0021222d93f00, type: 3}
     - target: {fileID: 919132149155446097, guid: 352fd9544ef8417428a0021222d93f00, type: 3}
       propertyPath: m_Name
       value: Brook_WS_03
@@ -1166,6 +1185,14 @@ PrefabInstance:
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
       objectReference: {fileID: 0}
+    - target: {fileID: -7511558181221131132, guid: c58e3719771d63142b98f3e4f8b4044f, type: 3}
+      propertyPath: 'm_Materials.Array.data[0]'
+      value: 
+      objectReference: {fileID: 2100000, guid: b9211b702f670c44d9bd98d322378aa4, type: 2}
+    - target: {fileID: -5754084199372789682, guid: c58e3719771d63142b98f3e4f8b4044f, type: 3}
+      propertyPath: m_Mesh
+      value: 
+      objectReference: {fileID: 4300000, guid: 74845d5540715f84fb798974a6c76181, type: 2}
     - target: {fileID: 919132149155446097, guid: c58e3719771d63142b98f3e4f8b4044f, type: 3}
       propertyPath: m_Name
       value: brook__M_03

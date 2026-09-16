@@ -54,13 +54,28 @@ MonoBehaviour:
     serializedVersion: 2
     m_Bits: 1
   raycastHeight: 20
-  defaultWaterHeight: 16
   boostPadPrefab: {fileID: 0}
+  randomRingPrefab: {fileID: 0}
   obstacleRockPrefab: {fileID: 0}
   targetZonePrefab: {fileID: 0}
   friendFlagPrefab: {fileID: 0}
-  jumpingFishPrefab: {fileID: 0}
-  lilyPadClusterPrefab: {fileID: 0}
+  fishPrefabs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  lilyPadPrefabs:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
 --- !u!1 &3149365434183643242
 GameObject:
   m_ObjectHideFlags: 0
@@ -781,7 +796,7 @@ PrefabInstance:
     - target: {fileID: -5754084199372789682, guid: 7e2c7f3a88eb1634388df87c90ad816b, type: 3}
       propertyPath: m_Mesh
       value: 
-      objectReference: {fileID: 4300000, guid: b1e5ebd63cd0e5b4aa0d06296e7d7fa9, type: 2}
+      objectReference: {fileID: 4300000, guid: 59caaa6a34ac340468538014844e7c11, type: 2}
     - target: {fileID: 919132149155446097, guid: 7e2c7f3a88eb1634388df87c90ad816b, type: 3}
       propertyPath: m_Name
       value: brook__M_01

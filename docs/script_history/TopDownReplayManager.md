@@ -27,6 +27,13 @@
 
 ## 3. 변경 이력 (Changelog)
 
+### [2026-09-16] 리플레이 종료 및 게임 복귀/재시작 시 잔존 마커 및 비주얼 클린업(ClearReplayVisuals) 추가
+- **수정 목적**: 탑다운 리플레이 재생 후 게임으로 복귀하거나 재시작(`RestartGame`, `ResetToPositioning`, `FinishMatchAndReturnToMapSelect`, `FinishReplayAndShowResult`)할 때 리플레이에서 렌더링된 바운스 마커 링, 궤적 선(`LineRenderer`), 3D 돌 아바타가 씬에 남아있던 버그 해결.
+- **상세 구현 내용**:
+  - `ReplayTrajectoryRenderer.cs`: 생성된 모든 마커 오브젝트 파괴, 궤적 `LineRenderer` 초기화 및 비활성화, 돌 아바타 `SetActive(false)`를 수행하는 `ClearAllVisuals()` 구현.
+  - `TopDownReplayManager.cs`: 드로잉 코루틴을 중단하고 `ClearAllVisuals()`를 호출하는 `ClearReplayVisuals()` 추가.
+  - `GameController.cs`: `FinishMatchAndReturnToMapSelect()`, `ResetToPositioning()` 및 리플레이 결과 복귀 지점에 `ClearReplayVisuals()`를 확실히 연동하여 인게임 수면 및 필드가 100% 깨끗하게 복구되도록 조치 완료.
+
 ### [2026-09-04] 리플레이 종료 후 마우스 휠 줌(Zoom) 안정성 강화 및 레거시/하이브리드 입력 백업 추가
 - **수정 목적**: 일부 플랫폼 및 유니티 에디터 창의 입력 포커스 상태, 또는 Active Input Handling 설정("Both" 등)에 따라 New Input System의 `Mouse.current.scroll`이 스크롤 입력을 받지 못해 리플레이 카메라의 줌인/줌아웃 작동이 중단되던 치명적인 문제 해결.
 - **상세 구현 내용**:

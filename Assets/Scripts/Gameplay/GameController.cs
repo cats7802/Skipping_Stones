@@ -1107,8 +1107,11 @@ public class GameController : MonoBehaviour
         SkippingStone.ClearAllTapDebugMarkers();
         if (topDownReplay != null)
         {
-            topDownReplay.isReplayActive = false;
-            topDownReplay.isDrawing = false;
+            topDownReplay.ClearReplayVisuals();
+        }
+        else if (TopDownReplayManager.Instance != null)
+        {
+            TopDownReplayManager.Instance.ClearReplayVisuals();
         }
         if (LakeEnvironmentManager.Instance != null)
         {
@@ -1165,7 +1168,14 @@ public class GameController : MonoBehaviour
     {
         StopAllCoroutines();
         SkippingStone.ClearAllTapDebugMarkers();
-        if (topDownReplay != null) topDownReplay.isReplayActive = false;
+        if (topDownReplay != null)
+        {
+            topDownReplay.ClearReplayVisuals();
+        }
+        else if (TopDownReplayManager.Instance != null)
+        {
+            TopDownReplayManager.Instance.ClearReplayVisuals();
+        }
 
         currentState = GameState.Positioning;
         lastStateChangeTime = Time.time + 0.35f;

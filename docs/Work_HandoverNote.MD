@@ -1,6 +1,6 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
-**작성 일시**: 2026-09-09 09:50  
+**작성 일시**: 2026-09-16 15:33  
 **현재 브랜치**: feature/sandbox-momentum-rhythm  
 **빌드 검증**: 0 Errors, 0 Warnings (골든 스크립트 100% 동기화)
 
@@ -8,7 +8,15 @@
 
 ## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
 
-### ✅ 1. 📱 하단 `< O >` 비행 조향 3버튼 안드로이드 Safe Area 자동 밀착 & 터치 연동
+### ✅ 1. 🎬 탑다운 리플레이 종료 후 잔존 마커 및 비주얼 클린업(ClearReplayVisuals) 처리
+- **버그 원인**:
+  - 탑다운 리플레이 드로잉 연출 시 생성된 3D 마커 링(`ReplayMarker_*`, `RingArc_*`), 궤적 라인(`TopDownReplay_TrajectoryLine`), 3D 돌 아바타(`TopDownReplay_StoneAvatar`)가 결과 화면 이동, 게임 재시작, 위치 잡기 복귀 시 파괴/비활성화되지 않아 인게임 화면에 지속 노출되던 문제.
+- **개선 구현**:
+  - `ReplayTrajectoryRenderer.cs`: 마커 게임오브젝트 일괄 파괴, 궤적 LineRenderer 비활성화, 돌 아바타 비활성화를 수행하는 `ClearAllVisuals()` 구현.
+  - `TopDownReplayManager.cs`: 진행 중인 드로잉 코루틴을 안전 중단하고 `ClearAllVisuals()`를 수행하는 `ClearReplayVisuals()` 구현 및 `ResetRealtimeTrajectory()`, `FinishReplayAndShowResult()`에 연동.
+  - `GameController.cs`: `FinishMatchAndReturnToMapSelect()` 및 `ResetToPositioning()` 호출 시 `topDownReplay.ClearReplayVisuals()`를 완벽히 호출하여 인게임 복귀 시 수면/필드가 100% 깨끗하게 초기화되도록 조치 완료.
+
+### ✅ 2. 📱 하단 `< O >` 비행 조향 3버튼 안드로이드 Safe Area 자동 밀착 & 터치 연동
 - **Safe Area 자동 피팅**:
   - `StoneSkippingUGUIController.cs`: `GetSafeContainer()`를 통해 노치/홈 바(Navigation Indicator)가 반영된 SafeContainer를 탐색하고, `ApplyLayouts()`에서 하단 조향 3버튼 컨테이너(`FlightTouchButtons_Container`)를 최하단(`anchorMin/Max = (0.5, 0)`, `pivot = (0.5, 0)`, `anchoredPosition = (0, 10f)`)에 자동 밀착 정렬.
   - `Image.raycastTarget = true`를 보장하여 터치/클릭 입력 수신 정상화.
