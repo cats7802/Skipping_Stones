@@ -1,6 +1,6 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
-**작성 일시**: 2026-09-16 15:33  
+**작성 일시**: 2026-09-16 16:05  
 **현재 브랜치**: feature/sandbox-momentum-rhythm  
 **빌드 검증**: 0 Errors, 0 Warnings (골든 스크립트 100% 동기화)
 
@@ -8,7 +8,18 @@
 
 ## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
 
-### ✅ 1. 🎬 탑다운 리플레이 종료 후 잔존 마커 및 비주얼 클린업(ClearReplayVisuals) 처리
+### ✅ 1. 🎵 10종 음원 마스터 데이터베이스(MusicDatabaseSO) 구축 & 실시간 BPM 가속 동기화
+- **ScriptableObject 아키텍처 구축**:
+  - `MusicDataSO.cs` (Assets/Scripts/Data/MusicDataSO.cs): 곡 ID, 제목, 장르/컨셉 설명, 오디오 클립, 난이도 별점(⭐~⭐⭐⭐⭐), 시작/최대 BPM, 시간별 BPM 타임라인 노드(`BpmTimelineNode`) 정의.
+  - `MusicDatabaseSO.cs` (Assets/Scripts/Data/MusicDatabaseSO.cs): 10종 음원 마스터 DB 중앙 집중 관리.
+  - `MusicDatabaseBuilder.cs` (Assets/Scripts/Editor/MusicDatabaseBuilder.cs): #1~#10 10종 음원(로파이, 아이리시, 컨트리, 라틴, 카리브해, 블루스, 트라이벌, 아프로비트 3종) 에셋 자동 생성 및 DB 바인딩 지원.
+- **실시간 BPM 가속 및 투구 동기화**:
+  - `ArcadeSkippingStone.cs`: 비행 경과 시간(`flightElapsedTime`)에 따라 선택된 음악의 BPM 타임라인(`EvaluateBpmAtTime`)을 실시간 조회하여 착수 주기(`currentCycleDuration = 60f / currentBPM`) 및 리듬 링(`RhythmRingIndicator`) 수축 타이밍 완벽 동기화.
+  - `GameController.cs`: 리듬 아케이드 모드 투구 시 선택된 음원 재생 및 시작 BPM에 비례한 투구 애니메이션 속도 자동 조절.
+- **맵 선택 화면(MapSelectScreenHandler.cs) 음원 트랙 선택 UI 전면 개편**:
+  - 기존의 밋밋한 텍스트 트랙 바를 제거하고, **곡명, 장르/컨셉, 난이도 별점(⭐~⭐⭐⭐⭐), BPM 범위(예: 60~120 BPM)**를 직관적으로 선택할 수 있는 ◀ / ▶ 음원 카드 셀렉터로 개편.
+
+### ✅ 2. 🎬 탑다운 리플레이 종료 후 잔존 마커 및 비주얼 클린업(ClearReplayVisuals) 처리
 - **버그 원인**:
   - 탑다운 리플레이 드로잉 연출 시 생성된 3D 마커 링(`ReplayMarker_*`, `RingArc_*`), 궤적 라인(`TopDownReplay_TrajectoryLine`), 3D 돌 아바타(`TopDownReplay_StoneAvatar`)가 결과 화면 이동, 게임 재시작, 위치 잡기 복귀 시 파괴/비활성화되지 않아 인게임 화면에 지속 노출되던 문제.
 - **개선 구현**:

@@ -126,8 +126,59 @@ namespace SkippingStones.UI
                 manager.selectedMapIndex = (selIdx + 1) % totalMaps;
             }
 
-            // 코스 미니맵 바
-            GUI.Box(new Rect(40, 720, 640, 160), "🚩 Start ────────────────────🌊──────────────────── 🏁 1500m Finish", manager.CardBoxStyle);
+            // 🎵 음원 트랙 선택 카드 뷰
+            var musicDb = dm.MusicDatabase;
+            int totalTracks = (musicDb != null) ? musicDb.Count : 0;
+            int currentTrackIdx = 0;
+            if (musicDb != null && !string.IsNullOrEmpty(dm.UserData.selectedMusicId))
+            {
+                currentTrackIdx = Mathf.Max(0, musicDb.IndexOfId(dm.UserData.selectedMusicId));
+            }
+
+            var track = (musicDb != null && totalTracks > 0) ? musicDb.GetTrackByIndex(currentTrackIdx) : null;
+
+            GUI.Box(new Rect(40, 715, 640, 185), string.Empty, manager.CardBoxStyle);
+
+            if (track != null)
+            {
+                string starStr = track.GetStarString();
+                GUI.Label(new Rect(60, 725, 600, 32), $"<b>🎵 {track.title}</b>   <color=#FFD700><b>{starStr}</b></color> <color=#90CAF9>({track.startBpm:0}~{track.maxBpm:0} BPM)</color>", manager.TitleStyle);
+                
+                GUIStyle descStyle = new GUIStyle(manager.LabelStyle);
+                descStyle.fontSize = 18;
+                descStyle.wordWrap = true;
+                descStyle.normal.textColor = new Color(0.85f, 0.92f, 1.0f, 0.9f);
+                GUI.Label(new Rect(60, 765, 520, 125), $"{track.genreConcept}", descStyle);
+            }
+            else
+            {
+                GUI.Label(new Rect(60, 750, 600, 40), "🎵 기본 BGM 트랙", manager.TitleStyle);
+            }
+
+            if (totalTracks > 1)
+            {
+                if (manager.DrawResponsiveButton(new Rect(50, 800, 50, 55), "◀", manager.GlassBtnStyle))
+                {
+                    int prevIdx = (currentTrackIdx - 1 + totalTracks) % totalTracks;
+                    var prevTrack = musicDb.GetTrackByIndex(prevIdx);
+                    if (prevTrack != null)
+                    {
+                        dm.UserData.selectedMusicId = prevTrack.id;
+                        dm.SaveUserData();
+                    }
+                }
+
+                if (manager.DrawResponsiveButton(new Rect(620, 800, 50, 55), "▶", manager.GlassBtnStyle))
+                {
+                    int nextIdx = (currentTrackIdx + 1) % totalTracks;
+                    var nextTrack = musicDb.GetTrackByIndex(nextIdx);
+                    if (nextTrack != null)
+                    {
+                        dm.UserData.selectedMusicId = nextTrack.id;
+                        dm.SaveUserData();
+                    }
+                }
+            }
 
             // GAME START 버튼
             if (manager.DrawResponsiveButton(new Rect(80, 920, 560, 90), "⚡-1   GAME START !", manager.PrimaryBtnStyle))

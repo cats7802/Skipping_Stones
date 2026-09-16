@@ -1,0 +1,34 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eade34e6fbb057439aba9aa3a71df06, type: 3}
+  m_Name: MusicData_track_01_crossing_horizon
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Data.MusicDataSO
+  id: track_01_crossing_horizon
+  title: Crossing the Horizon Line
+  genreConcept: "\uB85C\uD30C\uC774 \uD799\uD569 / \uC544\uB291\uD55C \uBC14\uC774\uB2D0
+    \uB178\uC774\uC988\uC640 \uB530\uB73B\uD55C \uD53C\uC544\uB178\uB85C \uC2DC\uC791\uD574
+    \uC810\uC810 \uBC1D\uACE0 \uC120\uBA85\uD574\uC9C0\uB294 \uC5EC\uD589\uC758 \uC2DC\uC791"
+  audioClip: {fileID: 8300000, guid: 6f4ec357a03f8e645a3b32b9bd4599d9, type: 3}
+  starDifficulty: 1
+  startBpm: 60
+  maxBpm: 120
+  bpmTimeline:
+  - timeSeconds: 0
+    targetBpm: 60
+  - timeSeconds: 30
+    targetBpm: 75
+  - timeSeconds: 60
+    targetBpm: 90
+  - timeSeconds: 90
+    targetBpm: 105
+  - timeSeconds: 120
+    targetBpm: 120

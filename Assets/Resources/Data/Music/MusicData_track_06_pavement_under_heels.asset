@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eade34e6fbb057439aba9aa3a71df06, type: 3}
+  m_Name: MusicData_track_06_pavement_under_heels
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Data.MusicDataSO
+  id: track_06_pavement_under_heels
+  title: Pavement Under My Heels
+  genreConcept: "\uBE14\uB8E8\uC9C0 \uCFE8 \uC7AC\uC988 \u2192 \uBE45\uBC34\uB4DC
+    \uBE44\uBC25 / \uACE0\uD5A5\uC744 \uADF8\uB9AC\uC6CC\uD558\uB294 \uC4F8\uC4F8\uD55C
+    \uC0C9\uC18C\uD3F0 \uC194\uB85C\uC5D0\uC11C \uC6A9\uAE30\uB97C \uC5BB\uACE0 \uD3ED\uBC1C\uD558\uB294
+    \uBE45\uBC34\uB4DC \uC9C8\uC8FC"
+  audioClip: {fileID: 8300000, guid: ebba8d8abd97a344c9df94b7d9e28b91, type: 3}
+  starDifficulty: 3
+  startBpm: 120
+  maxBpm: 200
+  bpmTimeline:
+  - timeSeconds: 0
+    targetBpm: 120
+  - timeSeconds: 30
+    targetBpm: 140
+  - timeSeconds: 60
+    targetBpm: 160
+  - timeSeconds: 90
+    targetBpm: 180
+  - timeSeconds: 120
+    targetBpm: 200

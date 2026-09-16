@@ -1,0 +1,25 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: bbb2eca6c71f6e245813ffa490d4d18d, type: 3}
+  m_Name: MusicDatabase
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Data.MusicDatabaseSO
+  tracks:
+  - {fileID: 11400000, guid: c1f1cf823421abe4aaa88e609a88d4b3, type: 2}
+  - {fileID: 11400000, guid: 294d2b81c4f619346b12b25658906b51, type: 2}
+  - {fileID: 11400000, guid: dbd776d5459e8d244bf7c3a5aafeef05, type: 2}
+  - {fileID: 11400000, guid: 64ba22f7110e85b48931e801ba8d7b6d, type: 2}
+  - {fileID: 11400000, guid: 5ffbee9e4edd24c4eac23f64760fed37, type: 2}
+  - {fileID: 11400000, guid: 29f304fdc8275a94d9ac023dd328e677, type: 2}
+  - {fileID: 11400000, guid: e25e39c6922f0324aa166329dc002037, type: 2}
+  - {fileID: 11400000, guid: 65bbfc02de822b64fb5bbe293750bf34, type: 2}
+  - {fileID: 11400000, guid: 3e5ae975bda37054ba45444b6603dbda, type: 2}
+  - {fileID: 11400000, guid: 526aee0e7b7d6cb40a643110242bf6df, type: 2}

@@ -1,0 +1,35 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!114 &11400000
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 0}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6eade34e6fbb057439aba9aa3a71df06, type: 3}
+  m_Name: MusicData_track_02_miles_from_hearth
+  m_EditorClassIdentifier: Assembly-CSharp::SkippingStones.Data.MusicDataSO
+  id: track_02_miles_from_hearth
+  title: Miles from the Hearth
+  genreConcept: "\uC544\uC774\uB9AC\uC2DC \uD3EC\uD06C \u2192 \uB7F0\uB358 \uB300\uB3C4\uC2DC
+    / \uC2DC\uACE8\uAE38\uC758 \uC11C\uC815\uC801\uC778 \uC544\uC774\uB9AC\uC2DC
+    \uD718\uC2AC\uB85C \uC2DC\uC791\uD574 \uB300\uB3C4\uC2DC \uB7F0\uB358\uC5D0 \uB3C4\uB2EC\uD558\uB294
+    \uC624\uCF00\uC2A4\uD2B8\uB77C \uD4E8\uC804"
+  audioClip: {fileID: 8300000, guid: 8b34995cc586c4d48be8bfbcbd750faf, type: 3}
+  starDifficulty: 1
+  startBpm: 60
+  maxBpm: 120
+  bpmTimeline:
+  - timeSeconds: 0
+    targetBpm: 60
+  - timeSeconds: 30
+    targetBpm: 75
+  - timeSeconds: 60
+    targetBpm: 90
+  - timeSeconds: 90
+    targetBpm: 105
+  - timeSeconds: 120
+    targetBpm: 120

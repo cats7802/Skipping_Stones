@@ -28,6 +28,10 @@ namespace SkippingStones.Data
         [SerializeField] private StoneDatabaseSO stoneDatabase;
         public StoneDatabaseSO StoneDatabase => stoneDatabase;
 
+        [Header("🎵 ScriptableObject 음악 데이터베이스")]
+        [SerializeField] private MusicDatabaseSO musicDatabase;
+        public MusicDatabaseSO MusicDatabase => musicDatabase;
+
         public event Action<UserPersistentData> OnUserDataChanged;
         public event Action<int, int> OnStaminaChanged; // current, max
 
@@ -205,6 +209,11 @@ namespace SkippingStones.Data
             if (stoneDatabase == null)
             {
                 stoneDatabase = Resources.Load<StoneDatabaseSO>("Data/StoneDatabase");
+            }
+
+            if (musicDatabase == null)
+            {
+                musicDatabase = Resources.Load<MusicDatabaseSO>("Data/MusicDatabase");
             }
 
             if (stoneDatabase != null && stoneDatabase.Count > 0)
@@ -430,6 +439,7 @@ namespace SkippingStones.Data
                 characterId = UserData.selectedCharacterId,
                 stoneId = UserData.selectedStoneId,
                 mapId = UserData.selectedMapId,
+                musicId = UserData.selectedMusicId,
                 gameMode = UserData.selectedGameMode
             };
         }

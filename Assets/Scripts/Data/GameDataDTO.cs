@@ -51,10 +51,12 @@ namespace SkippingStones.Data
         public string characterId = "boy_default";
         public string stoneId = "default";
         public string mapId = "emerald_lake";
+        public string musicId = "track_01_crossing_horizon";
         public GameController.GameMode gameMode = GameController.GameMode.LongDistance;
         public GameObject characterPrefabOverride = null;
         public GameObject stonePrefabOverride = null;
         public GameObject mapPrefabOverride = null;
+        public MusicDataSO musicDataOverride = null;
     }
 
     /// <summary>
@@ -98,6 +100,7 @@ namespace SkippingStones.Data
         public string selectedCharacterId = "boy_default";
         public string selectedStoneId = "default";
         public string selectedMapId = "emerald_lake";
+        public string selectedMusicId = "track_01_crossing_horizon";
         public GameController.GameMode selectedGameMode = GameController.GameMode.LongDistance;
 
         // 최고 기록

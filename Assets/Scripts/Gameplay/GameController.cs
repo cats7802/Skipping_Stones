@@ -760,13 +760,31 @@ public class GameController : MonoBehaviour
         float animSpeed = 1f;
         if (currentMode == GameMode.RhythmArcade)
         {
-            // 🎵 리듬 아케이드 모드: 투구 버튼 탭 즉시 BGM 시작 (120 BPM 원곡의 2박 정박 60 BPM 싱크)
+            AudioClip musicClip = null;
+            float startBpm = 60f;
+
+            if (SkippingStones.Data.GameDataManager.Instance != null)
+            {
+                var dm = SkippingStones.Data.GameDataManager.Instance;
+                string selMusicId = dm.UserData != null ? dm.UserData.selectedMusicId : "track_01_crossing_horizon";
+                if (dm.MusicDatabase != null)
+                {
+                    var track = dm.MusicDatabase.GetTrackById(selMusicId) ?? dm.MusicDatabase.GetTrackByIndex(0);
+                    if (track != null)
+                    {
+                        musicClip = track.audioClip;
+                        startBpm = track.startBpm;
+                    }
+                }
+            }
+
             if (AudioManager.Instance != null)
             {
-                AudioManager.Instance.PlayBGM(null, 60f);
+                AudioManager.Instance.PlayBGM(musicClip, startBpm);
             }
-            // 60 BPM 기준 정확히 1.0초 동안 투구 완료되도록 속도 동기화 (1.833x 배속)
-            animSpeed = 1.833f;
+
+            // 시작 BPM에 따른 투구 애니메이션 속도 동기화 (60 BPM: 1.833x = 1.0s, 90 BPM: 2.75x, 120 BPM: 3.66x)
+            animSpeed = Mathf.Clamp(1.833f * (startBpm / 60f), 1.0f, 4.0f);
         }
 
         if (TopDownReplayManager.Instance != null)

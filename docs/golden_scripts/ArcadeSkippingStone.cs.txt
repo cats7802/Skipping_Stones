@@ -55,12 +55,14 @@ namespace SkippingStones.Arcade
         public float currentBounceDistance = 10.0f;
         [HideInInspector] public float waterLevel = 0f;
 
-        [Header("🌊 리듬 BPM 및 타이밍 설정")]
+        [Header("🌊 리듬 BPM 및 음악 설정")]
+        public SkippingStones.Data.MusicDataSO activeMusicData;
         public float baseBPM = 60f;
         public int currentCombo = 0;
         public float currentBPM = 60f;
         public float currentCycleDuration = 1.00f; // BPM 60 = 1.00s
         public bool enableComboAcceleration = true;
+        public float flightElapsedTime = 0f;
 
         [Header("🌊 모멘텀 (스태미나/라이프)")]
         public float currentMomentum = 60f;
@@ -189,6 +191,23 @@ namespace SkippingStones.Arcade
             initialLaunchPower = Mathf.Clamp(powerMultiplier, 0.5f, 2.0f);
             currentBounceDistance = preset.baseDistance * initialLaunchPower;
             currentMomentum = Mathf.Clamp(60f * initialLaunchPower, 30f, maxMomentum);
+
+            if (activeMusicData == null && SkippingStones.Data.GameDataManager.Instance != null)
+            {
+                var dm = SkippingStones.Data.GameDataManager.Instance;
+                string selMusicId = dm.UserData != null ? dm.UserData.selectedMusicId : "track_01_crossing_horizon";
+                if (dm.MusicDatabase != null)
+                {
+                    activeMusicData = dm.MusicDatabase.GetTrackById(selMusicId) ?? dm.MusicDatabase.GetTrackByIndex(0);
+                }
+            }
+
+            if (activeMusicData != null)
+            {
+                baseBPM = activeMusicData.startBpm;
+            }
+
+            flightElapsedTime = 0f;
             UpdateBPM();
 
             currentForwardDir = new Vector3(forwardDirection.x, 0f, forwardDirection.z).normalized;
@@ -231,6 +250,9 @@ namespace SkippingStones.Arcade
 #endif
 
             if (!isThrown || isSunk || isCrashed || isSkimming || isInRandomRing) return;
+
+            flightElapsedTime += Time.deltaTime;
+            UpdateBPM();
 
             cycleElapsedTime += Time.deltaTime;
 
@@ -660,7 +682,14 @@ namespace SkippingStones.Arcade
 
         private void UpdateBPM()
         {
-            currentBPM = ArcadeRhythmTrajectoryCalculator.CalculateBPM(totalDistance, baseBPM, enableComboAcceleration);
+            if (activeMusicData != null)
+            {
+                currentBPM = activeMusicData.EvaluateBpmAtTime(flightElapsedTime);
+            }
+            else
+            {
+                currentBPM = ArcadeRhythmTrajectoryCalculator.CalculateBPM(totalDistance, baseBPM, enableComboAcceleration);
+            }
             currentCycleDuration = 60f / currentBPM;
         }
 
