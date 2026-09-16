@@ -1,12 +1,18 @@
 # 📋 최종 작업 인수인계서 (Work Handover Note & System Architecture)
 
-**작성 일시**: 2026-09-16 16:05  
+**작성 일시**: 2026-09-16 16:36  
 **현재 브랜치**: feature/sandbox-momentum-rhythm  
-**빌드 검증**: 0 Errors, 0 Warnings (골든 스크립트 100% 동기화)
+**빌드 검증**: Unity 도메인 리로드 후 컴파일 검증 필요
 
 ---
 
 ## 1. 🛠️ 금일 완료된 핵심 작업 및 아키텍처 개선 내역
+
+### ✅ 0. 🪨 인게임 장애물 바위 P_BoulderClassic 5종 프리팹 교체 및 Y축 랜덤 회전
+- **`RiverEntityFactory.cs`**: `obstacleRockPrefabs[5]` 배열 추가, `P_BoulderClassic1~5 Variant` Editor/Runtime 로드, `CreateObstacleRock()`에서 5종 중 랜덤 선택 + `Quaternion.Euler(0f, Random.Range(0f, 360f), 0f)` Y축 랜덤 회전 + `ObstacleRock` 컴포넌트 부착 보장.
+- **`RiverSpawner.cs`**: `obstacleRockPrefabs[5]` 인스펙터 슬롯 노출 및 `SyncFactoryPrefabs()` 동기화.
+- **`ObstacleRock.cs`**: MeshRenderer 존재 시 메쉬 중복 생성 차단, `OnCollisionEnter` + `OnTriggerEnter` 양쪽 충돌 감지 안전 통합(`HandleStoneHit`).
+- **`ResourceSyncTool.cs`**: `BoulderClassic_1~5` Resources 동기화 항목 추가.
 
 ### ✅ 1. 🎵 10종 음원 마스터 데이터베이스(MusicDatabaseSO) 구축 & 실시간 BPM 가속 동기화
 - **ScriptableObject 아키텍처 구축**:

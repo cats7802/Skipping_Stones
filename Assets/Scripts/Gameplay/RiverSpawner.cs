@@ -25,8 +25,10 @@ public class RiverSpawner : MonoBehaviour
     public GameObject boostPadPrefab;
     [Tooltip("🌀 리듬 아케이드 전용 랜덤 링 프리팹")]
     public GameObject randomRingPrefab;
-    [Tooltip("장애물 바위 프리팹")]
+    [Tooltip("장애물 바위 프리팹 (레거시 단일)")]
     public GameObject obstacleRockPrefab;
+    [Tooltip("장애물 바위 5종 프리팹 배열")]
+    public GameObject[] obstacleRockPrefabs = new GameObject[5];
     [Tooltip("타겟 과녁 프리팹")]
     public GameObject targetZonePrefab;
     [Tooltip("친구 랭킹 깃발 프리팹")]
@@ -49,6 +51,7 @@ public class RiverSpawner : MonoBehaviour
         entityFactory.boostPadPrefab = boostPadPrefab;
         entityFactory.randomRingPrefab = randomRingPrefab;
         entityFactory.obstacleRockPrefab = obstacleRockPrefab;
+        entityFactory.obstacleRockPrefabs = obstacleRockPrefabs;
         entityFactory.targetZonePrefab = targetZonePrefab;
         entityFactory.friendFlagPrefab = friendFlagPrefab;
         entityFactory.fishPrefabs = fishPrefabs;

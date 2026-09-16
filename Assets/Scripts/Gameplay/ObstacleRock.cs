@@ -6,8 +6,8 @@ public class ObstacleRock : MonoBehaviour
 
     private void Awake()
     {
-        // 🌟 유저가 프리팹이나 씬에서 이미 자식 메쉬를 세팅해 두었는지 1차 검사
-        if (transform.childCount > 0) return;
+        // 🌟 유저가 프리팹이나 씬에서 이미 메쉬/자식을 세팅해 두었는지 검사
+        if (transform.childCount > 0 || GetComponent<MeshRenderer>() != null || GetComponentInChildren<MeshRenderer>() != null) return;
 
         GameObject userPrefab = null;
 #if UNITY_EDITOR
@@ -46,9 +46,19 @@ public class ObstacleRock : MonoBehaviour
 
     private void OnTriggerEnter(Collider other)
     {
-        if (hasCollided) return;
+        HandleStoneHit(other.gameObject);
+    }
 
-        SkippingStone stone = other.GetComponent<SkippingStone>() ?? other.GetComponentInParent<SkippingStone>();
+    private void OnCollisionEnter(Collision collision)
+    {
+        HandleStoneHit(collision.gameObject);
+    }
+
+    private void HandleStoneHit(GameObject hitObj)
+    {
+        if (hasCollided || hitObj == null) return;
+
+        SkippingStone stone = hitObj.GetComponent<SkippingStone>() ?? hitObj.GetComponentInParent<SkippingStone>();
         if (stone != null)
         {
             hasCollided = true;

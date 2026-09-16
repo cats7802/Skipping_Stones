@@ -55,3 +55,9 @@
   - `GetWaterColliderBounds`에 `minZ`, `maxZ` 반환 추가.
   - 고정 길이 대신 슬롯 맵 청크(500m 등 가변 지형)의 `autoChunkSize`를 실측하여 해당 1개 청크 지형 경계(`startZ + 20m ~ endZ - 20m`) 내에서만 엔티티 스폰.
   - `IsValidWaterPosition`을 전면 개편: 초고도 `RaycastAll`로 메쉬 지형(`MeshCollider`), 터레인 지형(`TerrainCollider`), 수면 콜라이더를 전수 감지하고 안전 수심(`waterDepth >= 0.35m`)을 확보하여 땅속 파묻힘 및 허공 스폰 100% 원천 차단.
+- ### [2026-09-16] 🪨 장애물 바위 5종 프리팹 배열 슬롯 추가 및 팩토리 동기화
+  - **수정 목적**: `P_BoulderClassic1~5 Variant` 5종 프리팹을 인스펙터에서 드래그&드롭 할당 가능한 배열 슬롯으로 노출하고, `RiverEntityFactory`에 동기화.
+  - **핵심 구조**:
+    - `obstacleRockPrefabs[5]` 배열 인스펙터 슬롯 추가.
+    - `SyncFactoryPrefabs()`에서 `entityFactory.obstacleRockPrefabs` 동기화 추가.
+
