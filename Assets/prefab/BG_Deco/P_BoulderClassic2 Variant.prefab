@@ -17,6 +17,18 @@ PrefabInstance:
       value: P_BoulderClassic2 Variant
       objectReference: {fileID: 0}
     - target: {fileID: 4555936474140885312, guid: 54c4970544fc105469e5ac007eb0a877, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4555936474140885312, guid: 54c4970544fc105469e5ac007eb0a877, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4555936474140885312, guid: 54c4970544fc105469e5ac007eb0a877, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 4555936474140885312, guid: 54c4970544fc105469e5ac007eb0a877, type: 3}
       propertyPath: m_LocalPosition.x
       value: 343.3
       objectReference: {fileID: 0}
@@ -55,6 +67,10 @@ PrefabInstance:
     - target: {fileID: 4555936474140885312, guid: 54c4970544fc105469e5ac007eb0a877, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 4555936474140885312, guid: 54c4970544fc105469e5ac007eb0a877, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     m_RemovedComponents:
     - {fileID: 1681985228926193827, guid: 54c4970544fc105469e5ac007eb0a877, type: 3}

@@ -179,6 +179,10 @@ namespace SkippingStones.Gameplay.Spawners
                 GameObject obj = Object.Instantiate(chosenPrefab, pos, rot, parent);
                 obj.name = $"ObstacleRock_{chosenPrefab.name}_{pos.x:F0}x{pos.z:F0}";
 
+                // 🌟 프리팹 기본 스케일 기준 0.5 ~ 1.0 랜덤 크기
+                float scaleFactor = Random.Range(0.5f, 1.0f);
+                obj.transform.localScale = obj.transform.localScale * scaleFactor;
+
                 ObstacleRock rockComp = obj.GetComponent<ObstacleRock>();
                 if (rockComp == null)
                 {

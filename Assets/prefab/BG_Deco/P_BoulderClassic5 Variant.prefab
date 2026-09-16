@@ -13,6 +13,18 @@ PrefabInstance:
       value: P_BoulderClassic5 Variant
       objectReference: {fileID: 0}
     - target: {fileID: 8047342867073616821, guid: 645afe493a7ad4a4ba4e82e68f75c4de, type: 3}
+      propertyPath: m_LocalScale.x
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8047342867073616821, guid: 645afe493a7ad4a4ba4e82e68f75c4de, type: 3}
+      propertyPath: m_LocalScale.y
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8047342867073616821, guid: 645afe493a7ad4a4ba4e82e68f75c4de, type: 3}
+      propertyPath: m_LocalScale.z
+      value: 0.5
+      objectReference: {fileID: 0}
+    - target: {fileID: 8047342867073616821, guid: 645afe493a7ad4a4ba4e82e68f75c4de, type: 3}
       propertyPath: m_LocalPosition.x
       value: 399
       objectReference: {fileID: 0}
@@ -51,6 +63,10 @@ PrefabInstance:
     - target: {fileID: 8047342867073616821, guid: 645afe493a7ad4a4ba4e82e68f75c4de, type: 3}
       propertyPath: m_LocalEulerAnglesHint.z
       value: 0
+      objectReference: {fileID: 0}
+    - target: {fileID: 8047342867073616821, guid: 645afe493a7ad4a4ba4e82e68f75c4de, type: 3}
+      propertyPath: m_ConstrainProportionsScale
+      value: 1
       objectReference: {fileID: 0}
     - target: {fileID: 9216277368781254874, guid: 645afe493a7ad4a4ba4e82e68f75c4de, type: 3}
       propertyPath: 'm_Materials.Array.data[0]'
