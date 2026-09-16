@@ -32,7 +32,9 @@ public class TopDownReplayManager : MonoBehaviour
     private List<SkippingStone.BounceRecord> markerRecords = new List<SkippingStone.BounceRecord>();
     private List<Vector3> trajectoryPathPoints = new List<Vector3>();
     private Coroutine drawCoroutine;
-    private float cachedFinalDist = 0f;
+    public float cachedFinalDist = 0f;
+    public float CachedFinalDist => cachedFinalDist;
+    public int CachedSkipCount { get; private set; } = 0;
 
     private void Awake()
     {
@@ -218,6 +220,13 @@ public class TopDownReplayManager : MonoBehaviour
         Vector3 startOrigin = GetExactStartPlatformPosition();
         markerRecords = sampler.BuildMarkerRecords(rawBounces, startOrigin, finalDist);
         trajectoryPathPoints = sampler.BuildTrajectoryPathPoints(markerRecords, baseReplayLevel);
+
+        CachedSkipCount = (rawBounces != null) ? rawBounces.Count : (stone != null ? stone.skipCount : 0);
+        if (CachedSkipCount == 0)
+        {
+            var arcadeStone = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+            if (arcadeStone != null) CachedSkipCount = arcadeStone.skipCount;
+        }
 
         // 🌟 맵 및 물 전체 사전 100% 스폰
         float pageDist = (LakeEnvironmentManager.Instance != null && LakeEnvironmentManager.Instance.autoChunkSize > 50f) ? LakeEnvironmentManager.Instance.autoChunkSize : 500f;

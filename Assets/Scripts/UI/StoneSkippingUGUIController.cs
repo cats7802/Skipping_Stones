@@ -717,6 +717,59 @@ public class StoneSkippingUGUIController : MonoBehaviour
                 resultCoinText.text = $"[보상]: +{gameController.earnedCoins:N0} COIN 획득!";
         }
 
+        if (replayObj != null && replayObj.activeSelf)
+        {
+            float replayDist = 0f;
+            int replaySkips = 0;
+
+            if (gameController.topDownReplay != null && gameController.topDownReplay.CachedFinalDist > 0.01f)
+            {
+                replayDist = gameController.topDownReplay.CachedFinalDist;
+                replaySkips = gameController.topDownReplay.CachedSkipCount;
+            }
+            else if (TopDownReplayManager.Instance != null && TopDownReplayManager.Instance.CachedFinalDist > 0.01f)
+            {
+                replayDist = TopDownReplayManager.Instance.CachedFinalDist;
+                replaySkips = TopDownReplayManager.Instance.CachedSkipCount;
+            }
+            else if (gameController.currentMode == GameController.GameMode.RhythmArcade)
+            {
+                var arcade = FindAnyObjectByType<SkippingStones.Arcade.ArcadeSkippingStone>();
+                if (arcade != null)
+                {
+                    replayDist = arcade.totalDistance;
+                    replaySkips = arcade.skipCount;
+                }
+            }
+            else if (gameController.stone != null)
+            {
+                replayDist = gameController.stone.totalDistance;
+                replaySkips = gameController.stone.skipCount;
+            }
+
+            if (replaySummaryText == null)
+            {
+                var texts = replayObj.GetComponentsInChildren<Text>(true);
+                foreach (var t in texts)
+                {
+                    if (t.name.IndexOf("Summary", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        t.name.IndexOf("Info", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        t.name.IndexOf("Desc", StringComparison.OrdinalIgnoreCase) >= 0 ||
+                        t.text.Contains("비거리") || t.text.Contains("스킵"))
+                    {
+                        replaySummaryText = t;
+                        break;
+                    }
+                }
+                if (replaySummaryText == null && texts.Length > 1) replaySummaryText = texts[1];
+            }
+
+            if (replaySummaryText != null)
+            {
+                replaySummaryText.text = $"최종 비거리: {replayDist:F1}m | 총 {replaySkips}회 스킵";
+            }
+        }
+
         // 🛠️ 갓모드 버튼 라벨 실시간 갱신
         if (devTestMenuObj != null && devTestMenuObj.activeSelf && devGodModeBtnText != null && EnvironmentTestHelper.Instance != null)
         {
