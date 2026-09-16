@@ -137,27 +137,49 @@ namespace SkippingStones.UI
 
             var track = (musicDb != null && totalTracks > 0) ? musicDb.GetTrackByIndex(currentTrackIdx) : null;
 
-            GUI.Box(new Rect(40, 715, 640, 185), string.Empty, manager.CardBoxStyle);
+            GUI.Box(new Rect(40, 705, 640, 195), string.Empty, manager.CardBoxStyle);
 
             if (track != null)
             {
+                // 1행: 곡 제목
+                GUIStyle titleStyle = new GUIStyle(manager.LabelStyle)
+                {
+                    fontSize = 22,
+                    fontStyle = FontStyle.Bold,
+                    alignment = TextAnchor.MiddleCenter
+                };
+                titleStyle.normal.textColor = Color.white;
+                GUI.Label(new Rect(105, 715, 510, 32), $"<b>🎵 {track.title}</b>", titleStyle);
+
+                // 2행: 난이도 별점 & BPM 구간
+                GUIStyle subStyle = new GUIStyle(manager.LabelStyle)
+                {
+                    fontSize = 18,
+                    fontStyle = FontStyle.Bold,
+                    alignment = TextAnchor.MiddleCenter
+                };
                 string starStr = track.GetStarString();
-                GUI.Label(new Rect(60, 725, 600, 32), $"<b>🎵 {track.title}</b>   <color=#FFD700><b>{starStr}</b></color> <color=#90CAF9>({track.startBpm:0}~{track.maxBpm:0} BPM)</color>", manager.TitleStyle);
+                GUI.Label(new Rect(105, 747, 510, 26), $"<color=#FFD700>{starStr}</color>   <color=#90CAF9>({track.startBpm:0}~{track.maxBpm:0} BPM)</color>", subStyle);
                 
-                GUIStyle descStyle = new GUIStyle(manager.LabelStyle);
-                descStyle.fontSize = 18;
-                descStyle.wordWrap = true;
-                descStyle.normal.textColor = new Color(0.85f, 0.92f, 1.0f, 0.9f);
-                GUI.Label(new Rect(60, 765, 520, 125), $"{track.genreConcept}", descStyle);
+                // 3행: 장르 및 서사 설명 (좌우 버튼 사이 중앙 정렬)
+                GUIStyle descStyle = new GUIStyle(manager.LabelStyle)
+                {
+                    fontSize = 15,
+                    fontStyle = FontStyle.Normal,
+                    wordWrap = true,
+                    alignment = TextAnchor.UpperCenter
+                };
+                descStyle.normal.textColor = new Color(0.82f, 0.88f, 0.95f, 0.95f);
+                GUI.Label(new Rect(105, 778, 510, 110), $"{track.genreConcept}", descStyle);
             }
             else
             {
-                GUI.Label(new Rect(60, 750, 600, 40), "🎵 기본 BGM 트랙", manager.TitleStyle);
+                GUI.Label(new Rect(105, 760, 510, 40), "🎵 기본 BGM 트랙", manager.TitleStyle);
             }
 
             if (totalTracks > 1)
             {
-                if (manager.DrawResponsiveButton(new Rect(50, 800, 50, 55), "◀", manager.GlassBtnStyle))
+                if (manager.DrawResponsiveButton(new Rect(50, 765, 45, 75), "◀", manager.GlassBtnStyle))
                 {
                     int prevIdx = (currentTrackIdx - 1 + totalTracks) % totalTracks;
                     var prevTrack = musicDb.GetTrackByIndex(prevIdx);
@@ -168,7 +190,7 @@ namespace SkippingStones.UI
                     }
                 }
 
-                if (manager.DrawResponsiveButton(new Rect(620, 800, 50, 55), "▶", manager.GlassBtnStyle))
+                if (manager.DrawResponsiveButton(new Rect(625, 765, 45, 75), "▶", manager.GlassBtnStyle))
                 {
                     int nextIdx = (currentTrackIdx + 1) % totalTracks;
                     var nextTrack = musicDb.GetTrackByIndex(nextIdx);
